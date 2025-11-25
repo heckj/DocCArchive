@@ -11,10 +11,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # N-2 support strategy for the major Swift versions
+    # N-2 support strategy for the major Swift versions, starting
+    # with Swift 6.1
     strategy:
       matrix:
-        image: ["swift:6.0", "swift:6.1", "swift:6.2"]
+        image: ["swift:6.1", "swift:6.2"]
 
     container:
       image: ${{ matrix.image }}
