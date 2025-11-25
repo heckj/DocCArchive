@@ -1,4 +1,10 @@
-# DocCArchiveTransformer
+# DocCArchive
+
+> NOTE: This isn't the same code as Helge's lovely 
+> [DocCArchive library](https://github.com/DoccZz/DocCArchive), which he built
+> and maintains manually. It serves loosely the same purpose, but is independently
+> created based on Source content available from 
+> [Swift's DocC](https://github.com/swiftlang/swift-docc/).
 
 The data files for ingesting DocC archives source from the 
 [DocC repository](https://github.com/swiftlang/swift-docc/) of the [Swift Project](https://swift.org/).

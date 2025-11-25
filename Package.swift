@@ -3,14 +3,14 @@
 import PackageDescription
 
 let package = Package(
-  name: "DocCArchiveTransformer",
+  name: "DocCArchive",
   platforms: [
     .macOS(.v10_15)
   ],
   products: [
     .library(
-      name: "DocCArchiveTransformer",
-      targets: ["DocCArchiveTransformer"]
+      name: "DocCArchive",
+      targets: ["DocCArchive"]
     )
   ],
   dependencies: [
@@ -19,7 +19,7 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "DocCArchiveTransformer",
+      name: "DocCArchive",
       dependencies: ["VendoredDocC"]
     ),
     .target(
@@ -41,8 +41,8 @@ let package = Package(
       ]
     ),
     .testTarget(
-      name: "DocCArchiveTransformerTests",
-      dependencies: ["DocCArchiveTransformer"],
+      name: "DocCArchiveTests",
+      dependencies: ["DocCArchive"],
       resources: [.copy("Fixtures")]
     ),
   ]
