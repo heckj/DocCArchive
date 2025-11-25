@@ -1,0 +1,32 @@
+{
+  "inputs": [
+    {
+      "inputFile": "./Assets.json",
+    },
+    {
+      "inputFile": "./Benchmark.json",
+    },
+    {
+      "inputFile": "./Diagnostics.json",
+    },
+    {
+      "inputFile": "./IndexingRecords.spec.json",
+    },
+    {
+      "inputFile": "./LinkableEntities.json",
+    },
+    {
+      "inputFile": "./Metadata.json",
+    },
+    {
+      "inputFile": "./RenderIndex.spec.json",
+    },
+    {
+      "inputFile": "./RenderNode.spec.json",
+    },
+    {
+      "inputFile": "./ThemeSettings.spec.json",
+    }
+  ],
+  "output": "./merged-spec.json"
+}
