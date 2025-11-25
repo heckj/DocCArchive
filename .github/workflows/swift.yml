@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     container: 
       image: swift:6.2
+    steps:
+    - uses: actions/checkout@v6
     - name: sanitize w/ tests
       run: swift test --sanitize=address
     - name: Run tests w/ code coverage
