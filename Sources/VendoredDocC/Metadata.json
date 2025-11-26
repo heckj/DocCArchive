@@ -12,14 +12,14 @@
                 "type": "object",
                 "required": [
                     "bundleDisplayName",
-                    "bundleIdentifier",
+                    "bundleID",
                     "schemaVersion"
                 ],
                 "properties": {
                     "bundleDisplayName": {
                         "type": "string"
                     },
-                    "bundleIdentifier": {
+                    "bundleID": {
                         "type": "string"
                     },
                     "schemaVersion": {

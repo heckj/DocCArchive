@@ -24,7 +24,7 @@ OpenAPI generator accepts a single OpenAPI spec file, so this directory merges t
 
 ```bash
 npm i openapi-merge-cli
-npx openapi-merge.cli
+npx openapi-merge-cli
 ``` 
 
 To get Swift code for the serialized types, generate the types from the combined spec. The OpenAPI generator

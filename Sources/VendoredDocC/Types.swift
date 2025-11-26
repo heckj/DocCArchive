@@ -2404,28 +2404,28 @@ package enum Components {
     package struct Metadata: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Metadata/bundleDisplayName`.
       package var bundleDisplayName: Swift.String
-      /// - Remark: Generated from `#/components/schemas/Metadata/bundleIdentifier`.
-      package var bundleIdentifier: Swift.String
+      /// - Remark: Generated from `#/components/schemas/Metadata/bundleID`.
+      package var bundleID: Swift.String
       /// - Remark: Generated from `#/components/schemas/Metadata/schemaVersion`.
       package var schemaVersion: Components.Schemas.SchemaVersion
       /// Creates a new `Metadata`.
       ///
       /// - Parameters:
       ///   - bundleDisplayName:
-      ///   - bundleIdentifier:
+      ///   - bundleID:
       ///   - schemaVersion:
       package init(
         bundleDisplayName: Swift.String,
-        bundleIdentifier: Swift.String,
+        bundleID: Swift.String,
         schemaVersion: Components.Schemas.SchemaVersion
       ) {
         self.bundleDisplayName = bundleDisplayName
-        self.bundleIdentifier = bundleIdentifier
+        self.bundleID = bundleID
         self.schemaVersion = schemaVersion
       }
       package enum CodingKeys: String, CodingKey {
         case bundleDisplayName
-        case bundleIdentifier
+        case bundleID
         case schemaVersion
       }
     }

@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
   name: "DocCArchive",
   platforms: [
-    .macOS(.v10_15)
+    .macOS(.v13)
   ],
   products: [
     .library(
@@ -16,11 +16,15 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.10.0"),
     .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0"),
+    .package(url: "https://github.com/apple/swift-nio", from: "2.0.0"),
   ],
   targets: [
     .target(
       name: "DocCArchive",
-      dependencies: ["VendoredDocC"]
+      dependencies: [
+        "VendoredDocC",
+        .product(name: "_NIOFileSystem", package: "swift-nio"),
+      ]
     ),
     .target(
       name: "VendoredDocC",
@@ -37,7 +41,7 @@ let package = Package(
         "Diagnostics.json",
         "Metadata.json",
         "ThemeSettings.spec.json",
-        "Benchmark.json"
+        "Benchmark.json",
       ]
     ),
     .testTarget(

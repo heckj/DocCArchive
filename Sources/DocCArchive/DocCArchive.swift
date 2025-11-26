@@ -1,11 +1,69 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
+import Foundation
+internal import VendoredDocC
 
-import VendoredDocC
+public struct Archive {
+  /// File path to the DocC Archive
+  public let path: String
 
-let metadata = Components.Schemas.Metadata(
-  bundleDisplayName: "fred", bundleIdentifier: "org.swift",
-  schemaVersion: .init(major: 1, minor: 0, patch: 0))
+  public init(path: String) {
+    self.path = path
+  }
+
+  // ExampleDocs.doccarchive
+  // ├── assets.json
+  // ├── data
+  // │   └── documentation
+  // │       ├── exampledocs
+  // │       │   └── examplearticle.json
+  // │       └── exampledocs.json
+  // ├── diagnostics.json ✅ (need an fixture that includes diagnostics)
+  // ├── index
+  // │   └── index.json
+  // ├── indexing-records.json ✅ (full text search content)
+  // ├── linkable-entities.json
+  // └── metadata.json ✅
+
+  let decoder = JSONDecoder()
+
+  func parseMetadata() throws -> Components.Schemas.Metadata {
+    let metadataURL = URL(filePath: path).appending(component: "metadata").appendingPathExtension(
+      "json")
+
+    let metadataBytes = try Data(contentsOf: metadataURL)
+    let metadata = try decoder.decode(Components.Schemas.Metadata.self, from: metadataBytes)
+    return metadata
+  }
+
+  func parseDiagnostics() throws -> Components.Schemas.Diagnostics {
+    let diagnosticsURL = URL(filePath: path).appending(component: "diagnostics")
+      .appendingPathExtension("json")
+
+    let diagnosticsBytes = try Data(contentsOf: diagnosticsURL)
+    let diagnostics = try decoder.decode(
+      Components.Schemas.Diagnostics.self, from: diagnosticsBytes)
+    return diagnostics
+  }
+
+  func parseIndexingRecords() throws -> Components.Schemas.IndexingRecords {
+    let indexingRecordsURL = URL(filePath: path).appending(component: "indexing-records")
+      .appendingPathExtension("json")
+
+    let indexingRecordsBytes = try Data(contentsOf: indexingRecordsURL)
+    let indexingRecords = try decoder.decode(
+      Components.Schemas.IndexingRecords.self, from: indexingRecordsBytes)
+    return indexingRecords
+  }
+
+  func parseIndex() throws -> Components.Schemas.RenderIndex {
+    let indexURL = URL(filePath: path).appending(component: "index").appending(component: "index")
+      .appendingPathExtension("json")
+
+    let indexBytes = try Data(contentsOf: indexURL)
+    let index = try decoder.decode(Components.Schemas.RenderIndex.self, from: indexBytes)
+    return index
+  }
+
+}
 
 // JSON files to parse within a DocC Archive:
 //
