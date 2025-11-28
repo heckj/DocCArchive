@@ -18,8 +18,8 @@ public struct Archive {
   // │       └── exampledocs.json
   // ├── diagnostics.json ✅ (need an fixture that includes diagnostics)
   // ├── index
-  // │   └── index.json
-  // ├── indexing-records.json ✅ (full text search content)
+  // │   └── index.json ✅ (includes title, icon, and path in hierarchical tree of nodes)
+  // ├── indexing-records.json ✅ (full text search content within a flat list of IndexingRecord)
   // ├── linkable-entities.json
   // └── metadata.json ✅
 
