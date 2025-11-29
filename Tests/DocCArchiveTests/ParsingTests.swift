@@ -192,5 +192,49 @@ import VendoredDocC
       }
     }
   )
+}
 
+@Test func testParsingLinkableEntities() async throws {
+  let exampleFixture = try #require(TestFixtures.exampleDocs)
+  let exampleArchive = Archive(path: exampleFixture.path)
+  let exampleLinkDestinations = try exampleArchive.parseLinkableEntities()
+  //print(exampleLinkDestinations)
+  #expect(exampleLinkDestinations.count == 2)
+//  for l in exampleLinkDestinations {
+//    print("---")
+//    print("title: \(l.title)")
+//    print("abstract: \(l.abstract)")
+//    print("languages: \(l.availableLanguages)")
+//    print("fragments: \(l.fragments)")
+//    print("nav fragments: \(l.navigatorFragments)")
+//    print("reference url: \(l.referenceURL)")
+//    print("usr: \(l.usr)")
+//    print("kind: \(l.kind)")
+//    print("path: \(l.path)")
+//    print("platforms: \(l.platforms)")
+//    print("taskGroups: \(l.taskGroups)")
+//    print("plainText: \(l.plainTextDeclaration)")
+//  }
+
+  let sampleFixture = try #require(TestFixtures.sampleLibrary)
+  let sampleArchive = Archive(path: sampleFixture.path)
+  let sampleLinkDestinations = try sampleArchive.parseLinkableEntities()
+  //print(sampleIndexingRecords)
+  for l in sampleLinkDestinations {
+    print("---")
+    print("title: \(l.title)")
+    print("abstract: \(l.abstract)")
+    print("languages: \(l.availableLanguages)")
+    print("fragments: \(l.fragments)")
+    print("nav fragments: \(l.navigatorFragments)")
+    print("reference url: \(l.referenceURL)")
+    print("usr: \(l.usr)")
+    print("kind: \(l.kind)")
+    print("path: \(l.path)")
+    print("platforms: \(l.platforms)")
+    print("taskGroups: \(l.taskGroups)")
+    print("plainText: \(l.plainTextDeclaration)")
+  }
+
+  #expect(sampleLinkDestinations.count == 26)
 }

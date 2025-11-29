@@ -3,19 +3,19 @@ internal import VendoredDocC
 
 public struct Archive {
   /// File path to the DocC Archive
-  public let path: String
+  public let baseArchivePath: String
 
   public init(path: String) {
-    self.path = path
+    self.baseArchivePath = path
   }
 
   // ExampleDocs.doccarchive
   // ├── assets.json
   // ├── data
-  // │   └── documentation
+  // │   └── documentation ✅
   // │       ├── exampledocs
-  // │       │   └── examplearticle.json
-  // │       └── exampledocs.json
+  // │       │   └── examplearticle.json ✅
+  // │       └── exampledocs.json ✅
   // ├── diagnostics.json ✅ (need an fixture that includes diagnostics)
   // ├── index
   // │   └── index.json ✅ (includes title, icon, and path in hierarchical tree of nodes)
@@ -25,13 +25,13 @@ public struct Archive {
   // │   `path` property to identify and reference the relevant JSON files to load (RenderNode.spec.json)
   // │   looking at the option `--disable-indexing` in the plugin, that would align.
   // ├── indexing-records.json ✅ (full text search content within a flat list of IndexingRecord)
-  // ├── linkable-entities.json
+  // ├── linkable-entities.json ✅
   // └── metadata.json ✅
 
   let decoder = JSONDecoder()
 
   func parseMetadata() throws -> Components.Schemas.Metadata {
-    let metadataURL = URL(filePath: path).appending(component: "metadata").appendingPathExtension(
+    let metadataURL = URL(filePath: baseArchivePath).appending(component: "metadata").appendingPathExtension(
       "json")
     // print("metadata URL calculated at \(metadataURL.path)")
 
@@ -41,7 +41,7 @@ public struct Archive {
   }
 
   func parseDiagnostics() throws -> Components.Schemas.Diagnostics {
-    let diagnosticsURL = URL(filePath: path).appending(component: "diagnostics")
+    let diagnosticsURL = URL(filePath: baseArchivePath).appending(component: "diagnostics")
       .appendingPathExtension("json")
 
     let diagnosticsBytes = try Data(contentsOf: diagnosticsURL)
@@ -50,8 +50,10 @@ public struct Archive {
     return diagnostics
   }
 
+  // full text index records - only available when the docc archive was
+  // created with `--emit-digest`
   func parseIndexingRecords() throws -> Components.Schemas.IndexingRecords {
-    let indexingRecordsURL = URL(filePath: path).appending(component: "indexing-records")
+    let indexingRecordsURL = URL(filePath: baseArchivePath).appending(component: "indexing-records")
       .appendingPathExtension("json")
 
     let indexingRecordsBytes = try Data(contentsOf: indexingRecordsURL)
@@ -60,8 +62,9 @@ public struct Archive {
     return indexingRecords
   }
 
+  // always available for the static hosting scenarios, which is default.
   func parseIndex() throws -> Components.Schemas.RenderIndex {
-    let indexURL = URL(filePath: path).appending(component: "index").appending(component: "index")
+    let indexURL = URL(filePath: baseArchivePath).appending(component: "index").appending(component: "index")
       .appendingPathExtension("json")
 
     let indexBytes = try Data(contentsOf: indexURL)
@@ -70,7 +73,7 @@ public struct Archive {
   }
 
   func parseRenderNode(dataPath: String) throws -> Components.Schemas.RenderNode {
-    let nodeURL = URL(filePath: path).appending(component: "data").appending(component: dataPath)
+    let nodeURL = URL(filePath: baseArchivePath).appending(component: "data").appending(component: dataPath)
       .appendingPathExtension("json")
 
     let nodeBytes = try Data(contentsOf: nodeURL)
@@ -79,7 +82,8 @@ public struct Archive {
   }
 
   // recursive depth-first walk of tree of Nodes through the list provided, doing the
-  // function stuff on each node (visitor pattern)
+  // function stuff on each node (visitor pattern). Not sure I care about the level
+  // beyond pretty printing, but leaving it in for now...
   func walkRenderIndexNodes(
     nodes: [Components.Schemas.Node], doing: (Components.Schemas.Node, Int) throws -> Void
   ) throws {
@@ -98,6 +102,21 @@ public struct Archive {
       }
     }
   }
+
+  // only available when the archive was generated with the experimental linkable entities enabled
+  // This holds - or could hold - almost everything from the --emit-digest and quite a bit more, enabling
+  // easier references to content external to the DocC archive. Symbols include the usr (mangled name)
+  // and reference URL is on each, using the `doc://MODULENAME/documentatiopn/MODULENAME` custom URL structure.
+  func parseLinkableEntities() throws -> Components.Schemas.LinkableEntities {
+    let linkableEntitiesURL = URL(filePath: baseArchivePath).appending(component: "linkable-entities")
+      .appendingPathExtension("json")
+
+    let linkableEntitiesBytes = try Data(contentsOf: linkableEntitiesURL)
+    let linkDestinations = try decoder.decode(
+      Components.Schemas.LinkableEntities.self, from: linkableEntitiesBytes)
+    return linkDestinations
+  }
+  
 }
 
 // JSON files to parse within a DocC Archive:
