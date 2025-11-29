@@ -15,6 +15,7 @@
                 }
             },
             "IndexingRecord": {
+                description: "Maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Indexing/IndexingRecord.swift#L14",
                 "type": "object",
                 "required": [
                     "kind",

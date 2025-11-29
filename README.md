@@ -27,3 +27,7 @@ rm -rf .build
 container run -it -c 4 -m 8g -v "$(pwd):/src" -w src/ swift:6.2 swift test
 ```
 
+
+### Random Notes
+
+- I'm trying NIOFilesystem as an alternative to Foundation's Bundle structure for navigating and interacting with the filesystem, but I think that I'd like to bind that behind a package trait down the road.

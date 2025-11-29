@@ -15,6 +15,7 @@
                 } 
             },
             "LinkDestinationSummary": {
+                "description": "maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/LinkTargets/LinkDestinationSummary.swift#L76",
                 "type": "object",
                 "additionalProperties": false,
                 "required": [

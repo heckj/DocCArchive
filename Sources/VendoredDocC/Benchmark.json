@@ -9,6 +9,7 @@
     "components": {
         "schemas": {
             "Benchmark": {
+                "description": "maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Benchmark/BenchmarkResults.swift#L14",
                 "type": "object",
                 "required": [
                     "doccArguments",
