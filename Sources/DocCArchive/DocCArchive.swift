@@ -31,8 +31,9 @@ public struct Archive {
   let decoder = JSONDecoder()
 
   func parseMetadata() throws -> Components.Schemas.Metadata {
-    let metadataURL = URL(filePath: baseArchivePath).appending(component: "metadata").appendingPathExtension(
-      "json")
+    let metadataURL = URL(filePath: baseArchivePath).appending(component: "metadata")
+      .appendingPathExtension(
+        "json")
     // print("metadata URL calculated at \(metadataURL.path)")
 
     let metadataBytes = try Data(contentsOf: metadataURL)
@@ -64,8 +65,10 @@ public struct Archive {
 
   // always available for the static hosting scenarios, which is default.
   func parseIndex() throws -> Components.Schemas.RenderIndex {
-    let indexURL = URL(filePath: baseArchivePath).appending(component: "index").appending(component: "index")
-      .appendingPathExtension("json")
+    let indexURL = URL(filePath: baseArchivePath).appending(component: "index").appending(
+      component: "index"
+    )
+    .appendingPathExtension("json")
 
     let indexBytes = try Data(contentsOf: indexURL)
     let index = try decoder.decode(Components.Schemas.RenderIndex.self, from: indexBytes)
@@ -73,8 +76,10 @@ public struct Archive {
   }
 
   func parseRenderNode(dataPath: String) throws -> Components.Schemas.RenderNode {
-    let nodeURL = URL(filePath: baseArchivePath).appending(component: "data").appending(component: dataPath)
-      .appendingPathExtension("json")
+    let nodeURL = URL(filePath: baseArchivePath).appending(component: "data").appending(
+      component: dataPath
+    )
+    .appendingPathExtension("json")
 
     let nodeBytes = try Data(contentsOf: nodeURL)
     let index = try decoder.decode(Components.Schemas.RenderNode.self, from: nodeBytes)
@@ -108,15 +113,59 @@ public struct Archive {
   // easier references to content external to the DocC archive. Symbols include the usr (mangled name)
   // and reference URL is on each, using the `doc://MODULENAME/documentatiopn/MODULENAME` custom URL structure.
   func parseLinkableEntities() throws -> Components.Schemas.LinkableEntities {
-    let linkableEntitiesURL = URL(filePath: baseArchivePath).appending(component: "linkable-entities")
-      .appendingPathExtension("json")
+    let linkableEntitiesURL = URL(filePath: baseArchivePath).appending(
+      component: "linkable-entities"
+    )
+    .appendingPathExtension("json")
 
     let linkableEntitiesBytes = try Data(contentsOf: linkableEntitiesURL)
     let linkDestinations = try decoder.decode(
       Components.Schemas.LinkableEntities.self, from: linkableEntitiesBytes)
     return linkDestinations
   }
-  
+
+  func convert() throws {
+    // To walk an archive:
+    // open and parse the index (all into memory)
+    // index.interfaceLanguages -> .additionalProperties -> ["swift"] => [Nodes]
+    // [Nodes] is actually a list of tree structure Enums that you walk
+    let index = try self.parseIndex()
+
+    // index.includedArchiveIdentifiers is a list of the module names included in this archive.
+
+    let index_interface_languages = index.interfaceLanguages
+    // interfaceLanguages is a map of `String : [Node]` where the
+    // string is a language provided, and the list of nodes are the nodes
+    // for that language.
+    // The "additionalProperties" name of this is an artifact of how
+    // OpenAPI Spec gets rendered into Swift types. The upstream type
+    // that matches this (https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Indexing/RenderIndexJSON/RenderIndex.swift#L24)
+    // has a property that's the map. Guessing openAPI doesn't do a great
+    // job of representing a dictionary other than treating it like a full JSON
+    // object.
+
+    // proper iteration would be to get the keys of `additionalProperties`
+    // and iterate through the whole key set.
+    if let listOfRenderNodes: [Components.Schemas.Node] =
+      index_interface_languages.additionalProperties["swift"]
+    {
+
+      // walk through the tree of nodes, opening path (if available, not all have paths).
+      // the path is the JSON location to the RenderNode, so open & parse that - and then do
+      // whatever transformation you want from there.
+      try self.walkRenderIndexNodes(
+        nodes: listOfRenderNodes,
+        doing: { visitedNode, level in
+          if let renderNodePath = visitedNode.path {
+            let _ = try self.parseRenderNode(dataPath: renderNodePath)
+            print("RenderNode (\(visitedNode.title) at \(renderNodePath) parsed")
+          } else {
+            print("Node title \(visitedNode.title) at level \(level) doesn't have a path")
+          }
+        }
+      )
+    }
+  }
 }
 
 // JSON files to parse within a DocC Archive:
