@@ -9,11 +9,13 @@ import VendoredDocC
   let exampleArchive = Archive(path: exampleFixture.path)
   let metadata = try exampleArchive.parseMetadata()
   #expect(metadata.bundleDisplayName == "ExampleDocs")
+  print(metadata)
 
   let sampleFixture = try #require(TestFixtures.sampleLibrary)
   let sampleArchive = Archive(path: sampleFixture.path)
   let sampleMetadata = try sampleArchive.parseMetadata()
   #expect(sampleMetadata.bundleDisplayName == "SampleLibrary")
+  print(sampleMetadata)
 }
 
 @Test func testParsingDiagnostics() async throws {
@@ -31,8 +33,17 @@ import VendoredDocC
   let exampleFixture = try #require(TestFixtures.exampleDocs)
   let exampleArchive = Archive(path: exampleFixture.path)
   let exampleIndexingRecords = try exampleArchive.parseIndexingRecords()
-  //print(exampleIndexingRecords)
+  print(exampleIndexingRecords)
   #expect(exampleIndexingRecords.count == 2)
+  for r in exampleIndexingRecords {
+    print("kind: \(r.kind.rawValue)")
+    print("location: \(r.location)")
+    print("title: \(r.title)")
+    print("summary: \(r.summary)")
+    print("headings: \(r.headings)")
+    print("indexable content: \(r.rawIndexableTextContent)")
+    print("platforms: \(r.platforms)")
+  }
 
   let sampleFixture = try #require(TestFixtures.sampleLibrary)
   let sampleArchive = Archive(path: sampleFixture.path)
@@ -64,6 +75,8 @@ import VendoredDocC
         print("\(indent)[\(level)] type: ?, title: \(visitedNode.title)")
       }
       print("\(indent)    path: \(visitedNode.path ?? "")")
+      // path, in this case, appears to be the path under the `data` directory to the JSON
+      // data file that's represented by a RenderNode
       print(
         "\(indent)    beta: \(visitedNode.beta ?? false), deprecated: \(visitedNode.deprecated ?? false), external: \(visitedNode.external ?? false), icon: \(visitedNode.icon ?? "-none-")"
       )

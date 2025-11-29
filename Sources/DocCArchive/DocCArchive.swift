@@ -28,7 +28,7 @@ public struct Archive {
   func parseMetadata() throws -> Components.Schemas.Metadata {
     let metadataURL = URL(filePath: path).appending(component: "metadata").appendingPathExtension(
       "json")
-    print("metadata URL calculated at \(metadataURL.path)")
+    // print("metadata URL calculated at \(metadataURL.path)")
 
     let metadataBytes = try Data(contentsOf: metadataURL)
     let metadata = try decoder.decode(Components.Schemas.Metadata.self, from: metadataBytes)
