@@ -88,7 +88,7 @@ import VendoredDocC
   let exampleDocsNodes: [Components.Schemas.Node] = try #require(
     exampleIndex_interface_languages.additionalProperties["swift"])
 
-  exampleArchive.walkRenderIndexNodes(
+  try exampleArchive.walkRenderIndexNodes(
     nodes: exampleDocsNodes,
     doing: { visitedNode, level in
       let indent = String(repeating: "  ", count: level)
@@ -122,7 +122,7 @@ import VendoredDocC
   let sampleLibraryNodes: [Components.Schemas.Node] = try #require(
     sampleIndex_interface_languages.additionalProperties["swift"])
 
-  sampleArchive.walkRenderIndexNodes(
+  try sampleArchive.walkRenderIndexNodes(
     nodes: sampleLibraryNodes,
     doing: { visitedNode, level in
       let indent = String(repeating: "  ", count: level)
@@ -137,4 +137,60 @@ import VendoredDocC
       )
     }
   )
+}
+
+@Test func testParsingExampleDocsRenderNodes() async throws {
+  let fixture = try #require(TestFixtures.exampleDocs)
+  let archive = Archive(path: fixture.path)
+  let index = try archive.parseIndex()
+
+  #expect(index.includedArchiveIdentifiers.count == 1)
+  #expect(index.includedArchiveIdentifiers[0] == "ExampleDocs")
+  let index_interface_languages = index.interfaceLanguages
+
+  #expect(index_interface_languages.additionalProperties.count == 1)
+  let docsNodes: [Components.Schemas.Node] = try #require(
+    index_interface_languages.additionalProperties["swift"])
+
+  try archive.walkRenderIndexNodes(
+    nodes: docsNodes,
+    doing: { visitedNode, level in
+      if let renderNodePath = visitedNode.path {
+        let _ = try archive.parseRenderNode(dataPath: renderNodePath)
+        print("RenderNode (\(visitedNode.title) at \(renderNodePath) parsed")
+      } else {
+        print("Node title \(visitedNode.title) at level \(level) doesn't have a path")
+      }
+    }
+  )
+
+}
+
+@Test func testParsingSampleLibraryRenderNodes() async throws {
+  let fixture = try #require(TestFixtures.sampleLibrary)
+  let archive = Archive(path: fixture.path)
+  let index = try archive.parseIndex()
+
+  #expect(index.includedArchiveIdentifiers.count == 1)
+  #expect(index.includedArchiveIdentifiers[0] == "SampleLibrary")
+  let index_interface_languages = index.interfaceLanguages
+
+  #expect(index_interface_languages.additionalProperties.count == 1)
+  let docsNodes: [Components.Schemas.Node] = try #require(
+    index_interface_languages.additionalProperties["swift"])
+
+  try archive.walkRenderIndexNodes(
+    nodes: docsNodes,
+    doing: { visitedNode, level in
+      if let renderNodePath = visitedNode.path {
+        let _ = try archive.parseRenderNode(dataPath: renderNodePath)
+        print("RenderNode (\(visitedNode.title) at \(renderNodePath) parsed")
+      } else {
+        print(
+          "Node title \(visitedNode.title) at \(String(describing: visitedNode.path)) level \(level) doesn't have a path"
+        )
+      }
+    }
+  )
+
 }
