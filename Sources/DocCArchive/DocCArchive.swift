@@ -133,7 +133,17 @@ public struct Archive {
     return linkDestinations
   }
 
-  public func convert() throws {
+  // I can start with this just being synchronous, and loading the whole damn thing into memory.
+  // Worst case examples - SwiftNIO, maybe SwiftAST - for the sheer number of symbols included within
+  // the resulting archive.
+
+  func convert<T>(transformer: some Transformer<T>) throws -> [T] {
+
+    // this ends up needing to be package because everything boils down to depending on the generated types, which I'm keeping at "package" access.
+    // That may be a mistake.
+
+    var results: [T] = []
+
     // To walk an archive:
     // open and parse the index (all into memory)
     // index.interfaceLanguages -> .additionalProperties -> ["swift"] => [Nodes]
@@ -158,7 +168,6 @@ public struct Archive {
     if let listOfRenderNodes: [Components.Schemas.Node] =
       index_interface_languages.additionalProperties["swift"]
     {
-
       // walk through the tree of nodes, opening path (if available, not all have paths).
       // the path is the JSON location to the RenderNode, so open & parse that - and then do
       // whatever transformation you want from there.
@@ -166,14 +175,16 @@ public struct Archive {
         nodes: listOfRenderNodes,
         doing: { visitedNode, level in
           if let renderNodePath = visitedNode.path {
-            let _ = try self.parseRenderNode(dataPath: renderNodePath)
+            let renderNode = try self.parseRenderNode(dataPath: renderNodePath)
             print("RenderNode (\(visitedNode.title) at \(renderNodePath) parsed")
+            results.append(try transformer.convert(node: renderNode))
           } else {
             print("Node title \(visitedNode.title) at level \(level) doesn't have a path")
           }
         }
       )
     }
+    return results
   }
 
   // This is going to be tricky - mostly getting the right understanding of what's sendable, isolated, etc - in order to provide access to the channel. Classic Swift advice says to serialize this to something like MainActor
@@ -226,12 +237,26 @@ public enum ChunkStrategy {
   case collapsedToType
 }
 
-public struct Transformer {
-  func convert(node: Components.Schemas.RenderNode) async throws -> String {
+protocol Transformer<T> {
+  associatedtype T
+  func convert(node: Components.Schemas.RenderNode) throws -> T
+}
+
+// make into a protocol - implement a "MarkdownTransformer", "HTMLTransformer"
+public struct MyHTMLTransformer: Transformer {
+  func convert(node: Components.Schemas.RenderNode) throws -> some HTML {
+    // this may need access to look up/load other nodes for their content...
+    return HTMLRaw("<!-- what? -->")
+  }
+}
+
+public struct MyMarkdownTransformer: Transformer {
+  func convert(node: Components.Schemas.RenderNode) throws -> String {
     // this may need access to look up/load other nodes for their content...
     return ""
   }
 }
+
 // JSON files to parse within a DocC Archive:
 //
 // ExampleDocs.doccarchive
