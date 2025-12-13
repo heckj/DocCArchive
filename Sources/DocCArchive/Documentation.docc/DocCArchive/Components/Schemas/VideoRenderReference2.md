@@ -1,0 +1,20 @@
+# ``/DocCArchive/Components/Schemas/VideoRenderReference2``
+
+<!-- The content below this line is auto-generated and is redundant. You should either incorporate it into your content above this line or delete it. -->
+
+## Topics
+
+### Initializers
+
+- ``init(from:)``
+
+### Instance Properties
+
+- ``alt``
+- ``identifier``
+- ``poster``
+- ``variants``
+
+### Enumerations
+
+- ``CodingKeys``
