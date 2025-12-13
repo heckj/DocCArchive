@@ -21,7 +21,7 @@ func run() async throws {
 }
 
 public struct Archive {
-  /// File path to the DocC Archive
+  /// The file path to the DocC Archive.
   public let baseArchivePath: String
 
   // change to URL - and track "filesystem" vs. "internet" URL for retrieving JSON files?
@@ -192,7 +192,7 @@ public struct Archive {
 
   // This is going to be tricky - mostly getting the right understanding of what's sendable, isolated, etc - in order to provide access to the channel. Classic Swift advice says to serialize this to something like MainActor
 
-  /// provide access to an AsyncChannel of strings that make up the transformed content
+  /// Provides access to an AsyncChannel of strings that make up the transformed content.
   //    nonisolated(nonsending) public func withChunks(
   //        t: any Transformer,
   //        s: ChunkStrategy,
@@ -220,13 +220,13 @@ public struct Archive {
   //      }
 }
 
-/// The strategy for converting the tree of nodes into sequences that get rendered into contiguous, static content
+/// The strategy for converting the tree of nodes into sequences that get rendered into contiguous, static content.
 public enum ChunkStrategy {
-  /// One big file with everything in it
+  /// One big file with everything in it.
   case one
-  /// DocC classic - every file gets its own chunk of data
+  /// DocC classic—every file gets its own chunk of data.
   case everySymbol
-  /// Slightly optimized from DocC classic - properties, methods, etc on a type are collapsed into the page for the type.
+  /// Slightly optimized from DocC classic—properties, methods, and other elements on a type are collapsed into the page for the type.
   case collapsedToType
 }
 

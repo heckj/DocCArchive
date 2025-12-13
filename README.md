@@ -20,7 +20,7 @@ swift package --disable-sandbox generate-documentation --target ExampleDocs --em
 swift package --disable-sandbox generate-documentation --target SampleLibrary --emit-digest
 ```
 
-## Locally testing on Linux:
+## Test locally on Linux
 
 ```bash
 rm -rf .build
