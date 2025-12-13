@@ -11,69 +11,69 @@
   import struct Foundation.Date
 #endif
 /// A type that performs HTTP operations defined by the OpenAPI document.
-package protocol APIProtocol: Sendable {}
+public protocol APIProtocol: Sendable {}
 
 /// Convenience overloads for operation inputs.
 extension APIProtocol {
 }
 
 /// Server URLs defined in the OpenAPI document.
-package enum Servers {}
+public enum Servers {}
 
 /// Types generated from the components section of the OpenAPI document.
-package enum Components {
+public enum Components {
   /// Types generated from the `#/components/schemas` section of the OpenAPI document.
-  package enum Schemas {
+  public enum Schemas {
     /// maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Indexing/RenderIndexJSON/RenderIndex.swift#L24.
     ///
     /// - Remark: Generated from `#/components/schemas/RenderIndex`.
-    package struct RenderIndex: Codable, Hashable, Sendable {
+    public struct RenderIndex: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderIndex/schemaVersion`.
-      package var schemaVersion: Components.Schemas.SchemaVersion
+      public var schemaVersion: Components.Schemas.SchemaVersion
       /// - Remark: Generated from `#/components/schemas/RenderIndex/interfaceLanguages`.
-      package struct InterfaceLanguagesPayload: Codable, Hashable, Sendable {
+      public struct InterfaceLanguagesPayload: Codable, Hashable, Sendable {
         /// A container of undocumented properties.
-        package var additionalProperties: [String: [Components.Schemas.Node]]
+        public var additionalProperties: [String: [Components.Schemas.Node]]
         /// Creates a new `InterfaceLanguagesPayload`.
         ///
         /// - Parameters:
         ///   - additionalProperties: A container of undocumented properties.
-        package init(additionalProperties: [String: [Components.Schemas.Node]] = .init()) {
+        public init(additionalProperties: [String: [Components.Schemas.Node]] = .init()) {
           self.additionalProperties = additionalProperties
         }
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           try encoder.encodeAdditionalProperties(additionalProperties)
         }
       }
       /// - Remark: Generated from `#/components/schemas/RenderIndex/interfaceLanguages`.
-      package var interfaceLanguages: Components.Schemas.RenderIndex.InterfaceLanguagesPayload
+      public var interfaceLanguages: Components.Schemas.RenderIndex.InterfaceLanguagesPayload
       /// - Remark: Generated from `#/components/schemas/RenderIndex/references`.
-      package struct ReferencesPayload: Codable, Hashable, Sendable {
+      public struct ReferencesPayload: Codable, Hashable, Sendable {
         /// A container of undocumented properties.
-        package var additionalProperties: [String: Components.Schemas.ImageRenderReference]
+        public var additionalProperties: [String: Components.Schemas.ImageRenderReference]
         /// Creates a new `ReferencesPayload`.
         ///
         /// - Parameters:
         ///   - additionalProperties: A container of undocumented properties.
-        package init(
+        public init(
           additionalProperties: [String: Components.Schemas.ImageRenderReference] = .init()
         ) {
           self.additionalProperties = additionalProperties
         }
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           try encoder.encodeAdditionalProperties(additionalProperties)
         }
       }
       /// - Remark: Generated from `#/components/schemas/RenderIndex/references`.
-      package var references: Components.Schemas.RenderIndex.ReferencesPayload?
+      public var references: Components.Schemas.RenderIndex.ReferencesPayload?
       /// - Remark: Generated from `#/components/schemas/RenderIndex/includedArchiveIdentifiers`.
-      package var includedArchiveIdentifiers: [Swift.String]?
+      public var includedArchiveIdentifiers: [Swift.String]?
       /// Creates a new `RenderIndex`.
       ///
       /// - Parameters:
@@ -81,7 +81,7 @@ package enum Components {
       ///   - interfaceLanguages:
       ///   - references:
       ///   - includedArchiveIdentifiers:
-      package init(
+      public init(
         schemaVersion: Components.Schemas.SchemaVersion,
         interfaceLanguages: Components.Schemas.RenderIndex.InterfaceLanguagesPayload,
         references: Components.Schemas.RenderIndex.ReferencesPayload? = nil,
@@ -92,7 +92,7 @@ package enum Components {
         self.references = references
         self.includedArchiveIdentifiers = includedArchiveIdentifiers
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case schemaVersion
         case interfaceLanguages
         case references
@@ -102,9 +102,9 @@ package enum Components {
     /// maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Indexing/RenderIndexJSON/RenderIndex.swift#L117.
     ///
     /// - Remark: Generated from `#/components/schemas/Node`.
-    package struct Node: Codable, Hashable, Sendable {
+    public struct Node: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Node/title`.
-      package var title: Swift.String {
+      public var title: Swift.String {
         get {
           self.storage.value.title
         }
@@ -113,7 +113,7 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/Node/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case article = "article"
         case _associatedtype = "associatedtype"
         case buildSetting = "buildSetting"
@@ -152,7 +152,7 @@ package enum Components {
         case _var = "var"
       }
       /// - Remark: Generated from `#/components/schemas/Node/type`.
-      package var _type: Components.Schemas.Node._TypePayload? {
+      public var _type: Components.Schemas.Node._TypePayload? {
         get {
           self.storage.value._type
         }
@@ -161,7 +161,7 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/Node/path`.
-      package var path: Swift.String? {
+      public var path: Swift.String? {
         get {
           self.storage.value.path
         }
@@ -170,7 +170,7 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/Node/deprecated`.
-      package var deprecated: Swift.Bool? {
+      public var deprecated: Swift.Bool? {
         get {
           self.storage.value.deprecated
         }
@@ -179,7 +179,7 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/Node/external`.
-      package var external: Swift.Bool? {
+      public var external: Swift.Bool? {
         get {
           self.storage.value.external
         }
@@ -188,7 +188,7 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/Node/beta`.
-      package var beta: Swift.Bool? {
+      public var beta: Swift.Bool? {
         get {
           self.storage.value.beta
         }
@@ -197,7 +197,7 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/Node/icon`.
-      package var icon: Swift.String? {
+      public var icon: Swift.String? {
         get {
           self.storage.value.icon
         }
@@ -206,7 +206,7 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/Node/children`.
-      package var children: [Components.Schemas.Node]? {
+      public var children: [Components.Schemas.Node]? {
         get {
           self.storage.value.children
         }
@@ -225,7 +225,7 @@ package enum Components {
       ///   - beta:
       ///   - icon:
       ///   - children:
-      package init(
+      public init(
         title: Swift.String,
         _type: Components.Schemas.Node._TypePayload? = nil,
         path: Swift.String? = nil,
@@ -247,7 +247,7 @@ package enum Components {
             children: children
           ))
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case _type = "type"
         case path
@@ -257,10 +257,10 @@ package enum Components {
         case icon
         case children
       }
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         self.storage = try .init(from: decoder)
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         try self.storage.encode(to: encoder)
       }
       /// Internal reference storage to allow type recursion.
@@ -344,20 +344,20 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/SchemaVersion`.
-    package struct SchemaVersion: Codable, Hashable, Sendable {
+    public struct SchemaVersion: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/SchemaVersion/major`.
-      package var major: Swift.Int
+      public var major: Swift.Int
       /// - Remark: Generated from `#/components/schemas/SchemaVersion/minor`.
-      package var minor: Swift.Int
+      public var minor: Swift.Int
       /// - Remark: Generated from `#/components/schemas/SchemaVersion/patch`.
-      package var patch: Swift.Int
+      public var patch: Swift.Int
       /// Creates a new `SchemaVersion`.
       ///
       /// - Parameters:
       ///   - major:
       ///   - minor:
       ///   - patch:
-      package init(
+      public init(
         major: Swift.Int,
         minor: Swift.Int,
         patch: Swift.Int
@@ -366,26 +366,26 @@ package enum Components {
         self.minor = minor
         self.patch = patch
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case major
         case minor
         case patch
       }
     }
     /// - Remark: Generated from `#/components/schemas/ImageRenderReference`.
-    package struct ImageRenderReference: Codable, Hashable, Sendable {
+    public struct ImageRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case image = "image"
       }
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference/type`.
-      package var _type: Components.Schemas.ImageRenderReference._TypePayload
+      public var _type: Components.Schemas.ImageRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference/alt`.
-      package var alt: Swift.String?
+      public var alt: Swift.String?
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference/variants`.
-      package var variants: [Components.Schemas.RenderReferenceVariant]
+      public var variants: [Components.Schemas.RenderReferenceVariant]
       /// Creates a new `ImageRenderReference`.
       ///
       /// - Parameters:
@@ -393,7 +393,7 @@ package enum Components {
       ///   - alt:
       ///   - identifier:
       ///   - variants:
-      package init(
+      public init(
         _type: Components.Schemas.ImageRenderReference._TypePayload,
         alt: Swift.String? = nil,
         identifier: Swift.String,
@@ -404,7 +404,7 @@ package enum Components {
         self.identifier = identifier
         self.variants = variants
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case alt
         case identifier
@@ -412,22 +412,22 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderReferenceVariant`.
-    package struct RenderReferenceVariant: Codable, Hashable, Sendable {
+    public struct RenderReferenceVariant: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderReferenceVariant/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// The ID attribute for the image that should be rendered in the SVG file represented by this variant.
       ///
       /// - Remark: Generated from `#/components/schemas/RenderReferenceVariant/svgID`.
-      package var svgID: Swift.String?
+      public var svgID: Swift.String?
       /// - Remark: Generated from `#/components/schemas/RenderReferenceVariant/traits`.
-      package var traits: [Components.Schemas.RenderReferenceVariantTrait]
+      public var traits: [Components.Schemas.RenderReferenceVariantTrait]
       /// Creates a new `RenderReferenceVariant`.
       ///
       /// - Parameters:
       ///   - url:
       ///   - svgID: The ID attribute for the image that should be rendered in the SVG file represented by this variant.
       ///   - traits:
-      package init(
+      public init(
         url: Swift.String,
         svgID: Swift.String? = nil,
         traits: [Components.Schemas.RenderReferenceVariantTrait]
@@ -436,7 +436,7 @@ package enum Components {
         self.svgID = svgID
         self.traits = traits
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case url
         case svgID
         case traits
@@ -444,7 +444,7 @@ package enum Components {
     }
     /// - Remark: Generated from `#/components/schemas/RenderReferenceVariantTrait`.
     @frozen
-    package enum RenderReferenceVariantTrait: String, Codable, Hashable, Sendable, CaseIterable {
+    public enum RenderReferenceVariantTrait: String, Codable, Hashable, Sendable, CaseIterable {
       case _1x = "1x"
       case _2x = "2x"
       case _3x = "3x"
@@ -452,20 +452,20 @@ package enum Components {
       case dark = "dark"
     }
     /// - Remark: Generated from `#/components/schemas/Assets`.
-    package struct Assets: Codable, Hashable, Sendable {
+    public struct Assets: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Assets/images`.
-      package var images: [Components.Schemas.ImageRenderReference1]
+      public var images: [Components.Schemas.ImageRenderReference1]
       /// - Remark: Generated from `#/components/schemas/Assets/videos`.
-      package var videos: [Components.Schemas.VideoRenderReference]
+      public var videos: [Components.Schemas.VideoRenderReference]
       /// - Remark: Generated from `#/components/schemas/Assets/downloads`.
-      package var downloads: [Components.Schemas.DownloadRenderReference]
+      public var downloads: [Components.Schemas.DownloadRenderReference]
       /// Creates a new `Assets`.
       ///
       /// - Parameters:
       ///   - images:
       ///   - videos:
       ///   - downloads:
-      package init(
+      public init(
         images: [Components.Schemas.ImageRenderReference1],
         videos: [Components.Schemas.VideoRenderReference],
         downloads: [Components.Schemas.DownloadRenderReference]
@@ -474,26 +474,26 @@ package enum Components {
         self.videos = videos
         self.downloads = downloads
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case images
         case videos
         case downloads
       }
     }
     /// - Remark: Generated from `#/components/schemas/ImageRenderReference1`.
-    package struct ImageRenderReference1: Codable, Hashable, Sendable {
+    public struct ImageRenderReference1: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference1/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case image = "image"
       }
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference1/type`.
-      package var _type: Components.Schemas.ImageRenderReference1._TypePayload
+      public var _type: Components.Schemas.ImageRenderReference1._TypePayload
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference1/alt`.
-      package var alt: Swift.String?
+      public var alt: Swift.String?
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference1/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/ImageRenderReference1/variants`.
-      package var variants: [Components.Schemas.RenderReferenceVariant1]
+      public var variants: [Components.Schemas.RenderReferenceVariant1]
       /// Creates a new `ImageRenderReference1`.
       ///
       /// - Parameters:
@@ -501,7 +501,7 @@ package enum Components {
       ///   - alt:
       ///   - identifier:
       ///   - variants:
-      package init(
+      public init(
         _type: Components.Schemas.ImageRenderReference1._TypePayload,
         alt: Swift.String? = nil,
         identifier: Swift.String,
@@ -512,7 +512,7 @@ package enum Components {
         self.identifier = identifier
         self.variants = variants
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case alt
         case identifier
@@ -520,20 +520,20 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderReferenceVariant1`.
-    package struct RenderReferenceVariant1: Codable, Hashable, Sendable {
+    public struct RenderReferenceVariant1: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderReferenceVariant1/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// - Remark: Generated from `#/components/schemas/RenderReferenceVariant1/size`.
-      package var size: Components.Schemas.RenderReferenceVariantSize?
+      public var size: Components.Schemas.RenderReferenceVariantSize?
       /// - Remark: Generated from `#/components/schemas/RenderReferenceVariant1/traits`.
-      package var traits: [Components.Schemas.RenderReferenceVariantTrait]
+      public var traits: [Components.Schemas.RenderReferenceVariantTrait]
       /// Creates a new `RenderReferenceVariant1`.
       ///
       /// - Parameters:
       ///   - url:
       ///   - size:
       ///   - traits:
-      package init(
+      public init(
         url: Swift.String,
         size: Components.Schemas.RenderReferenceVariantSize? = nil,
         traits: [Components.Schemas.RenderReferenceVariantTrait]
@@ -542,51 +542,51 @@ package enum Components {
         self.size = size
         self.traits = traits
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case url
         case size
         case traits
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderReferenceVariantSize`.
-    package struct RenderReferenceVariantSize: Codable, Hashable, Sendable {
+    public struct RenderReferenceVariantSize: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderReferenceVariantSize/width`.
-      package var width: Swift.Int
+      public var width: Swift.Int
       /// - Remark: Generated from `#/components/schemas/RenderReferenceVariantSize/height`.
-      package var height: Swift.Int
+      public var height: Swift.Int
       /// Creates a new `RenderReferenceVariantSize`.
       ///
       /// - Parameters:
       ///   - width:
       ///   - height:
-      package init(
+      public init(
         width: Swift.Int,
         height: Swift.Int
       ) {
         self.width = width
         self.height = height
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case width
         case height
       }
     }
     /// - Remark: Generated from `#/components/schemas/VideoRenderReference`.
-    package struct VideoRenderReference: Codable, Hashable, Sendable {
+    public struct VideoRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case video = "video"
       }
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference/type`.
-      package var _type: Components.Schemas.VideoRenderReference._TypePayload
+      public var _type: Components.Schemas.VideoRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference/alt`.
-      package var alt: Swift.String?
+      public var alt: Swift.String?
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference/poster`.
-      package var poster: Swift.String?
+      public var poster: Swift.String?
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference/variants`.
-      package var variants: [Components.Schemas.RenderReferenceVariant1]
+      public var variants: [Components.Schemas.RenderReferenceVariant1]
       /// Creates a new `VideoRenderReference`.
       ///
       /// - Parameters:
@@ -595,7 +595,7 @@ package enum Components {
       ///   - identifier:
       ///   - poster:
       ///   - variants:
-      package init(
+      public init(
         _type: Components.Schemas.VideoRenderReference._TypePayload,
         alt: Swift.String? = nil,
         identifier: Swift.String,
@@ -608,7 +608,7 @@ package enum Components {
         self.poster = poster
         self.variants = variants
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case alt
         case identifier
@@ -617,19 +617,19 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/DownloadRenderReference`.
-    package struct DownloadRenderReference: Codable, Hashable, Sendable {
+    public struct DownloadRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case download = "download"
       }
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference/type`.
-      package var _type: Components.Schemas.DownloadRenderReference._TypePayload
+      public var _type: Components.Schemas.DownloadRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference/checksum`.
-      package var checksum: Swift.String
+      public var checksum: Swift.String
       /// Creates a new `DownloadRenderReference`.
       ///
       /// - Parameters:
@@ -637,7 +637,7 @@ package enum Components {
       ///   - identifier:
       ///   - url:
       ///   - checksum:
-      package init(
+      public init(
         _type: Components.Schemas.DownloadRenderReference._TypePayload,
         identifier: Swift.String,
         url: Swift.String,
@@ -648,7 +648,7 @@ package enum Components {
         self.url = url
         self.checksum = checksum
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
         case url
@@ -658,15 +658,15 @@ package enum Components {
     /// maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Benchmark/BenchmarkResults.swift#L14
     ///
     /// - Remark: Generated from `#/components/schemas/Benchmark`.
-    package struct Benchmark: Codable, Hashable, Sendable {
+    public struct Benchmark: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Benchmark/doccArguments`.
-      package var doccArguments: [Swift.String]
+      public var doccArguments: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/Benchmark/platformName`.
-      package var platformName: Swift.String
+      public var platformName: Swift.String
       /// - Remark: Generated from `#/components/schemas/Benchmark/metrics`.
-      package var metrics: [Components.Schemas.Metric]
+      public var metrics: [Components.Schemas.Metric]
       /// - Remark: Generated from `#/components/schemas/Benchmark/timestamp`.
-      package var timestamp: Swift.Double
+      public var timestamp: Swift.Double
       /// Creates a new `Benchmark`.
       ///
       /// - Parameters:
@@ -674,7 +674,7 @@ package enum Components {
       ///   - platformName:
       ///   - metrics:
       ///   - timestamp:
-      package init(
+      public init(
         doccArguments: [Swift.String],
         platformName: Swift.String,
         metrics: [Components.Schemas.Metric],
@@ -685,7 +685,7 @@ package enum Components {
         self.metrics = metrics
         self.timestamp = timestamp
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case doccArguments
         case platformName
         case metrics
@@ -693,20 +693,20 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Metric`.
-    package struct Metric: Codable, Hashable, Sendable {
+    public struct Metric: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Metric/displayName`.
-      package var displayName: Swift.String
+      public var displayName: Swift.String
       /// - Remark: Generated from `#/components/schemas/Metric/value`.
-      package var value: [Components.Schemas.Value]?
+      public var value: [Components.Schemas.Value]?
       /// - Remark: Generated from `#/components/schemas/Metric/id`.
-      package var id: Swift.String
+      public var id: Swift.String
       /// Creates a new `Metric`.
       ///
       /// - Parameters:
       ///   - displayName:
       ///   - value:
       ///   - id:
-      package init(
+      public init(
         displayName: Swift.String,
         value: [Components.Schemas.Value]? = nil,
         id: Swift.String
@@ -715,30 +715,30 @@ package enum Components {
         self.value = value
         self.id = id
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case displayName
         case value
         case id
       }
     }
     /// - Remark: Generated from `#/components/schemas/Value`.
-    package struct Value: Codable, Hashable, Sendable {
+    public struct Value: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Value/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case duration = "duration"
         case bytesInMemory = "bytesInMemory"
         case bytesOnDisk = "bytesOnDisk"
         case checksum = "checksum"
       }
       /// - Remark: Generated from `#/components/schemas/Value/type`.
-      package var _type: Components.Schemas.Value._TypePayload
+      public var _type: Components.Schemas.Value._TypePayload
       /// - Remark: Generated from `#/components/schemas/Value/value`.
-      @frozen package enum ValuePayload: Codable, Hashable, Sendable {
+      @frozen public enum ValuePayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/Value/value/case1`.
         case case1(Swift.Double)
         /// - Remark: Generated from `#/components/schemas/Value/value/case2`.
         case case2(Swift.String)
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           var errors: [any Error] = []
           do {
             self = .case1(try decoder.decodeFromSingleValueContainer())
@@ -758,7 +758,7 @@ package enum Components {
             errors: errors
           )
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           switch self {
           case .case1(let value):
             try encoder.encodeToSingleValueContainer(value)
@@ -768,40 +768,40 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/Value/value`.
-      package var value: Components.Schemas.Value.ValuePayload
+      public var value: Components.Schemas.Value.ValuePayload
       /// Creates a new `Value`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - value:
-      package init(
+      public init(
         _type: Components.Schemas.Value._TypePayload,
         value: Components.Schemas.Value.ValuePayload
       ) {
         self._type = _type
         self.value = value
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case value
       }
     }
     /// - Remark: Generated from `#/components/schemas/Diagnostics`.
-    package typealias Diagnostics = [Components.Schemas.DiagnosticSummary]
+    public typealias Diagnostics = [Components.Schemas.DiagnosticSummary]
     /// - Remark: Generated from `#/components/schemas/DiagnosticSummary`.
-    package struct DiagnosticSummary: Codable, Hashable, Sendable {
+    public struct DiagnosticSummary: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DiagnosticSummary/start`.
-      package var start: Components.Schemas.Location?
+      public var start: Components.Schemas.Location?
       /// - Remark: Generated from `#/components/schemas/DiagnosticSummary/source`.
-      package var source: Swift.String?
+      public var source: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DiagnosticSummary/severity`.
-      package var severity: Swift.Int
+      public var severity: Swift.Int
       /// - Remark: Generated from `#/components/schemas/DiagnosticSummary/summary`.
-      package var summary: Swift.String
+      public var summary: Swift.String
       /// - Remark: Generated from `#/components/schemas/DiagnosticSummary/explanation`.
-      package var explanation: Swift.String?
+      public var explanation: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DiagnosticSummary/notes`.
-      package var notes: [Components.Schemas.Note]
+      public var notes: [Components.Schemas.Note]
       /// Creates a new `DiagnosticSummary`.
       ///
       /// - Parameters:
@@ -811,7 +811,7 @@ package enum Components {
       ///   - summary:
       ///   - explanation:
       ///   - notes:
-      package init(
+      public init(
         start: Components.Schemas.Location? = nil,
         source: Swift.String? = nil,
         severity: Swift.Int,
@@ -826,7 +826,7 @@ package enum Components {
         self.explanation = explanation
         self.notes = notes
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case start
         case source
         case severity
@@ -836,59 +836,59 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Location`.
-    package struct Location: Codable, Hashable, Sendable {
+    public struct Location: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Location/line`.
-      package var line: Swift.Int
+      public var line: Swift.Int
       /// - Remark: Generated from `#/components/schemas/Location/column`.
-      package var column: Swift.Int
+      public var column: Swift.Int
       /// Creates a new `Location`.
       ///
       /// - Parameters:
       ///   - line:
       ///   - column:
-      package init(
+      public init(
         line: Swift.Int,
         column: Swift.Int
       ) {
         self.line = line
         self.column = column
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case line
         case column
       }
     }
     /// - Remark: Generated from `#/components/schemas/Note`.
-    package struct Note: Codable, Hashable, Sendable {
+    public struct Note: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Note/location`.
-      package var location: Components.Schemas.Location
+      public var location: Components.Schemas.Location
       /// - Remark: Generated from `#/components/schemas/Note/message`.
-      package var message: Swift.String
+      public var message: Swift.String
       /// Creates a new `Note`.
       ///
       /// - Parameters:
       ///   - location:
       ///   - message:
-      package init(
+      public init(
         location: Components.Schemas.Location,
         message: Swift.String
       ) {
         self.location = location
         self.message = message
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case location
         case message
       }
     }
     /// - Remark: Generated from `#/components/schemas/IndexingRecords`.
-    package typealias IndexingRecords = [Components.Schemas.IndexingRecord]
+    public typealias IndexingRecords = [Components.Schemas.IndexingRecord]
     /// Maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Indexing/IndexingRecord.swift#L14
     ///
     /// - Remark: Generated from `#/components/schemas/IndexingRecord`.
-    package struct IndexingRecord: Codable, Hashable, Sendable {
+    public struct IndexingRecord: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case overview = "overview"
         case tutorial = "tutorial"
         case article = "article"
@@ -896,14 +896,14 @@ package enum Components {
         case symbol = "symbol"
       }
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/kind`.
-      package var kind: Components.Schemas.IndexingRecord.KindPayload
+      public var kind: Components.Schemas.IndexingRecord.KindPayload
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/location`.
-      @frozen package enum LocationPayload: Codable, Hashable, Sendable {
+      @frozen public enum LocationPayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/IndexingRecord/location/case1`.
         case LocationContained(Components.Schemas.LocationContained)
         /// - Remark: Generated from `#/components/schemas/IndexingRecord/location/case2`.
         case LocationTopLevelPage(Components.Schemas.LocationTopLevelPage)
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           var errors: [any Error] = []
           do {
             self = .LocationContained(try .init(from: decoder))
@@ -923,7 +923,7 @@ package enum Components {
             errors: errors
           )
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           switch self {
           case .LocationContained(let value):
             try value.encode(to: encoder)
@@ -933,17 +933,17 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/location`.
-      package var location: Components.Schemas.IndexingRecord.LocationPayload
+      public var location: Components.Schemas.IndexingRecord.LocationPayload
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/summary`.
-      package var summary: Swift.String
+      public var summary: Swift.String
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/headings`.
-      package var headings: [Swift.String]
+      public var headings: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/rawIndexableTextContent`.
-      package var rawIndexableTextContent: Swift.String
+      public var rawIndexableTextContent: Swift.String
       /// - Remark: Generated from `#/components/schemas/IndexingRecord/platforms`.
-      package var platforms: [Components.Schemas.PlatformAvailability]?
+      public var platforms: [Components.Schemas.PlatformAvailability]?
       /// Creates a new `IndexingRecord`.
       ///
       /// - Parameters:
@@ -954,7 +954,7 @@ package enum Components {
       ///   - headings:
       ///   - rawIndexableTextContent:
       ///   - platforms:
-      package init(
+      public init(
         kind: Components.Schemas.IndexingRecord.KindPayload,
         location: Components.Schemas.IndexingRecord.LocationPayload,
         title: Swift.String,
@@ -971,7 +971,7 @@ package enum Components {
         self.rawIndexableTextContent = rawIndexableTextContent
         self.platforms = platforms
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case location
         case title
@@ -982,24 +982,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/LocationContained`.
-    package struct LocationContained: Codable, Hashable, Sendable {
+    public struct LocationContained: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/LocationContained/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case contained = "contained"
       }
       /// - Remark: Generated from `#/components/schemas/LocationContained/type`.
-      package var _type: Components.Schemas.LocationContained._TypePayload
+      public var _type: Components.Schemas.LocationContained._TypePayload
       /// - Remark: Generated from `#/components/schemas/LocationContained/reference`.
-      package var reference: Components.Schemas.ResolvedTopicReference
+      public var reference: Components.Schemas.ResolvedTopicReference
       /// - Remark: Generated from `#/components/schemas/LocationContained/inPage`.
-      package var inPage: Components.Schemas.ResolvedTopicReference
+      public var inPage: Components.Schemas.ResolvedTopicReference
       /// Creates a new `LocationContained`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - reference:
       ///   - inPage:
-      package init(
+      public init(
         _type: Components.Schemas.LocationContained._TypePayload,
         reference: Components.Schemas.ResolvedTopicReference,
         inPage: Components.Schemas.ResolvedTopicReference
@@ -1008,82 +1008,82 @@ package enum Components {
         self.reference = reference
         self.inPage = inPage
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case reference
         case inPage
       }
     }
     /// - Remark: Generated from `#/components/schemas/LocationTopLevelPage`.
-    package struct LocationTopLevelPage: Codable, Hashable, Sendable {
+    public struct LocationTopLevelPage: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/LocationTopLevelPage/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case topLevelPage = "topLevelPage"
       }
       /// - Remark: Generated from `#/components/schemas/LocationTopLevelPage/type`.
-      package var _type: Components.Schemas.LocationTopLevelPage._TypePayload
+      public var _type: Components.Schemas.LocationTopLevelPage._TypePayload
       /// - Remark: Generated from `#/components/schemas/LocationTopLevelPage/reference`.
-      package var reference: Components.Schemas.ResolvedTopicReference
+      public var reference: Components.Schemas.ResolvedTopicReference
       /// Creates a new `LocationTopLevelPage`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - reference:
-      package init(
+      public init(
         _type: Components.Schemas.LocationTopLevelPage._TypePayload,
         reference: Components.Schemas.ResolvedTopicReference
       ) {
         self._type = _type
         self.reference = reference
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case reference
       }
     }
     /// - Remark: Generated from `#/components/schemas/ResolvedTopicReference`.
-    package struct ResolvedTopicReference: Codable, Hashable, Sendable {
+    public struct ResolvedTopicReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ResolvedTopicReference/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// - Remark: Generated from `#/components/schemas/ResolvedTopicReference/interfaceLanguage`.
-      package var interfaceLanguage: Swift.String
+      public var interfaceLanguage: Swift.String
       /// Creates a new `ResolvedTopicReference`.
       ///
       /// - Parameters:
       ///   - url:
       ///   - interfaceLanguage:
-      package init(
+      public init(
         url: Swift.String,
         interfaceLanguage: Swift.String
       ) {
         self.url = url
         self.interfaceLanguage = interfaceLanguage
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case url
         case interfaceLanguage
       }
     }
     /// - Remark: Generated from `#/components/schemas/PlatformAvailability`.
-    package struct PlatformAvailability: Codable, Hashable, Sendable {
+    public struct PlatformAvailability: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/name`.
-      package var name: Swift.String?
+      public var name: Swift.String?
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/deprecated`.
-      package var deprecated: Swift.Bool?
+      public var deprecated: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/unavailable`.
-      package var unavailable: Swift.Bool?
+      public var unavailable: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/introducedAt`.
-      package var introducedAt: Swift.String?
+      public var introducedAt: Swift.String?
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/deprecatedAt`.
-      package var deprecatedAt: Swift.String?
+      public var deprecatedAt: Swift.String?
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/message`.
-      package var message: Swift.String?
+      public var message: Swift.String?
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/renamed`.
-      package var renamed: Swift.String?
+      public var renamed: Swift.String?
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/current`.
-      package var current: Swift.String?
+      public var current: Swift.String?
       /// - Remark: Generated from `#/components/schemas/PlatformAvailability/beta`.
-      package var beta: Swift.Bool?
+      public var beta: Swift.Bool?
       /// Creates a new `PlatformAvailability`.
       ///
       /// - Parameters:
@@ -1096,7 +1096,7 @@ package enum Components {
       ///   - renamed:
       ///   - current:
       ///   - beta:
-      package init(
+      public init(
         name: Swift.String? = nil,
         deprecated: Swift.Bool? = nil,
         unavailable: Swift.Bool? = nil,
@@ -1117,7 +1117,7 @@ package enum Components {
         self.current = current
         self.beta = beta
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case name
         case deprecated
         case unavailable
@@ -1130,63 +1130,63 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/LinkableEntities`.
-    package typealias LinkableEntities = [Components.Schemas.LinkDestinationSummary]
+    public typealias LinkableEntities = [Components.Schemas.LinkDestinationSummary]
     /// maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/LinkTargets/LinkDestinationSummary.swift#L76
     ///
     /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary`.
-    package struct LinkDestinationSummary: Codable, Hashable, Sendable {
+    public struct LinkDestinationSummary: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/kind`.
-      package var kind: Swift.String
+      public var kind: Swift.String
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/language`.
-      package var language: Swift.String
+      public var language: Swift.String
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/path`.
-      package var path: Swift.String
+      public var path: Swift.String
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/referenceURL`.
-      package var referenceURL: Swift.String
+      public var referenceURL: Swift.String
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/abstract`.
-      package var abstract: [Components.Schemas.RenderInlineContent]?
+      public var abstract: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/availableLanguages`.
-      package var availableLanguages: [Swift.String]
+      public var availableLanguages: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/platforms`.
-      package var platforms: [Components.Schemas.PlatformAvailability]?
+      public var platforms: [Components.Schemas.PlatformAvailability]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/taskGroups`.
-      package var taskGroups: [Components.Schemas.TaskGroup]?
+      public var taskGroups: [Components.Schemas.TaskGroup]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/usr`.
-      package var usr: Swift.String?
+      public var usr: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/plainTextDeclaration`.
-      package var plainTextDeclaration: Swift.String?
+      public var plainTextDeclaration: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/fragments`.
-      package var fragments: [Components.Schemas.DeclarationToken]?
+      public var fragments: [Components.Schemas.DeclarationToken]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/navigatorFragments`.
-      package var navigatorFragments: [Components.Schemas.DeclarationToken]?
+      public var navigatorFragments: [Components.Schemas.DeclarationToken]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/topicImages`.
-      package var topicImages: [Components.Schemas.TopicImage]?
+      public var topicImages: [Components.Schemas.TopicImage]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/references`.
-      package struct ReferencesPayload: Codable, Hashable, Sendable {
+      public struct ReferencesPayload: Codable, Hashable, Sendable {
         /// A container of undocumented properties.
-        package var additionalProperties: [String: Components.Schemas.RenderReference]
+        public var additionalProperties: [String: Components.Schemas.RenderReference]
         /// Creates a new `ReferencesPayload`.
         ///
         /// - Parameters:
         ///   - additionalProperties: A container of undocumented properties.
-        package init(additionalProperties: [String: Components.Schemas.RenderReference] = .init()) {
+        public init(additionalProperties: [String: Components.Schemas.RenderReference] = .init()) {
           self.additionalProperties = additionalProperties
         }
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           try encoder.encodeAdditionalProperties(additionalProperties)
         }
       }
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/references`.
-      package var references: Components.Schemas.LinkDestinationSummary.ReferencesPayload?
+      public var references: Components.Schemas.LinkDestinationSummary.ReferencesPayload?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/redirects`.
-      package var redirects: [Swift.String]?
+      public var redirects: [Swift.String]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummary/variants`.
-      package var variants: [Components.Schemas.LinkDestinationSummaryVariant]?
+      public var variants: [Components.Schemas.LinkDestinationSummaryVariant]?
       /// Creates a new `LinkDestinationSummary`.
       ///
       /// - Parameters:
@@ -1207,7 +1207,7 @@ package enum Components {
       ///   - references:
       ///   - redirects:
       ///   - variants:
-      package init(
+      public init(
         kind: Swift.String,
         language: Swift.String,
         path: Swift.String,
@@ -1244,7 +1244,7 @@ package enum Components {
         self.redirects = redirects
         self.variants = variants
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case language
         case path
@@ -1263,7 +1263,7 @@ package enum Components {
         case redirects
         case variants
       }
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.kind = try container.decode(
           Swift.String.self,
@@ -1355,10 +1355,10 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderNodeVariantTrait`.
-    @frozen package enum RenderNodeVariantTrait: Codable, Hashable, Sendable {
+    @frozen public enum RenderNodeVariantTrait: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderNodeVariantTrait/case1`.
       case TraitInterfaceLanguage(Components.Schemas.TraitInterfaceLanguage)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .TraitInterfaceLanguage(try .init(from: decoder))
@@ -1372,7 +1372,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .TraitInterfaceLanguage(let value):
           try value.encode(to: encoder)
@@ -1380,44 +1380,44 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TraitInterfaceLanguage`.
-    package struct TraitInterfaceLanguage: Codable, Hashable, Sendable {
+    public struct TraitInterfaceLanguage: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TraitInterfaceLanguage/interfaceLanguage`.
-      package var interfaceLanguage: Swift.String
+      public var interfaceLanguage: Swift.String
       /// Creates a new `TraitInterfaceLanguage`.
       ///
       /// - Parameters:
       ///   - interfaceLanguage:
-      package init(interfaceLanguage: Swift.String) {
+      public init(interfaceLanguage: Swift.String) {
         self.interfaceLanguage = interfaceLanguage
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case interfaceLanguage
       }
     }
     /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant`.
-    package struct LinkDestinationSummaryVariant: Codable, Hashable, Sendable {
+    public struct LinkDestinationSummaryVariant: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/traits`.
-      package var traits: [Components.Schemas.RenderNodeVariantTrait]
+      public var traits: [Components.Schemas.RenderNodeVariantTrait]
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/kind`.
-      package var kind: Swift.String?
+      public var kind: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/language`.
-      package var language: Swift.String?
+      public var language: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/path`.
-      package var path: Swift.String?
+      public var path: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/abstract`.
-      package var abstract: [Components.Schemas.RenderInlineContent]?
+      public var abstract: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/usr`.
-      package var usr: Swift.String?
+      public var usr: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/plainTextDeclaration`.
-      package var plainTextDeclaration: Swift.String?
+      public var plainTextDeclaration: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/fragments`.
-      package var fragments: [Components.Schemas.DeclarationToken]?
+      public var fragments: [Components.Schemas.DeclarationToken]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/navigatorFragments`.
-      package var navigatorFragments: [Components.Schemas.DeclarationToken]?
+      public var navigatorFragments: [Components.Schemas.DeclarationToken]?
       /// - Remark: Generated from `#/components/schemas/LinkDestinationSummaryVariant/taskGroups`.
-      package var taskGroups: [Components.Schemas.TaskGroup]?
+      public var taskGroups: [Components.Schemas.TaskGroup]?
       /// Creates a new `LinkDestinationSummaryVariant`.
       ///
       /// - Parameters:
@@ -1432,7 +1432,7 @@ package enum Components {
       ///   - fragments:
       ///   - navigatorFragments:
       ///   - taskGroups:
-      package init(
+      public init(
         traits: [Components.Schemas.RenderNodeVariantTrait],
         kind: Swift.String? = nil,
         language: Swift.String? = nil,
@@ -1457,7 +1457,7 @@ package enum Components {
         self.navigatorFragments = navigatorFragments
         self.taskGroups = taskGroups
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case traits
         case kind
         case language
@@ -1470,7 +1470,7 @@ package enum Components {
         case navigatorFragments
         case taskGroups
       }
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.traits = try container.decode(
           [Components.Schemas.RenderNodeVariantTrait].self,
@@ -1532,7 +1532,7 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderInlineContent`.
-    @frozen package indirect enum RenderInlineContent: Codable, Hashable, Sendable {
+    @frozen public indirect enum RenderInlineContent: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderInlineContent/case1`.
       case Text(Components.Schemas.Text)
       /// - Remark: Generated from `#/components/schemas/RenderInlineContent/case2`.
@@ -1555,7 +1555,7 @@ package enum Components {
       case Link(Components.Schemas.Link)
       /// - Remark: Generated from `#/components/schemas/RenderInlineContent/case11`.
       case Subscript(Components.Schemas.Subscript)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .Text(try .init(from: decoder))
@@ -1629,7 +1629,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .Text(let value):
           try value.encode(to: encoder)
@@ -1657,130 +1657,130 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Text`.
-    package struct Text: Codable, Hashable, Sendable {
+    public struct Text: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Text/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case text = "text"
       }
       /// - Remark: Generated from `#/components/schemas/Text/type`.
-      package var _type: Components.Schemas.Text._TypePayload
+      public var _type: Components.Schemas.Text._TypePayload
       /// - Remark: Generated from `#/components/schemas/Text/text`.
-      package var text: Swift.String
+      public var text: Swift.String
       /// Creates a new `Text`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - text:
-      package init(
+      public init(
         _type: Components.Schemas.Text._TypePayload,
         text: Swift.String
       ) {
         self._type = _type
         self.text = text
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case text
       }
     }
     /// - Remark: Generated from `#/components/schemas/Emphasis`.
-    package struct Emphasis: Codable, Hashable, Sendable {
+    public struct Emphasis: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Emphasis/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case emphasis = "emphasis"
         case italic = "italic"
       }
       /// - Remark: Generated from `#/components/schemas/Emphasis/type`.
-      package var _type: Components.Schemas.Emphasis._TypePayload
+      public var _type: Components.Schemas.Emphasis._TypePayload
       /// - Remark: Generated from `#/components/schemas/Emphasis/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `Emphasis`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.Emphasis._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/Strong`.
-    package struct Strong: Codable, Hashable, Sendable {
+    public struct Strong: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Strong/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case strong = "strong"
       }
       /// - Remark: Generated from `#/components/schemas/Strong/type`.
-      package var _type: Components.Schemas.Strong._TypePayload
+      public var _type: Components.Schemas.Strong._TypePayload
       /// - Remark: Generated from `#/components/schemas/Strong/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `Strong`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.Strong._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/CodeVoice`.
-    package struct CodeVoice: Codable, Hashable, Sendable {
+    public struct CodeVoice: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/CodeVoice/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case codeVoice = "codeVoice"
       }
       /// - Remark: Generated from `#/components/schemas/CodeVoice/type`.
-      package var _type: Components.Schemas.CodeVoice._TypePayload
+      public var _type: Components.Schemas.CodeVoice._TypePayload
       /// - Remark: Generated from `#/components/schemas/CodeVoice/code`.
-      package var code: Swift.String
+      public var code: Swift.String
       /// Creates a new `CodeVoice`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - code:
-      package init(
+      public init(
         _type: Components.Schemas.CodeVoice._TypePayload,
         code: Swift.String
       ) {
         self._type = _type
         self.code = code
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case code
       }
     }
     /// - Remark: Generated from `#/components/schemas/Reference`.
-    package struct Reference: Codable, Hashable, Sendable {
+    public struct Reference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Reference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case reference = "reference"
       }
       /// - Remark: Generated from `#/components/schemas/Reference/type`.
-      package var _type: Components.Schemas.Reference._TypePayload
+      public var _type: Components.Schemas.Reference._TypePayload
       /// - Remark: Generated from `#/components/schemas/Reference/isActive`.
-      package var isActive: Swift.Bool
+      public var isActive: Swift.Bool
       /// - Remark: Generated from `#/components/schemas/Reference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/Reference/overridingTitle`.
-      package var overridingTitle: Swift.String?
+      public var overridingTitle: Swift.String?
       /// - Remark: Generated from `#/components/schemas/Reference/overridingTitleInlineContent`.
-      package var overridingTitleInlineContent: [Components.Schemas.RenderInlineContent]?
+      public var overridingTitleInlineContent: [Components.Schemas.RenderInlineContent]?
       /// Creates a new `Reference`.
       ///
       /// - Parameters:
@@ -1789,7 +1789,7 @@ package enum Components {
       ///   - identifier:
       ///   - overridingTitle:
       ///   - overridingTitleInlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.Reference._TypePayload,
         isActive: Swift.Bool,
         identifier: Swift.String,
@@ -1802,7 +1802,7 @@ package enum Components {
         self.overridingTitle = overridingTitle
         self.overridingTitleInlineContent = overridingTitleInlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case isActive
         case identifier
@@ -1811,24 +1811,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Image`.
-    package struct Image: Codable, Hashable, Sendable {
+    public struct Image: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Image/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case image = "image"
       }
       /// - Remark: Generated from `#/components/schemas/Image/type`.
-      package var _type: Components.Schemas.Image._TypePayload
+      public var _type: Components.Schemas.Image._TypePayload
       /// - Remark: Generated from `#/components/schemas/Image/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/Image/metadata`.
-      package var metadata: Components.Schemas.RenderContentMetadata?
+      public var metadata: Components.Schemas.RenderContentMetadata?
       /// Creates a new `Image`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - identifier:
       ///   - metadata:
-      package init(
+      public init(
         _type: Components.Schemas.Image._TypePayload,
         identifier: Swift.String,
         metadata: Components.Schemas.RenderContentMetadata? = nil
@@ -1837,166 +1837,166 @@ package enum Components {
         self.identifier = identifier
         self.metadata = metadata
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
         case metadata
       }
     }
     /// - Remark: Generated from `#/components/schemas/InlineHead`.
-    package struct InlineHead: Codable, Hashable, Sendable {
+    public struct InlineHead: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/InlineHead/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case inlineHead = "inlineHead"
       }
       /// - Remark: Generated from `#/components/schemas/InlineHead/type`.
-      package var _type: Components.Schemas.InlineHead._TypePayload
+      public var _type: Components.Schemas.InlineHead._TypePayload
       /// - Remark: Generated from `#/components/schemas/InlineHead/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `InlineHead`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.InlineHead._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/NewTerm`.
-    package struct NewTerm: Codable, Hashable, Sendable {
+    public struct NewTerm: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/NewTerm/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case newTerm = "newTerm"
       }
       /// - Remark: Generated from `#/components/schemas/NewTerm/type`.
-      package var _type: Components.Schemas.NewTerm._TypePayload
+      public var _type: Components.Schemas.NewTerm._TypePayload
       /// - Remark: Generated from `#/components/schemas/NewTerm/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `NewTerm`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.NewTerm._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/Superscript`.
-    package struct Superscript: Codable, Hashable, Sendable {
+    public struct Superscript: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Superscript/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case superscript = "superscript"
       }
       /// - Remark: Generated from `#/components/schemas/Superscript/type`.
-      package var _type: Components.Schemas.Superscript._TypePayload
+      public var _type: Components.Schemas.Superscript._TypePayload
       /// - Remark: Generated from `#/components/schemas/Superscript/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `Superscript`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.Superscript._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/Subscript`.
-    package struct Subscript: Codable, Hashable, Sendable {
+    public struct Subscript: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Subscript/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case _subscript = "subscript"
       }
       /// - Remark: Generated from `#/components/schemas/Subscript/type`.
-      package var _type: Components.Schemas.Subscript._TypePayload
+      public var _type: Components.Schemas.Subscript._TypePayload
       /// - Remark: Generated from `#/components/schemas/Subscript/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `Subscript`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.Subscript._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/Strikethrough`.
-    package struct Strikethrough: Codable, Hashable, Sendable {
+    public struct Strikethrough: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Strikethrough/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case strikethrough = "strikethrough"
       }
       /// - Remark: Generated from `#/components/schemas/Strikethrough/type`.
-      package var _type: Components.Schemas.Strikethrough._TypePayload
+      public var _type: Components.Schemas.Strikethrough._TypePayload
       /// - Remark: Generated from `#/components/schemas/Strikethrough/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `Strikethrough`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.Strikethrough._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/Link`.
-    package struct Link: Codable, Hashable, Sendable {
+    public struct Link: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Link/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case link = "link"
       }
       /// - Remark: Generated from `#/components/schemas/Link/type`.
-      package var _type: Components.Schemas.Link._TypePayload
+      public var _type: Components.Schemas.Link._TypePayload
       /// - Remark: Generated from `#/components/schemas/Link/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/Link/destination`.
-      package var destination: Swift.String
+      public var destination: Swift.String
       /// Creates a new `Link`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - title:
       ///   - destination:
-      package init(
+      public init(
         _type: Components.Schemas.Link._TypePayload,
         title: Swift.String,
         destination: Swift.String
@@ -2005,41 +2005,41 @@ package enum Components {
         self.title = title
         self.destination = destination
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case title
         case destination
       }
     }
     /// - Remark: Generated from `#/components/schemas/TaskGroup`.
-    package struct TaskGroup: Codable, Hashable, Sendable {
+    public struct TaskGroup: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TaskGroup/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TaskGroup/identifiers`.
-      package var identifiers: [Swift.String]
+      public var identifiers: [Swift.String]
       /// Creates a new `TaskGroup`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - identifiers:
-      package init(
+      public init(
         title: Swift.String? = nil,
         identifiers: [Swift.String]
       ) {
         self.title = title
         self.identifiers = identifiers
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case identifiers
       }
     }
     /// - Remark: Generated from `#/components/schemas/DeclarationToken`.
-    package struct DeclarationToken: Codable, Hashable, Sendable {
+    public struct DeclarationToken: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DeclarationToken/text`.
-      package var text: Swift.String
+      public var text: Swift.String
       /// - Remark: Generated from `#/components/schemas/DeclarationToken/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case keyword = "keyword"
         case attribute = "attribute"
         case number = "number"
@@ -2053,11 +2053,11 @@ package enum Components {
         case label = "label"
       }
       /// - Remark: Generated from `#/components/schemas/DeclarationToken/kind`.
-      package var kind: Components.Schemas.DeclarationToken.KindPayload
+      public var kind: Components.Schemas.DeclarationToken.KindPayload
       /// - Remark: Generated from `#/components/schemas/DeclarationToken/identifier`.
-      package var identifier: Swift.String?
+      public var identifier: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DeclarationToken/preciseIdentifier`.
-      package var preciseIdentifier: Swift.String?
+      public var preciseIdentifier: Swift.String?
       /// Creates a new `DeclarationToken`.
       ///
       /// - Parameters:
@@ -2065,7 +2065,7 @@ package enum Components {
       ///   - kind:
       ///   - identifier:
       ///   - preciseIdentifier:
-      package init(
+      public init(
         text: Swift.String,
         kind: Components.Schemas.DeclarationToken.KindPayload,
         identifier: Swift.String? = nil,
@@ -2076,7 +2076,7 @@ package enum Components {
         self.identifier = identifier
         self.preciseIdentifier = preciseIdentifier
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case text
         case kind
         case identifier
@@ -2084,35 +2084,35 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TopicImage`.
-    package struct TopicImage: Codable, Hashable, Sendable {
+    public struct TopicImage: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TopicImage/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case icon = "icon"
         case card = "card"
       }
       /// - Remark: Generated from `#/components/schemas/TopicImage/type`.
-      package var _type: Components.Schemas.TopicImage._TypePayload
+      public var _type: Components.Schemas.TopicImage._TypePayload
       /// - Remark: Generated from `#/components/schemas/TopicImage/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// Creates a new `TopicImage`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - identifier:
-      package init(
+      public init(
         _type: Components.Schemas.TopicImage._TypePayload,
         identifier: Swift.String
       ) {
         self._type = _type
         self.identifier = identifier
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderReference`.
-    @frozen package enum RenderReference: Codable, Hashable, Sendable {
+    @frozen public enum RenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderReference/case1`.
       case ImageRenderReference(Components.Schemas.ImageRenderReference)
       /// - Remark: Generated from `#/components/schemas/RenderReference/case2`.
@@ -2131,7 +2131,7 @@ package enum Components {
       case UnresolvableRenderReference(Components.Schemas.UnresolvableRenderReference)
       /// - Remark: Generated from `#/components/schemas/RenderReference/case9`.
       case LinkRenderReference(Components.Schemas.LinkRenderReference)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .ImageRenderReference(try .init(from: decoder))
@@ -2193,7 +2193,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .ImageRenderReference(let value):
           try value.encode(to: encoder)
@@ -2217,21 +2217,21 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/LinkRenderReference`.
-    package struct LinkRenderReference: Codable, Hashable, Sendable {
+    public struct LinkRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/LinkRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case link = "link"
       }
       /// - Remark: Generated from `#/components/schemas/LinkRenderReference/type`.
-      package var _type: Components.Schemas.LinkRenderReference._TypePayload
+      public var _type: Components.Schemas.LinkRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/LinkRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/LinkRenderReference/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/LinkRenderReference/titleInlineContent`.
-      package var titleInlineContent: [Components.Schemas.RenderInlineContent]?
+      public var titleInlineContent: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/LinkRenderReference/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// Creates a new `LinkRenderReference`.
       ///
       /// - Parameters:
@@ -2240,7 +2240,7 @@ package enum Components {
       ///   - title:
       ///   - titleInlineContent:
       ///   - url:
-      package init(
+      public init(
         _type: Components.Schemas.LinkRenderReference._TypePayload,
         identifier: Swift.String,
         title: Swift.String? = nil,
@@ -2253,7 +2253,7 @@ package enum Components {
         self.titleInlineContent = titleInlineContent
         self.url = url
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
         case title
@@ -2262,21 +2262,21 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/VideoRenderReference1`.
-    package struct VideoRenderReference1: Codable, Hashable, Sendable {
+    public struct VideoRenderReference1: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference1/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case video = "video"
       }
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference1/type`.
-      package var _type: Components.Schemas.VideoRenderReference1._TypePayload
+      public var _type: Components.Schemas.VideoRenderReference1._TypePayload
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference1/alt`.
-      package var alt: Swift.String?
+      public var alt: Swift.String?
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference1/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference1/poster`.
-      package var poster: Swift.String?
+      public var poster: Swift.String?
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference1/variants`.
-      package var variants: [Components.Schemas.RenderReferenceVariant]
+      public var variants: [Components.Schemas.RenderReferenceVariant]
       /// Creates a new `VideoRenderReference1`.
       ///
       /// - Parameters:
@@ -2285,7 +2285,7 @@ package enum Components {
       ///   - identifier:
       ///   - poster:
       ///   - variants:
-      package init(
+      public init(
         _type: Components.Schemas.VideoRenderReference1._TypePayload,
         alt: Swift.String? = nil,
         identifier: Swift.String,
@@ -2298,7 +2298,7 @@ package enum Components {
         self.poster = poster
         self.variants = variants
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case alt
         case identifier
@@ -2307,25 +2307,25 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/FileRenderReference`.
-    package struct FileRenderReference: Codable, Hashable, Sendable {
+    public struct FileRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/FileRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case file = "file"
       }
       /// - Remark: Generated from `#/components/schemas/FileRenderReference/type`.
-      package var _type: Components.Schemas.FileRenderReference._TypePayload
+      public var _type: Components.Schemas.FileRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/FileRenderReference/fileName`.
-      package var fileName: Swift.String
+      public var fileName: Swift.String
       /// - Remark: Generated from `#/components/schemas/FileRenderReference/fileType`.
-      package var fileType: Swift.String
+      public var fileType: Swift.String
       /// - Remark: Generated from `#/components/schemas/FileRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/FileRenderReference/syntax`.
-      package var syntax: Swift.String
+      public var syntax: Swift.String
       /// - Remark: Generated from `#/components/schemas/FileRenderReference/content`.
-      package var content: [Swift.String]
+      public var content: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/FileRenderReference/highlights`.
-      package var highlights: [Components.Schemas.FileRenderReferenceHighlight]?
+      public var highlights: [Components.Schemas.FileRenderReferenceHighlight]?
       /// Creates a new `FileRenderReference`.
       ///
       /// - Parameters:
@@ -2336,7 +2336,7 @@ package enum Components {
       ///   - syntax:
       ///   - content:
       ///   - highlights:
-      package init(
+      public init(
         _type: Components.Schemas.FileRenderReference._TypePayload,
         fileName: Swift.String,
         fileType: Swift.String,
@@ -2353,7 +2353,7 @@ package enum Components {
         self.content = content
         self.highlights = highlights
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case fileName
         case fileType
@@ -2364,20 +2364,20 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/FileRenderReferenceHighlight`.
-    package struct FileRenderReferenceHighlight: Codable, Hashable, Sendable {
+    public struct FileRenderReferenceHighlight: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/FileRenderReferenceHighlight/line`.
-      package var line: Swift.Int
+      public var line: Swift.Int
       /// - Remark: Generated from `#/components/schemas/FileRenderReferenceHighlight/start`.
-      package var start: Swift.Int?
+      public var start: Swift.Int?
       /// - Remark: Generated from `#/components/schemas/FileRenderReferenceHighlight/length`.
-      package var length: Swift.Int?
+      public var length: Swift.Int?
       /// Creates a new `FileRenderReferenceHighlight`.
       ///
       /// - Parameters:
       ///   - line:
       ///   - start:
       ///   - length:
-      package init(
+      public init(
         line: Swift.Int,
         start: Swift.Int? = nil,
         length: Swift.Int? = nil
@@ -2386,26 +2386,26 @@ package enum Components {
         self.start = start
         self.length = length
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case line
         case start
         case length
       }
     }
     /// - Remark: Generated from `#/components/schemas/FileTypeRenderReference`.
-    package struct FileTypeRenderReference: Codable, Hashable, Sendable {
+    public struct FileTypeRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/FileTypeRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case fileType = "fileType"
       }
       /// - Remark: Generated from `#/components/schemas/FileTypeRenderReference/type`.
-      package var _type: Components.Schemas.FileTypeRenderReference._TypePayload
+      public var _type: Components.Schemas.FileTypeRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/FileTypeRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/FileTypeRenderReference/displayName`.
-      package var displayName: Swift.String
+      public var displayName: Swift.String
       /// - Remark: Generated from `#/components/schemas/FileTypeRenderReference/iconBase64`.
-      package var iconBase64: Swift.String
+      public var iconBase64: Swift.String
       /// Creates a new `FileTypeRenderReference`.
       ///
       /// - Parameters:
@@ -2413,7 +2413,7 @@ package enum Components {
       ///   - identifier:
       ///   - displayName:
       ///   - iconBase64:
-      package init(
+      public init(
         _type: Components.Schemas.FileTypeRenderReference._TypePayload,
         identifier: Swift.String,
         displayName: Swift.String,
@@ -2424,7 +2424,7 @@ package enum Components {
         self.displayName = displayName
         self.iconBase64 = iconBase64
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
         case displayName
@@ -2432,19 +2432,19 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/XcodeRequirementRenderReference`.
-    package struct XcodeRequirementRenderReference: Codable, Hashable, Sendable {
+    public struct XcodeRequirementRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/XcodeRequirementRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case xcodeRequirement = "xcodeRequirement"
       }
       /// - Remark: Generated from `#/components/schemas/XcodeRequirementRenderReference/type`.
-      package var _type: Components.Schemas.XcodeRequirementRenderReference._TypePayload
+      public var _type: Components.Schemas.XcodeRequirementRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/XcodeRequirementRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/XcodeRequirementRenderReference/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/XcodeRequirementRenderReference/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// Creates a new `XcodeRequirementRenderReference`.
       ///
       /// - Parameters:
@@ -2452,7 +2452,7 @@ package enum Components {
       ///   - identifier:
       ///   - title:
       ///   - url:
-      package init(
+      public init(
         _type: Components.Schemas.XcodeRequirementRenderReference._TypePayload,
         identifier: Swift.String,
         title: Swift.String,
@@ -2463,7 +2463,7 @@ package enum Components {
         self.title = title
         self.url = url
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
         case title
@@ -2471,24 +2471,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TopicRenderReference`.
-    package struct TopicRenderReference: Codable, Hashable, Sendable {
+    public struct TopicRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/abstract`.
-      package var abstract: [Components.Schemas.RenderInlineContent]?
+      public var abstract: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case topic = "topic"
         case section = "section"
       }
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/type`.
-      package var _type: Components.Schemas.TopicRenderReference._TypePayload
+      public var _type: Components.Schemas.TopicRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case article = "article"
         case project = "project"
         case section = "section"
@@ -2497,40 +2497,40 @@ package enum Components {
         case root = "root"
       }
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/kind`.
-      package var kind: Components.Schemas.TopicRenderReference.KindPayload
+      public var kind: Components.Schemas.TopicRenderReference.KindPayload
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/required`.
-      package var required: Swift.Bool?
+      public var required: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/defaultImplementations`.
-      package var defaultImplementations: Swift.Double?
+      public var defaultImplementations: Swift.Double?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/fragments`.
-      package var fragments: [Components.Schemas.DeclarationToken]?
+      public var fragments: [Components.Schemas.DeclarationToken]?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/images`.
-      package var images: [Components.Schemas.TopicImage]?
+      public var images: [Components.Schemas.TopicImage]?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/navigatorTitle`.
-      package var navigatorTitle: [Components.Schemas.DeclarationToken]?
+      public var navigatorTitle: [Components.Schemas.DeclarationToken]?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/role`.
-      package var role: Components.Schemas.DocumentationRole?
+      public var role: Components.Schemas.DocumentationRole?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/conformance`.
-      package var conformance: Components.Schemas.ConformanceSection?
+      public var conformance: Components.Schemas.ConformanceSection?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/estimatedTime`.
-      package var estimatedTime: Swift.String?
+      public var estimatedTime: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/beta`.
-      package var beta: Swift.Bool?
+      public var beta: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/deprecated`.
-      package var deprecated: Swift.Bool?
+      public var deprecated: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/titleStyle`.
-      @frozen package enum TitleStylePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum TitleStylePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case title = "title"
         case symbol = "symbol"
       }
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/titleStyle`.
-      package var titleStyle: Components.Schemas.TopicRenderReference.TitleStylePayload?
+      public var titleStyle: Components.Schemas.TopicRenderReference.TitleStylePayload?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/name`.
-      package var name: Swift.String?
+      public var name: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/ideTitle`.
-      package var ideTitle: Swift.String?
+      public var ideTitle: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference/tags`.
-      package var tags: [Components.Schemas.SymbolTag]?
+      public var tags: [Components.Schemas.SymbolTag]?
       /// Creates a new `TopicRenderReference`.
       ///
       /// - Parameters:
@@ -2554,7 +2554,7 @@ package enum Components {
       ///   - name:
       ///   - ideTitle:
       ///   - tags:
-      package init(
+      public init(
         title: Swift.String,
         abstract: [Components.Schemas.RenderInlineContent]? = nil,
         _type: Components.Schemas.TopicRenderReference._TypePayload,
@@ -2597,7 +2597,7 @@ package enum Components {
         self.ideTitle = ideTitle
         self.tags = tags
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case abstract
         case _type = "type"
@@ -2621,19 +2621,19 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/DownloadRenderReference1`.
-    package struct DownloadRenderReference1: Codable, Hashable, Sendable {
+    public struct DownloadRenderReference1: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference1/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case download = "download"
       }
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference1/type`.
-      package var _type: Components.Schemas.DownloadRenderReference1._TypePayload
+      public var _type: Components.Schemas.DownloadRenderReference1._TypePayload
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference1/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference1/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference1/checksum`.
-      package var checksum: Swift.String?
+      public var checksum: Swift.String?
       /// Creates a new `DownloadRenderReference1`.
       ///
       /// - Parameters:
@@ -2641,7 +2641,7 @@ package enum Components {
       ///   - identifier:
       ///   - url:
       ///   - checksum:
-      package init(
+      public init(
         _type: Components.Schemas.DownloadRenderReference1._TypePayload,
         identifier: Swift.String,
         url: Swift.String,
@@ -2652,7 +2652,7 @@ package enum Components {
         self.url = url
         self.checksum = checksum
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
         case url
@@ -2660,24 +2660,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/UnresolvableRenderReference`.
-    package struct UnresolvableRenderReference: Codable, Hashable, Sendable {
+    public struct UnresolvableRenderReference: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/UnresolvableRenderReference/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case unresolvable = "unresolvable"
       }
       /// - Remark: Generated from `#/components/schemas/UnresolvableRenderReference/type`.
-      package var _type: Components.Schemas.UnresolvableRenderReference._TypePayload
+      public var _type: Components.Schemas.UnresolvableRenderReference._TypePayload
       /// - Remark: Generated from `#/components/schemas/UnresolvableRenderReference/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/UnresolvableRenderReference/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// Creates a new `UnresolvableRenderReference`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - title:
       ///   - identifier:
-      package init(
+      public init(
         _type: Components.Schemas.UnresolvableRenderReference._TypePayload,
         title: Swift.String,
         identifier: Swift.String
@@ -2686,37 +2686,37 @@ package enum Components {
         self.title = title
         self.identifier = identifier
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case title
         case identifier
       }
     }
     /// - Remark: Generated from `#/components/schemas/SymbolTag`.
-    package struct SymbolTag: Codable, Hashable, Sendable {
+    public struct SymbolTag: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/SymbolTag/type`.
-      package var _type: Swift.String
+      public var _type: Swift.String
       /// - Remark: Generated from `#/components/schemas/SymbolTag/text`.
-      package var text: Swift.String
+      public var text: Swift.String
       /// Creates a new `SymbolTag`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - text:
-      package init(
+      public init(
         _type: Swift.String,
         text: Swift.String
       ) {
         self._type = _type
         self.text = text
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case text
       }
     }
     /// - Remark: Generated from `#/components/schemas/DocumentationRole`.
-    @frozen package enum DocumentationRole: String, Codable, Hashable, Sendable, CaseIterable {
+    @frozen public enum DocumentationRole: String, Codable, Hashable, Sendable, CaseIterable {
       case symbol = "symbol"
       case containerSymbol = "containerSymbol"
       case restRequestSymbol = "restRequestSymbol"
@@ -2736,20 +2736,20 @@ package enum Components {
       case task = "task"
     }
     /// - Remark: Generated from `#/components/schemas/ConformanceSection`.
-    package struct ConformanceSection: Codable, Hashable, Sendable {
+    public struct ConformanceSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ConformanceSection/constraints`.
-      package var constraints: [Components.Schemas.RenderInlineContent]
+      public var constraints: [Components.Schemas.RenderInlineContent]
       /// - Remark: Generated from `#/components/schemas/ConformanceSection/availabilityPrefix`.
-      package var availabilityPrefix: [Components.Schemas.RenderInlineContent]
+      public var availabilityPrefix: [Components.Schemas.RenderInlineContent]
       /// - Remark: Generated from `#/components/schemas/ConformanceSection/conformancePrefix`.
-      package var conformancePrefix: [Components.Schemas.RenderInlineContent]
+      public var conformancePrefix: [Components.Schemas.RenderInlineContent]
       /// Creates a new `ConformanceSection`.
       ///
       /// - Parameters:
       ///   - constraints:
       ///   - availabilityPrefix:
       ///   - conformancePrefix:
-      package init(
+      public init(
         constraints: [Components.Schemas.RenderInlineContent],
         availabilityPrefix: [Components.Schemas.RenderInlineContent],
         conformancePrefix: [Components.Schemas.RenderInlineContent]
@@ -2758,22 +2758,22 @@ package enum Components {
         self.availabilityPrefix = availabilityPrefix
         self.conformancePrefix = conformancePrefix
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case constraints
         case availabilityPrefix
         case conformancePrefix
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderContentMetadata`.
-    package struct RenderContentMetadata: Codable, Hashable, Sendable {
+    public struct RenderContentMetadata: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderContentMetadata/anchor`.
-      package var anchor: Swift.String?
+      public var anchor: Swift.String?
       /// - Remark: Generated from `#/components/schemas/RenderContentMetadata/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/RenderContentMetadata/abstract`.
-      package var abstract: [Components.Schemas.RenderInlineContent]?
+      public var abstract: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/RenderContentMetadata/deviceFrame`.
-      package var deviceFrame: Swift.String?
+      public var deviceFrame: Swift.String?
       /// Creates a new `RenderContentMetadata`.
       ///
       /// - Parameters:
@@ -2781,7 +2781,7 @@ package enum Components {
       ///   - title:
       ///   - abstract:
       ///   - deviceFrame:
-      package init(
+      public init(
         anchor: Swift.String? = nil,
         title: Swift.String? = nil,
         abstract: [Components.Schemas.RenderInlineContent]? = nil,
@@ -2792,7 +2792,7 @@ package enum Components {
         self.abstract = abstract
         self.deviceFrame = deviceFrame
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case anchor
         case title
         case abstract
@@ -2802,20 +2802,20 @@ package enum Components {
     /// maps to Maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Model/BuildMetadata.swift#L14
     ///
     /// - Remark: Generated from `#/components/schemas/Metadata`.
-    package struct Metadata: Codable, Hashable, Sendable {
+    public struct Metadata: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Metadata/bundleDisplayName`.
-      package var bundleDisplayName: Swift.String
+      public var bundleDisplayName: Swift.String
       /// - Remark: Generated from `#/components/schemas/Metadata/bundleID`.
-      package var bundleID: Swift.String
+      public var bundleID: Swift.String
       /// - Remark: Generated from `#/components/schemas/Metadata/schemaVersion`.
-      package var schemaVersion: Components.Schemas.SchemaVersion1
+      public var schemaVersion: Components.Schemas.SchemaVersion1
       /// Creates a new `Metadata`.
       ///
       /// - Parameters:
       ///   - bundleDisplayName:
       ///   - bundleID:
       ///   - schemaVersion:
-      package init(
+      public init(
         bundleDisplayName: Swift.String,
         bundleID: Swift.String,
         schemaVersion: Components.Schemas.SchemaVersion1
@@ -2824,7 +2824,7 @@ package enum Components {
         self.bundleID = bundleID
         self.schemaVersion = schemaVersion
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case bundleDisplayName
         case bundleID
         case schemaVersion
@@ -2833,21 +2833,21 @@ package enum Components {
     /// A version that follows the [Semantic Versioning](https://semver.org) specification. Maps to https: https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Model/Rendering/SemanticVersion.swift#L14
     ///
     /// - Remark: Generated from `#/components/schemas/SchemaVersion1`.
-    package struct SchemaVersion1: Codable, Hashable, Sendable {
+    public struct SchemaVersion1: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/SchemaVersion1/major`.
-      package var major: Swift.Int
+      public var major: Swift.Int
       /// - Remark: Generated from `#/components/schemas/SchemaVersion1/minor`.
-      package var minor: Swift.Int
+      public var minor: Swift.Int
       /// - Remark: Generated from `#/components/schemas/SchemaVersion1/patch`.
-      package var patch: Swift.Int
+      public var patch: Swift.Int
       /// The optional prerelease version component, which may contain non-numeric characters.
       ///
       /// - Remark: Generated from `#/components/schemas/SchemaVersion1/prerelease`.
-      package var prerelease: Swift.String?
+      public var prerelease: Swift.String?
       /// Optional additional build metadata.
       ///
       /// - Remark: Generated from `#/components/schemas/SchemaVersion1/buildMetadata`.
-      package var buildMetadata: Swift.String?
+      public var buildMetadata: Swift.String?
       /// Creates a new `SchemaVersion1`.
       ///
       /// - Parameters:
@@ -2856,7 +2856,7 @@ package enum Components {
       ///   - patch:
       ///   - prerelease: The optional prerelease version component, which may contain non-numeric characters.
       ///   - buildMetadata: Optional additional build metadata.
-      package init(
+      public init(
         major: Swift.Int,
         minor: Swift.Int,
         patch: Swift.Int,
@@ -2869,7 +2869,7 @@ package enum Components {
         self.prerelease = prerelease
         self.buildMetadata = buildMetadata
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case major
         case minor
         case patch
@@ -2880,12 +2880,12 @@ package enum Components {
     /// maps to https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Model/Rendering/RenderNode.swift#L91
     ///
     /// - Remark: Generated from `#/components/schemas/RenderNode`.
-    @frozen package enum RenderNode: Codable, Hashable, Sendable {
+    @frozen public enum RenderNode: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderNode/case1`.
       case TutorialsPageRenderNode(Components.Schemas.TutorialsPageRenderNode)
       /// - Remark: Generated from `#/components/schemas/RenderNode/case2`.
       case DocumentationRenderNode(Components.Schemas.DocumentationRenderNode)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .TutorialsPageRenderNode(try .init(from: decoder))
@@ -2905,7 +2905,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .TutorialsPageRenderNode(let value):
           try value.encode(to: encoder)
@@ -2915,12 +2915,12 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode`.
-    package struct TutorialsPageRenderNode: Codable, Hashable, Sendable {
+    public struct TutorialsPageRenderNode: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/hierarchy`.
-      @frozen package enum HierarchyPayload: Codable, Hashable, Sendable {
+      @frozen public enum HierarchyPayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/hierarchy/case1`.
         case Hierarchy(Components.Schemas.Hierarchy)
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           var errors: [any Error] = []
           do {
             self = .Hierarchy(try .init(from: decoder))
@@ -2934,7 +2934,7 @@ package enum Components {
             errors: errors
           )
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           switch self {
           case .Hierarchy(let value):
             try value.encode(to: encoder)
@@ -2942,46 +2942,45 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/hierarchy`.
-      package var hierarchy: Components.Schemas.TutorialsPageRenderNode.HierarchyPayload
+      public var hierarchy: Components.Schemas.TutorialsPageRenderNode.HierarchyPayload
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case overview = "overview"
         case project = "project"
         case article = "article"
       }
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/kind`.
-      package var kind: Components.Schemas.TutorialsPageRenderNode.KindPayload
+      public var kind: Components.Schemas.TutorialsPageRenderNode.KindPayload
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/identifier`.
-      package var identifier: Components.Schemas.ResolvedTopicReference
+      public var identifier: Components.Schemas.ResolvedTopicReference
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/sections`.
-      package var sections: [Components.Schemas.RenderSection]
+      public var sections: [Components.Schemas.RenderSection]
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/references`.
-      package struct ReferencesPayload: Codable, Hashable, Sendable {
+      public struct ReferencesPayload: Codable, Hashable, Sendable {
         /// A container of undocumented properties.
-        package var additionalProperties: [String: Components.Schemas.RenderReference1]
+        public var additionalProperties: [String: Components.Schemas.RenderReference1]
         /// Creates a new `ReferencesPayload`.
         ///
         /// - Parameters:
         ///   - additionalProperties: A container of undocumented properties.
-        package init(additionalProperties: [String: Components.Schemas.RenderReference1] = .init())
-        {
+        public init(additionalProperties: [String: Components.Schemas.RenderReference1] = .init()) {
           self.additionalProperties = additionalProperties
         }
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           try encoder.encodeAdditionalProperties(additionalProperties)
         }
       }
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/references`.
-      package var references: Components.Schemas.TutorialsPageRenderNode.ReferencesPayload?
+      public var references: Components.Schemas.TutorialsPageRenderNode.ReferencesPayload?
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/metadata`.
-      package var metadata: Components.Schemas.TutorialsMetadata?
+      public var metadata: Components.Schemas.TutorialsMetadata?
       /// - Remark: Generated from `#/components/schemas/TutorialsPageRenderNode/schemaVersion`.
-      package var schemaVersion: Components.Schemas.SchemaVersion
+      public var schemaVersion: Components.Schemas.SchemaVersion
       /// Creates a new `TutorialsPageRenderNode`.
       ///
       /// - Parameters:
@@ -2993,7 +2992,7 @@ package enum Components {
       ///   - references:
       ///   - metadata:
       ///   - schemaVersion:
-      package init(
+      public init(
         hierarchy: Components.Schemas.TutorialsPageRenderNode.HierarchyPayload,
         kind: Components.Schemas.TutorialsPageRenderNode.KindPayload,
         identifier: Components.Schemas.ResolvedTopicReference,
@@ -3012,7 +3011,7 @@ package enum Components {
         self.metadata = metadata
         self.schemaVersion = schemaVersion
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case hierarchy
         case kind
         case identifier
@@ -3024,7 +3023,7 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderSection`.
-    @frozen package enum RenderSection: Codable, Hashable, Sendable {
+    @frozen public enum RenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderSection/case1`.
       case IntroRenderSection(Components.Schemas.IntroRenderSection)
       /// - Remark: Generated from `#/components/schemas/RenderSection/case2`.
@@ -3039,7 +3038,7 @@ package enum Components {
       case VolumeRenderSection(Components.Schemas.VolumeRenderSection)
       /// - Remark: Generated from `#/components/schemas/RenderSection/case7`.
       case ResourcesRenderSection(Components.Schemas.ResourcesRenderSection)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .IntroRenderSection(try .init(from: decoder))
@@ -3089,7 +3088,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .IntroRenderSection(let value):
           try value.encode(to: encoder)
@@ -3109,25 +3108,25 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/IntroRenderSection`.
-    package struct IntroRenderSection: Codable, Hashable, Sendable {
+    public struct IntroRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/IntroRenderSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/IntroRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case hero = "hero"
         case intro = "intro"
       }
       /// - Remark: Generated from `#/components/schemas/IntroRenderSection/kind`.
-      package var kind: Components.Schemas.IntroRenderSection.KindPayload
+      public var kind: Components.Schemas.IntroRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/IntroRenderSection/content`.
-      package var content: [Components.Schemas.RenderBlockContent]?
+      public var content: [Components.Schemas.RenderBlockContent]?
       /// Creates a new `IntroRenderSection`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - kind:
       ///   - content:
-      package init(
+      public init(
         title: Swift.String,
         kind: Components.Schemas.IntroRenderSection.KindPayload,
         content: [Components.Schemas.RenderBlockContent]? = nil
@@ -3136,55 +3135,55 @@ package enum Components {
         self.kind = kind
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/ArticleBodyRenderSection`.
-    package struct ArticleBodyRenderSection: Codable, Hashable, Sendable {
+    public struct ArticleBodyRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ArticleBodyRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case articleBody = "articleBody"
       }
       /// - Remark: Generated from `#/components/schemas/ArticleBodyRenderSection/kind`.
-      package var kind: Components.Schemas.ArticleBodyRenderSection.KindPayload
+      public var kind: Components.Schemas.ArticleBodyRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/ArticleBodyRenderSection/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `ArticleBodyRenderSection`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - content:
-      package init(
+      public init(
         kind: Components.Schemas.ArticleBodyRenderSection.KindPayload,
         content: [Components.Schemas.RenderBlockContent]
       ) {
         self.kind = kind
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/CallToActionRenderSection`.
-    package struct CallToActionRenderSection: Codable, Hashable, Sendable {
+    public struct CallToActionRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/CallToActionRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case callToAction = "callToAction"
       }
       /// - Remark: Generated from `#/components/schemas/CallToActionRenderSection/kind`.
-      package var kind: Components.Schemas.CallToActionRenderSection.KindPayload
+      public var kind: Components.Schemas.CallToActionRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/CallToActionRenderSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/CallToActionRenderSection/abstract`.
-      package var abstract: [Components.Schemas.RenderInlineContent]?
+      public var abstract: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/CallToActionRenderSection/media`.
-      package var media: Swift.String?
+      public var media: Swift.String?
       /// - Remark: Generated from `#/components/schemas/CallToActionRenderSection/action`.
-      package var action: Components.Schemas.RenderInlineContent
+      public var action: Components.Schemas.RenderInlineContent
       /// Creates a new `CallToActionRenderSection`.
       ///
       /// - Parameters:
@@ -3193,7 +3192,7 @@ package enum Components {
       ///   - abstract:
       ///   - media:
       ///   - action:
-      package init(
+      public init(
         kind: Components.Schemas.CallToActionRenderSection.KindPayload,
         title: Swift.String,
         abstract: [Components.Schemas.RenderInlineContent]? = nil,
@@ -3206,7 +3205,7 @@ package enum Components {
         self.media = media
         self.action = action
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case title
         case abstract
@@ -3215,42 +3214,42 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TasksSection`.
-    package struct TasksSection: Codable, Hashable, Sendable {
+    public struct TasksSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TasksSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case tasks = "tasks"
       }
       /// - Remark: Generated from `#/components/schemas/TasksSection/kind`.
-      package var kind: Components.Schemas.TasksSection.KindPayload
+      public var kind: Components.Schemas.TasksSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/TasksSection/tasks`.
-      package var tasks: [Components.Schemas.Task]
+      public var tasks: [Components.Schemas.Task]
       /// Creates a new `TasksSection`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - tasks:
-      package init(
+      public init(
         kind: Components.Schemas.TasksSection.KindPayload,
         tasks: [Components.Schemas.Task]
       ) {
         self.kind = kind
         self.tasks = tasks
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case tasks
       }
     }
     /// - Remark: Generated from `#/components/schemas/Task`.
-    package struct Task: Codable, Hashable, Sendable {
+    public struct Task: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Task/anchor`.
-      package var anchor: Swift.String
+      public var anchor: Swift.String
       /// - Remark: Generated from `#/components/schemas/Task/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/Task/contentSection`.
-      package var contentSection: [Components.Schemas.ContentLayout]
+      public var contentSection: [Components.Schemas.ContentLayout]
       /// - Remark: Generated from `#/components/schemas/Task/stepsSection`.
-      package var stepsSection: [Components.Schemas.RenderBlockContent]
+      public var stepsSection: [Components.Schemas.RenderBlockContent]
       /// Creates a new `Task`.
       ///
       /// - Parameters:
@@ -3258,7 +3257,7 @@ package enum Components {
       ///   - title:
       ///   - contentSection:
       ///   - stepsSection:
-      package init(
+      public init(
         anchor: Swift.String,
         title: Swift.String,
         contentSection: [Components.Schemas.ContentLayout],
@@ -3269,7 +3268,7 @@ package enum Components {
         self.contentSection = contentSection
         self.stepsSection = stepsSection
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case anchor
         case title
         case contentSection
@@ -3277,24 +3276,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/AssessmentsSection`.
-    package struct AssessmentsSection: Codable, Hashable, Sendable {
+    public struct AssessmentsSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/AssessmentsSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case assessments = "assessments"
       }
       /// - Remark: Generated from `#/components/schemas/AssessmentsSection/kind`.
-      package var kind: Components.Schemas.AssessmentsSection.KindPayload
+      public var kind: Components.Schemas.AssessmentsSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/AssessmentsSection/anchor`.
-      package var anchor: Swift.String
+      public var anchor: Swift.String
       /// - Remark: Generated from `#/components/schemas/AssessmentsSection/assessments`.
-      package var assessments: [Components.Schemas.Assessment]
+      public var assessments: [Components.Schemas.Assessment]
       /// Creates a new `AssessmentsSection`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - anchor:
       ///   - assessments:
-      package init(
+      public init(
         kind: Components.Schemas.AssessmentsSection.KindPayload,
         anchor: Swift.String,
         assessments: [Components.Schemas.Assessment]
@@ -3303,26 +3302,26 @@ package enum Components {
         self.anchor = anchor
         self.assessments = assessments
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case anchor
         case assessments
       }
     }
     /// - Remark: Generated from `#/components/schemas/Assessment`.
-    package struct Assessment: Codable, Hashable, Sendable {
+    public struct Assessment: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Assessment/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case multipleChoice = "multiple-choice"
       }
       /// - Remark: Generated from `#/components/schemas/Assessment/type`.
-      package var _type: Components.Schemas.Assessment._TypePayload
+      public var _type: Components.Schemas.Assessment._TypePayload
       /// - Remark: Generated from `#/components/schemas/Assessment/title`.
-      package var title: [Components.Schemas.RenderBlockContent]
+      public var title: [Components.Schemas.RenderBlockContent]
       /// - Remark: Generated from `#/components/schemas/Assessment/content`.
-      package var content: [Components.Schemas.RenderBlockContent]?
+      public var content: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/Assessment/choices`.
-      package var choices: [Components.Schemas.Choice]
+      public var choices: [Components.Schemas.Choice]
       /// Creates a new `Assessment`.
       ///
       /// - Parameters:
@@ -3330,7 +3329,7 @@ package enum Components {
       ///   - title:
       ///   - content:
       ///   - choices:
-      package init(
+      public init(
         _type: Components.Schemas.Assessment._TypePayload,
         title: [Components.Schemas.RenderBlockContent],
         content: [Components.Schemas.RenderBlockContent]? = nil,
@@ -3341,7 +3340,7 @@ package enum Components {
         self.content = content
         self.choices = choices
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case title
         case content
@@ -3349,15 +3348,15 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Choice`.
-    package struct Choice: Codable, Hashable, Sendable {
+    public struct Choice: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Choice/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// - Remark: Generated from `#/components/schemas/Choice/isCorrect`.
-      package var isCorrect: Swift.Bool
+      public var isCorrect: Swift.Bool
       /// - Remark: Generated from `#/components/schemas/Choice/justification`.
-      package var justification: [Components.Schemas.RenderBlockContent]?
+      public var justification: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/Choice/reaction`.
-      package var reaction: Swift.String?
+      public var reaction: Swift.String?
       /// Creates a new `Choice`.
       ///
       /// - Parameters:
@@ -3365,7 +3364,7 @@ package enum Components {
       ///   - isCorrect:
       ///   - justification:
       ///   - reaction:
-      package init(
+      public init(
         content: [Components.Schemas.RenderBlockContent],
         isCorrect: Swift.Bool,
         justification: [Components.Schemas.RenderBlockContent]? = nil,
@@ -3376,7 +3375,7 @@ package enum Components {
         self.justification = justification
         self.reaction = reaction
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case content
         case isCorrect
         case justification
@@ -3384,21 +3383,21 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/VolumeRenderSection`.
-    package struct VolumeRenderSection: Codable, Hashable, Sendable {
+    public struct VolumeRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/VolumeRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case volume = "volume"
       }
       /// - Remark: Generated from `#/components/schemas/VolumeRenderSection/kind`.
-      package var kind: Components.Schemas.VolumeRenderSection.KindPayload
+      public var kind: Components.Schemas.VolumeRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/VolumeRenderSection/image`.
-      package var image: Swift.String?
+      public var image: Swift.String?
       /// - Remark: Generated from `#/components/schemas/VolumeRenderSection/name`.
-      package var name: Swift.String?
+      public var name: Swift.String?
       /// - Remark: Generated from `#/components/schemas/VolumeRenderSection/content`.
-      package var content: [Components.Schemas.RenderBlockContent]?
+      public var content: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/VolumeRenderSection/chapters`.
-      package var chapters: [Components.Schemas.Chapter]
+      public var chapters: [Components.Schemas.Chapter]
       /// Creates a new `VolumeRenderSection`.
       ///
       /// - Parameters:
@@ -3407,7 +3406,7 @@ package enum Components {
       ///   - name:
       ///   - content:
       ///   - chapters:
-      package init(
+      public init(
         kind: Components.Schemas.VolumeRenderSection.KindPayload,
         image: Swift.String? = nil,
         name: Swift.String? = nil,
@@ -3420,7 +3419,7 @@ package enum Components {
         self.content = content
         self.chapters = chapters
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case image
         case name
@@ -3429,15 +3428,15 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Chapter`.
-    package struct Chapter: Codable, Hashable, Sendable {
+    public struct Chapter: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Chapter/name`.
-      package var name: Swift.String
+      public var name: Swift.String
       /// - Remark: Generated from `#/components/schemas/Chapter/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// - Remark: Generated from `#/components/schemas/Chapter/tutorials`.
-      package var tutorials: [Swift.String]
+      public var tutorials: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/Chapter/image`.
-      package var image: Swift.String?
+      public var image: Swift.String?
       /// Creates a new `Chapter`.
       ///
       /// - Parameters:
@@ -3445,7 +3444,7 @@ package enum Components {
       ///   - content:
       ///   - tutorials:
       ///   - image:
-      package init(
+      public init(
         name: Swift.String,
         content: [Components.Schemas.RenderBlockContent],
         tutorials: [Swift.String],
@@ -3456,7 +3455,7 @@ package enum Components {
         self.tutorials = tutorials
         self.image = image
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case name
         case content
         case tutorials
@@ -3464,17 +3463,17 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection`.
-    package struct ResourcesRenderSection: Codable, Hashable, Sendable {
+    public struct ResourcesRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case resources = "resources"
       }
       /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/kind`.
-      package var kind: Components.Schemas.ResourcesRenderSection.KindPayload
+      public var kind: Components.Schemas.ResourcesRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/TilesPayload`.
-      package struct TilesPayloadPayload: Codable, Hashable, Sendable {
+      public struct TilesPayloadPayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/TilesPayload/identifier`.
-        @frozen package enum IdentifierPayload: String, Codable, Hashable, Sendable, CaseIterable {
+        @frozen public enum IdentifierPayload: String, Codable, Hashable, Sendable, CaseIterable {
           case featured = "featured"
           case documentation = "documentation"
           case sampleCode = "sampleCode"
@@ -3483,16 +3482,16 @@ package enum Components {
           case forums = "forums"
         }
         /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/TilesPayload/identifier`.
-        package var identifier:
+        public var identifier:
           Components.Schemas.ResourcesRenderSection.TilesPayloadPayload.IdentifierPayload
         /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/TilesPayload/title`.
-        package var title: Swift.String
+        public var title: Swift.String
         /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/TilesPayload/content`.
-        package var content: [Components.Schemas.RenderBlockContent]
+        public var content: [Components.Schemas.RenderBlockContent]
         /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/TilesPayload/action`.
-        package var action: Components.Schemas.RenderInlineContent?
+        public var action: Components.Schemas.RenderInlineContent?
         /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/TilesPayload/media`.
-        package var media: Swift.String?
+        public var media: Swift.String?
         /// Creates a new `TilesPayloadPayload`.
         ///
         /// - Parameters:
@@ -3501,7 +3500,7 @@ package enum Components {
         ///   - content:
         ///   - action:
         ///   - media:
-        package init(
+        public init(
           identifier: Components.Schemas.ResourcesRenderSection.TilesPayloadPayload
             .IdentifierPayload,
           title: Swift.String,
@@ -3515,7 +3514,7 @@ package enum Components {
           self.action = action
           self.media = media
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case identifier
           case title
           case content
@@ -3524,36 +3523,36 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/tiles`.
-      package typealias TilesPayload = [Components.Schemas.ResourcesRenderSection
+      public typealias TilesPayload = [Components.Schemas.ResourcesRenderSection
         .TilesPayloadPayload]
       /// - Remark: Generated from `#/components/schemas/ResourcesRenderSection/tiles`.
-      package var tiles: Components.Schemas.ResourcesRenderSection.TilesPayload
+      public var tiles: Components.Schemas.ResourcesRenderSection.TilesPayload
       /// Creates a new `ResourcesRenderSection`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - tiles:
-      package init(
+      public init(
         kind: Components.Schemas.ResourcesRenderSection.KindPayload,
         tiles: Components.Schemas.ResourcesRenderSection.TilesPayload
       ) {
         self.kind = kind
         self.tiles = tiles
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case tiles
       }
     }
     /// - Remark: Generated from `#/components/schemas/ContentLayout`.
-    @frozen package enum ContentLayout: Codable, Hashable, Sendable {
+    @frozen public enum ContentLayout: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ContentLayout/case1`.
       case FullWidth(Components.Schemas.FullWidth)
       /// - Remark: Generated from `#/components/schemas/ContentLayout/case2`.
       case ContentAndMedia(Components.Schemas.ContentAndMedia)
       /// - Remark: Generated from `#/components/schemas/ContentLayout/case3`.
       case Columns(Components.Schemas.Columns)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .FullWidth(try .init(from: decoder))
@@ -3579,7 +3578,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .FullWidth(let value):
           try value.encode(to: encoder)
@@ -3591,7 +3590,7 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderBlockContent`.
-    @frozen package indirect enum RenderBlockContent: Codable, Hashable, Sendable {
+    @frozen public indirect enum RenderBlockContent: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderBlockContent/case1`.
       case FullWidth(Components.Schemas.FullWidth)
       /// - Remark: Generated from `#/components/schemas/RenderBlockContent/case2`.
@@ -3632,7 +3631,7 @@ package enum Components {
       case DictionaryExample(Components.Schemas.DictionaryExample)
       /// - Remark: Generated from `#/components/schemas/RenderBlockContent/case20`.
       case TermList(Components.Schemas.TermList)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .FullWidth(try .init(from: decoder))
@@ -3760,7 +3759,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .FullWidth(let value):
           try value.encode(to: encoder)
@@ -3806,51 +3805,51 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/FullWidth`.
-    package struct FullWidth: Codable, Hashable, Sendable {
+    public struct FullWidth: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/FullWidth/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case fullWidth = "fullWidth"
       }
       /// - Remark: Generated from `#/components/schemas/FullWidth/kind`.
-      package var kind: Components.Schemas.FullWidth.KindPayload
+      public var kind: Components.Schemas.FullWidth.KindPayload
       /// - Remark: Generated from `#/components/schemas/FullWidth/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `FullWidth`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - content:
-      package init(
+      public init(
         kind: Components.Schemas.FullWidth.KindPayload,
         content: [Components.Schemas.RenderBlockContent]
       ) {
         self.kind = kind
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/ContentAndMedia`.
-    package struct ContentAndMedia: Codable, Hashable, Sendable {
+    public struct ContentAndMedia: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ContentAndMedia/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case contentAndMedia = "contentAndMedia"
       }
       /// - Remark: Generated from `#/components/schemas/ContentAndMedia/kind`.
-      package var kind: Components.Schemas.ContentAndMedia.KindPayload
+      public var kind: Components.Schemas.ContentAndMedia.KindPayload
       /// - Remark: Generated from `#/components/schemas/ContentAndMedia/media`.
-      package var media: Swift.String
+      public var media: Swift.String
       /// - Remark: Generated from `#/components/schemas/ContentAndMedia/mediaPosition`.
-      @frozen package enum MediaPositionPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum MediaPositionPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case leading = "leading"
         case trailing = "trailing"
       }
       /// - Remark: Generated from `#/components/schemas/ContentAndMedia/mediaPosition`.
-      package var mediaPosition: Components.Schemas.ContentAndMedia.MediaPositionPayload
+      public var mediaPosition: Components.Schemas.ContentAndMedia.MediaPositionPayload
       /// - Remark: Generated from `#/components/schemas/ContentAndMedia/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `ContentAndMedia`.
       ///
       /// - Parameters:
@@ -3858,7 +3857,7 @@ package enum Components {
       ///   - media:
       ///   - mediaPosition:
       ///   - content:
-      package init(
+      public init(
         kind: Components.Schemas.ContentAndMedia.KindPayload,
         media: Swift.String,
         mediaPosition: Components.Schemas.ContentAndMedia.MediaPositionPayload,
@@ -3869,7 +3868,7 @@ package enum Components {
         self.mediaPosition = mediaPosition
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case media
         case mediaPosition
@@ -3877,51 +3876,51 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Columns`.
-    package struct Columns: Codable, Hashable, Sendable {
+    public struct Columns: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Columns/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case columns = "columns"
       }
       /// - Remark: Generated from `#/components/schemas/Columns/kind`.
-      package var kind: Components.Schemas.Columns.KindPayload
+      public var kind: Components.Schemas.Columns.KindPayload
       /// - Remark: Generated from `#/components/schemas/Columns/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `Columns`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - content:
-      package init(
+      public init(
         kind: Components.Schemas.Columns.KindPayload,
         content: [Components.Schemas.RenderBlockContent]
       ) {
         self.kind = kind
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/Row`.
-    package struct Row: Codable, Hashable, Sendable {
+    public struct Row: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Row/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case row = "row"
       }
       /// - Remark: Generated from `#/components/schemas/Row/kind`.
-      package var kind: Components.Schemas.Row.KindPayload
+      public var kind: Components.Schemas.Row.KindPayload
       /// - Remark: Generated from `#/components/schemas/Row/columns`.
-      package var columns: [Components.Schemas.Column]
+      public var columns: [Components.Schemas.Column]
       /// - Remark: Generated from `#/components/schemas/Row/numberOfColumns`.
-      package var numberOfColumns: Swift.Double
+      public var numberOfColumns: Swift.Double
       /// Creates a new `Row`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - columns:
       ///   - numberOfColumns:
-      package init(
+      public init(
         kind: Components.Schemas.Row.KindPayload,
         columns: [Components.Schemas.Column],
         numberOfColumns: Swift.Double
@@ -3930,110 +3929,110 @@ package enum Components {
         self.columns = columns
         self.numberOfColumns = numberOfColumns
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case columns
         case numberOfColumns
       }
     }
     /// - Remark: Generated from `#/components/schemas/Column`.
-    package struct Column: Codable, Hashable, Sendable {
+    public struct Column: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Column/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// - Remark: Generated from `#/components/schemas/Column/size`.
-      package var size: Swift.Double
+      public var size: Swift.Double
       /// Creates a new `Column`.
       ///
       /// - Parameters:
       ///   - content:
       ///   - size:
-      package init(
+      public init(
         content: [Components.Schemas.RenderBlockContent],
         size: Swift.Double
       ) {
         self.content = content
         self.size = size
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case content
         case size
       }
     }
     /// - Remark: Generated from `#/components/schemas/TabNavigator`.
-    package struct TabNavigator: Codable, Hashable, Sendable {
+    public struct TabNavigator: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TabNavigator/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case tabNavigator = "tabNavigator"
       }
       /// - Remark: Generated from `#/components/schemas/TabNavigator/kind`.
-      package var kind: Components.Schemas.TabNavigator.KindPayload
+      public var kind: Components.Schemas.TabNavigator.KindPayload
       /// - Remark: Generated from `#/components/schemas/TabNavigator/tabs`.
-      package var tabs: [Components.Schemas.Tab]
+      public var tabs: [Components.Schemas.Tab]
       /// Creates a new `TabNavigator`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - tabs:
-      package init(
+      public init(
         kind: Components.Schemas.TabNavigator.KindPayload,
         tabs: [Components.Schemas.Tab]
       ) {
         self.kind = kind
         self.tabs = tabs
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case tabs
       }
     }
     /// - Remark: Generated from `#/components/schemas/Tab`.
-    package struct Tab: Codable, Hashable, Sendable {
+    public struct Tab: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Tab/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/Tab/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `Tab`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - content:
-      package init(
+      public init(
         title: Swift.String,
         content: [Components.Schemas.RenderBlockContent]
       ) {
         self.title = title
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/Links`.
-    package struct Links: Codable, Hashable, Sendable {
+    public struct Links: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Links/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case links = "links"
       }
       /// - Remark: Generated from `#/components/schemas/Links/type`.
-      package var _type: Components.Schemas.Links._TypePayload
+      public var _type: Components.Schemas.Links._TypePayload
       /// - Remark: Generated from `#/components/schemas/Links/style`.
-      @frozen package enum StylePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum StylePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case list = "list"
         case compactGrid = "compactGrid"
         case detailedGrid = "detailedGrid"
       }
       /// - Remark: Generated from `#/components/schemas/Links/style`.
-      package var style: Components.Schemas.Links.StylePayload
+      public var style: Components.Schemas.Links.StylePayload
       /// - Remark: Generated from `#/components/schemas/Links/items`.
-      package var items: [Swift.String]
+      public var items: [Swift.String]
       /// Creates a new `Links`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - style:
       ///   - items:
-      package init(
+      public init(
         _type: Components.Schemas.Links._TypePayload,
         style: Components.Schemas.Links.StylePayload,
         items: [Swift.String]
@@ -4042,31 +4041,31 @@ package enum Components {
         self.style = style
         self.items = items
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case style
         case items
       }
     }
     /// - Remark: Generated from `#/components/schemas/Video`.
-    package struct Video: Codable, Hashable, Sendable {
+    public struct Video: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Video/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case video = "video"
       }
       /// - Remark: Generated from `#/components/schemas/Video/type`.
-      package var _type: Components.Schemas.Video._TypePayload
+      public var _type: Components.Schemas.Video._TypePayload
       /// - Remark: Generated from `#/components/schemas/Video/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/Video/metadata`.
-      package var metadata: Components.Schemas.RenderContentMetadata?
+      public var metadata: Components.Schemas.RenderContentMetadata?
       /// Creates a new `Video`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - identifier:
       ///   - metadata:
-      package init(
+      public init(
         _type: Components.Schemas.Video._TypePayload,
         identifier: Swift.String,
         metadata: Components.Schemas.RenderContentMetadata? = nil
@@ -4075,41 +4074,41 @@ package enum Components {
         self.identifier = identifier
         self.metadata = metadata
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
         case metadata
       }
     }
     /// - Remark: Generated from `#/components/schemas/ThematicBreak`.
-    package struct ThematicBreak: Codable, Hashable, Sendable {
+    public struct ThematicBreak: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ThematicBreak/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case thematicBreak = "thematicBreak"
       }
       /// - Remark: Generated from `#/components/schemas/ThematicBreak/type`.
-      package var _type: Components.Schemas.ThematicBreak._TypePayload
+      public var _type: Components.Schemas.ThematicBreak._TypePayload
       /// Creates a new `ThematicBreak`.
       ///
       /// - Parameters:
       ///   - _type:
-      package init(_type: Components.Schemas.ThematicBreak._TypePayload) {
+      public init(_type: Components.Schemas.ThematicBreak._TypePayload) {
         self._type = _type
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
       }
     }
     /// - Remark: Generated from `#/components/schemas/Aside`.
-    package struct Aside: Codable, Hashable, Sendable {
+    public struct Aside: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Aside/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case aside = "aside"
       }
       /// - Remark: Generated from `#/components/schemas/Aside/type`.
-      package var _type: Components.Schemas.Aside._TypePayload
+      public var _type: Components.Schemas.Aside._TypePayload
       /// - Remark: Generated from `#/components/schemas/Aside/style`.
-      @frozen package enum StylePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum StylePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case important = "important"
         case note = "note"
         case tip = "tip"
@@ -4117,11 +4116,11 @@ package enum Components {
         case experiment = "experiment"
       }
       /// - Remark: Generated from `#/components/schemas/Aside/style`.
-      package var style: Components.Schemas.Aside.StylePayload
+      public var style: Components.Schemas.Aside.StylePayload
       /// - Remark: Generated from `#/components/schemas/Aside/name`.
-      package var name: Swift.String?
+      public var name: Swift.String?
       /// - Remark: Generated from `#/components/schemas/Aside/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `Aside`.
       ///
       /// - Parameters:
@@ -4129,7 +4128,7 @@ package enum Components {
       ///   - style:
       ///   - name:
       ///   - content:
-      package init(
+      public init(
         _type: Components.Schemas.Aside._TypePayload,
         style: Components.Schemas.Aside.StylePayload,
         name: Swift.String? = nil,
@@ -4140,7 +4139,7 @@ package enum Components {
         self.name = name
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case style
         case name
@@ -4148,46 +4147,46 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Small`.
-    package struct Small: Codable, Hashable, Sendable {
+    public struct Small: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Small/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case small = "small"
       }
       /// - Remark: Generated from `#/components/schemas/Small/type`.
-      package var _type: Components.Schemas.Small._TypePayload
+      public var _type: Components.Schemas.Small._TypePayload
       /// - Remark: Generated from `#/components/schemas/Small/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `Small`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.Small._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/Heading`.
-    package struct Heading: Codable, Hashable, Sendable {
+    public struct Heading: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Heading/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case heading = "heading"
       }
       /// - Remark: Generated from `#/components/schemas/Heading/type`.
-      package var _type: Components.Schemas.Heading._TypePayload
+      public var _type: Components.Schemas.Heading._TypePayload
       /// - Remark: Generated from `#/components/schemas/Heading/level`.
-      package var level: Swift.Int
+      public var level: Swift.Int
       /// - Remark: Generated from `#/components/schemas/Heading/text`.
-      package var text: Swift.String
+      public var text: Swift.String
       /// - Remark: Generated from `#/components/schemas/Heading/anchor`.
-      package var anchor: Swift.String?
+      public var anchor: Swift.String?
       /// Creates a new `Heading`.
       ///
       /// - Parameters:
@@ -4195,7 +4194,7 @@ package enum Components {
       ///   - level:
       ///   - text:
       ///   - anchor:
-      package init(
+      public init(
         _type: Components.Schemas.Heading._TypePayload,
         level: Swift.Int,
         text: Swift.String,
@@ -4206,7 +4205,7 @@ package enum Components {
         self.text = text
         self.anchor = anchor
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case level
         case text
@@ -4214,78 +4213,78 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/LineAnnotation`.
-    package struct LineAnnotation: Codable, Hashable, Sendable {
+    public struct LineAnnotation: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/LineAnnotation/style`.
-      @frozen package enum StylePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum StylePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case highlight = "highlight"
         case strikeout = "strikeout"
       }
       /// - Remark: Generated from `#/components/schemas/LineAnnotation/style`.
-      package var style: Components.Schemas.LineAnnotation.StylePayload
+      public var style: Components.Schemas.LineAnnotation.StylePayload
       /// - Remark: Generated from `#/components/schemas/LineAnnotation/range`.
-      package var range: [Components.Schemas.Position]
+      public var range: [Components.Schemas.Position]
       /// Creates a new `LineAnnotation`.
       ///
       /// - Parameters:
       ///   - style:
       ///   - range:
-      package init(
+      public init(
         style: Components.Schemas.LineAnnotation.StylePayload,
         range: [Components.Schemas.Position]
       ) {
         self.style = style
         self.range = range
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case style
         case range
       }
     }
     /// - Remark: Generated from `#/components/schemas/Position`.
-    package struct Position: Codable, Hashable, Sendable {
+    public struct Position: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Position/line`.
-      package var line: Swift.Int
+      public var line: Swift.Int
       /// - Remark: Generated from `#/components/schemas/Position/character`.
-      package var character: Swift.Int?
+      public var character: Swift.Int?
       /// Creates a new `Position`.
       ///
       /// - Parameters:
       ///   - line:
       ///   - character:
-      package init(
+      public init(
         line: Swift.Int,
         character: Swift.Int? = nil
       ) {
         self.line = line
         self.character = character
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case line
         case character
       }
     }
     /// - Remark: Generated from `#/components/schemas/CodeListing`.
-    package struct CodeListing: Codable, Hashable, Sendable {
+    public struct CodeListing: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/CodeListing/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case codeListing = "codeListing"
       }
       /// - Remark: Generated from `#/components/schemas/CodeListing/type`.
-      package var _type: Components.Schemas.CodeListing._TypePayload
+      public var _type: Components.Schemas.CodeListing._TypePayload
       /// - Remark: Generated from `#/components/schemas/CodeListing/code`.
-      package var code: [Swift.String]
+      public var code: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/CodeListing/syntax`.
-      package var syntax: Swift.String?
+      public var syntax: Swift.String?
       /// - Remark: Generated from `#/components/schemas/CodeListing/metadata`.
-      package var metadata: Components.Schemas.RenderContentMetadata?
+      public var metadata: Components.Schemas.RenderContentMetadata?
       /// - Remark: Generated from `#/components/schemas/CodeListing/copyToClipboard`.
-      package var copyToClipboard: Swift.Bool?
+      public var copyToClipboard: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/CodeListing/showLineNumbers`.
-      package var showLineNumbers: Swift.Bool?
+      public var showLineNumbers: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/CodeListing/wrap`.
-      package var wrap: Swift.Int?
+      public var wrap: Swift.Int?
       /// - Remark: Generated from `#/components/schemas/CodeListing/lineAnnotations`.
-      package var lineAnnotations: [Components.Schemas.LineAnnotation]?
+      public var lineAnnotations: [Components.Schemas.LineAnnotation]?
       /// Creates a new `CodeListing`.
       ///
       /// - Parameters:
@@ -4297,7 +4296,7 @@ package enum Components {
       ///   - showLineNumbers:
       ///   - wrap:
       ///   - lineAnnotations:
-      package init(
+      public init(
         _type: Components.Schemas.CodeListing._TypePayload,
         code: [Swift.String],
         syntax: Swift.String? = nil,
@@ -4316,7 +4315,7 @@ package enum Components {
         self.wrap = wrap
         self.lineAnnotations = lineAnnotations
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case code
         case syntax
@@ -4328,51 +4327,51 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/Paragraph`.
-    package struct Paragraph: Codable, Hashable, Sendable {
+    public struct Paragraph: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Paragraph/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case paragraph = "paragraph"
       }
       /// - Remark: Generated from `#/components/schemas/Paragraph/type`.
-      package var _type: Components.Schemas.Paragraph._TypePayload
+      public var _type: Components.Schemas.Paragraph._TypePayload
       /// - Remark: Generated from `#/components/schemas/Paragraph/inlineContent`.
-      package var inlineContent: [Components.Schemas.RenderInlineContent]
+      public var inlineContent: [Components.Schemas.RenderInlineContent]
       /// Creates a new `Paragraph`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - inlineContent:
-      package init(
+      public init(
         _type: Components.Schemas.Paragraph._TypePayload,
         inlineContent: [Components.Schemas.RenderInlineContent]
       ) {
         self._type = _type
         self.inlineContent = inlineContent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case inlineContent
       }
     }
     /// - Remark: Generated from `#/components/schemas/OrderedList`.
-    package struct OrderedList: Codable, Hashable, Sendable {
+    public struct OrderedList: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/OrderedList/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case orderedList = "orderedList"
       }
       /// - Remark: Generated from `#/components/schemas/OrderedList/type`.
-      package var _type: Components.Schemas.OrderedList._TypePayload
+      public var _type: Components.Schemas.OrderedList._TypePayload
       /// - Remark: Generated from `#/components/schemas/OrderedList/start`.
-      package var start: Swift.Int?
+      public var start: Swift.Int?
       /// - Remark: Generated from `#/components/schemas/OrderedList/items`.
-      package var items: [Components.Schemas.ListItem]
+      public var items: [Components.Schemas.ListItem]
       /// Creates a new `OrderedList`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - start:
       ///   - items:
-      package init(
+      public init(
         _type: Components.Schemas.OrderedList._TypePayload,
         start: Swift.Int? = nil,
         items: [Components.Schemas.ListItem]
@@ -4381,200 +4380,200 @@ package enum Components {
         self.start = start
         self.items = items
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case start
         case items
       }
     }
     /// - Remark: Generated from `#/components/schemas/UnorderedList`.
-    package struct UnorderedList: Codable, Hashable, Sendable {
+    public struct UnorderedList: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/UnorderedList/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case unorderedList = "unorderedList"
       }
       /// - Remark: Generated from `#/components/schemas/UnorderedList/type`.
-      package var _type: Components.Schemas.UnorderedList._TypePayload
+      public var _type: Components.Schemas.UnorderedList._TypePayload
       /// - Remark: Generated from `#/components/schemas/UnorderedList/items`.
-      package var items: [Components.Schemas.ListItem]
+      public var items: [Components.Schemas.ListItem]
       /// Creates a new `UnorderedList`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - items:
-      package init(
+      public init(
         _type: Components.Schemas.UnorderedList._TypePayload,
         items: [Components.Schemas.ListItem]
       ) {
         self._type = _type
         self.items = items
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case items
       }
     }
     /// - Remark: Generated from `#/components/schemas/ListItem`.
-    package struct ListItem: Codable, Hashable, Sendable {
+    public struct ListItem: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ListItem/checked`.
-      package var checked: Swift.Bool?
+      public var checked: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/ListItem/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `ListItem`.
       ///
       /// - Parameters:
       ///   - checked:
       ///   - content:
-      package init(
+      public init(
         checked: Swift.Bool? = nil,
         content: [Components.Schemas.RenderBlockContent]
       ) {
         self.checked = checked
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case checked
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/TermList`.
-    package struct TermList: Codable, Hashable, Sendable {
+    public struct TermList: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TermList/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case termList = "termList"
       }
       /// - Remark: Generated from `#/components/schemas/TermList/type`.
-      package var _type: Components.Schemas.TermList._TypePayload
+      public var _type: Components.Schemas.TermList._TypePayload
       /// - Remark: Generated from `#/components/schemas/TermList/items`.
-      package var items: [Components.Schemas.TermListItem]
+      public var items: [Components.Schemas.TermListItem]
       /// Creates a new `TermList`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - items:
-      package init(
+      public init(
         _type: Components.Schemas.TermList._TypePayload,
         items: [Components.Schemas.TermListItem]
       ) {
         self._type = _type
         self.items = items
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case items
       }
     }
     /// - Remark: Generated from `#/components/schemas/TermListItem`.
-    package struct TermListItem: Codable, Hashable, Sendable {
+    public struct TermListItem: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TermListItem/term`.
-      package struct TermPayload: Codable, Hashable, Sendable {
+      public struct TermPayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/TermListItem/term/inlineContent`.
-        package var inlineContent: [Components.Schemas.RenderInlineContent]
+        public var inlineContent: [Components.Schemas.RenderInlineContent]
         /// Creates a new `TermPayload`.
         ///
         /// - Parameters:
         ///   - inlineContent:
-        package init(inlineContent: [Components.Schemas.RenderInlineContent]) {
+        public init(inlineContent: [Components.Schemas.RenderInlineContent]) {
           self.inlineContent = inlineContent
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case inlineContent
         }
       }
       /// - Remark: Generated from `#/components/schemas/TermListItem/term`.
-      package var term: Components.Schemas.TermListItem.TermPayload
+      public var term: Components.Schemas.TermListItem.TermPayload
       /// - Remark: Generated from `#/components/schemas/TermListItem/definition`.
-      package struct DefinitionPayload: Codable, Hashable, Sendable {
+      public struct DefinitionPayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/TermListItem/definition/content`.
-        package var content: [Components.Schemas.RenderBlockContent]
+        public var content: [Components.Schemas.RenderBlockContent]
         /// Creates a new `DefinitionPayload`.
         ///
         /// - Parameters:
         ///   - content:
-        package init(content: [Components.Schemas.RenderBlockContent]) {
+        public init(content: [Components.Schemas.RenderBlockContent]) {
           self.content = content
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case content
         }
       }
       /// - Remark: Generated from `#/components/schemas/TermListItem/definition`.
-      package var definition: Components.Schemas.TermListItem.DefinitionPayload
+      public var definition: Components.Schemas.TermListItem.DefinitionPayload
       /// Creates a new `TermListItem`.
       ///
       /// - Parameters:
       ///   - term:
       ///   - definition:
-      package init(
+      public init(
         term: Components.Schemas.TermListItem.TermPayload,
         definition: Components.Schemas.TermListItem.DefinitionPayload
       ) {
         self.term = term
         self.definition = definition
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case term
         case definition
       }
     }
     /// - Remark: Generated from `#/components/schemas/Table`.
-    package struct Table: Codable, Hashable, Sendable {
+    public struct Table: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Table/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case table = "table"
       }
       /// - Remark: Generated from `#/components/schemas/Table/type`.
-      package var _type: Components.Schemas.Table._TypePayload
+      public var _type: Components.Schemas.Table._TypePayload
       /// - Remark: Generated from `#/components/schemas/Table/header`.
-      @frozen package enum HeaderPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum HeaderPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case row = "row"
         case column = "column"
         case both = "both"
         case none = "none"
       }
       /// - Remark: Generated from `#/components/schemas/Table/header`.
-      package var header: Components.Schemas.Table.HeaderPayload
+      public var header: Components.Schemas.Table.HeaderPayload
       /// - Remark: Generated from `#/components/schemas/Table/AlignmentsPayload`.
       @frozen
-      package enum AlignmentsPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      public enum AlignmentsPayloadPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case left = "left"
         case right = "right"
         case center = "center"
         case unset = "unset"
       }
       /// - Remark: Generated from `#/components/schemas/Table/alignments`.
-      package typealias AlignmentsPayload = [Components.Schemas.Table.AlignmentsPayloadPayload]
+      public typealias AlignmentsPayload = [Components.Schemas.Table.AlignmentsPayloadPayload]
       /// - Remark: Generated from `#/components/schemas/Table/alignments`.
-      package var alignments: Components.Schemas.Table.AlignmentsPayload?
+      public var alignments: Components.Schemas.Table.AlignmentsPayload?
       /// - Remark: Generated from `#/components/schemas/Table/rows`.
-      package var rows: [[[Components.Schemas.RenderBlockContent]]]
+      public var rows: [[[Components.Schemas.RenderBlockContent]]]
       /// Additional data that can be applied per-cell. Property keys have the pattern 'X_Y', where X is the numerical row index and Y is the numerical column index, both starting from zero.
       ///
       /// - Remark: Generated from `#/components/schemas/Table/extendedData`.
-      package struct ExtendedDataPayload: Codable, Hashable, Sendable {
+      public struct ExtendedDataPayload: Codable, Hashable, Sendable {
         /// A container of undocumented properties.
-        package var additionalProperties: [String: Components.Schemas.TableExtendedData]
+        public var additionalProperties: [String: Components.Schemas.TableExtendedData]
         /// Creates a new `ExtendedDataPayload`.
         ///
         /// - Parameters:
         ///   - additionalProperties: A container of undocumented properties.
-        package init(additionalProperties: [String: Components.Schemas.TableExtendedData] = .init())
+        public init(additionalProperties: [String: Components.Schemas.TableExtendedData] = .init())
         {
           self.additionalProperties = additionalProperties
         }
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           try encoder.encodeAdditionalProperties(additionalProperties)
         }
       }
       /// Additional data that can be applied per-cell. Property keys have the pattern 'X_Y', where X is the numerical row index and Y is the numerical column index, both starting from zero.
       ///
       /// - Remark: Generated from `#/components/schemas/Table/extendedData`.
-      package var extendedData: Components.Schemas.Table.ExtendedDataPayload?
+      public var extendedData: Components.Schemas.Table.ExtendedDataPayload?
       /// - Remark: Generated from `#/components/schemas/Table/metadata`.
-      package var metadata: Components.Schemas.RenderContentMetadata?
+      public var metadata: Components.Schemas.RenderContentMetadata?
       /// Creates a new `Table`.
       ///
       /// - Parameters:
@@ -4584,7 +4583,7 @@ package enum Components {
       ///   - rows:
       ///   - extendedData: Additional data that can be applied per-cell. Property keys have the pattern 'X_Y', where X is the numerical row index and Y is the numerical column index, both starting from zero.
       ///   - metadata:
-      package init(
+      public init(
         _type: Components.Schemas.Table._TypePayload,
         header: Components.Schemas.Table.HeaderPayload,
         alignments: Components.Schemas.Table.AlignmentsPayload? = nil,
@@ -4599,7 +4598,7 @@ package enum Components {
         self.extendedData = extendedData
         self.metadata = metadata
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case header
         case alignments
@@ -4609,46 +4608,46 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TableExtendedData`.
-    package struct TableExtendedData: Codable, Hashable, Sendable {
+    public struct TableExtendedData: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TableExtendedData/colspan`.
-      package var colspan: Swift.Int?
+      public var colspan: Swift.Int?
       /// - Remark: Generated from `#/components/schemas/TableExtendedData/rowspan`.
-      package var rowspan: Swift.Int?
+      public var rowspan: Swift.Int?
       /// Creates a new `TableExtendedData`.
       ///
       /// - Parameters:
       ///   - colspan:
       ///   - rowspan:
-      package init(
+      public init(
         colspan: Swift.Int? = nil,
         rowspan: Swift.Int? = nil
       ) {
         self.colspan = colspan
         self.rowspan = rowspan
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case colspan
         case rowspan
       }
     }
     /// - Remark: Generated from `#/components/schemas/Step`.
-    package struct Step: Codable, Hashable, Sendable {
+    public struct Step: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Step/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case step = "step"
       }
       /// - Remark: Generated from `#/components/schemas/Step/type`.
-      package var _type: Components.Schemas.Step._TypePayload
+      public var _type: Components.Schemas.Step._TypePayload
       /// - Remark: Generated from `#/components/schemas/Step/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// - Remark: Generated from `#/components/schemas/Step/caption`.
-      package var caption: [Components.Schemas.RenderBlockContent]
+      public var caption: [Components.Schemas.RenderBlockContent]
       /// - Remark: Generated from `#/components/schemas/Step/runtimePreview`.
-      package var runtimePreview: Swift.String?
+      public var runtimePreview: Swift.String?
       /// - Remark: Generated from `#/components/schemas/Step/media`.
-      package var media: Swift.String?
+      public var media: Swift.String?
       /// - Remark: Generated from `#/components/schemas/Step/code`.
-      package var code: Swift.String?
+      public var code: Swift.String?
       /// Creates a new `Step`.
       ///
       /// - Parameters:
@@ -4658,7 +4657,7 @@ package enum Components {
       ///   - runtimePreview:
       ///   - media:
       ///   - code:
-      package init(
+      public init(
         _type: Components.Schemas.Step._TypePayload,
         content: [Components.Schemas.RenderBlockContent],
         caption: [Components.Schemas.RenderBlockContent],
@@ -4673,7 +4672,7 @@ package enum Components {
         self.media = media
         self.code = code
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case content
         case caption
@@ -4683,65 +4682,65 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/CodeExampleContent`.
-    package struct CodeExampleContent: Codable, Hashable, Sendable {
+    public struct CodeExampleContent: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/CodeExampleContent/collapsible`.
-      package var collapsible: Swift.Bool
+      public var collapsible: Swift.Bool
       /// - Remark: Generated from `#/components/schemas/CodeExampleContent/code`.
-      package var code: [Swift.String]
+      public var code: [Swift.String]
       /// Creates a new `CodeExampleContent`.
       ///
       /// - Parameters:
       ///   - collapsible:
       ///   - code:
-      package init(
+      public init(
         collapsible: Swift.Bool,
         code: [Swift.String]
       ) {
         self.collapsible = collapsible
         self.code = code
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case collapsible
         case code
       }
     }
     /// - Remark: Generated from `#/components/schemas/CodeExample`.
-    package struct CodeExample: Codable, Hashable, Sendable {
+    public struct CodeExample: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/CodeExample/syntax`.
-      package var syntax: Swift.String?
+      public var syntax: Swift.String?
       /// - Remark: Generated from `#/components/schemas/CodeExample/content`.
-      package var content: [Components.Schemas.CodeExampleContent]
+      public var content: [Components.Schemas.CodeExampleContent]
       /// Creates a new `CodeExample`.
       ///
       /// - Parameters:
       ///   - syntax:
       ///   - content:
-      package init(
+      public init(
         syntax: Swift.String? = nil,
         content: [Components.Schemas.CodeExampleContent]
       ) {
         self.syntax = syntax
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case syntax
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/EndpointExample`.
-    package struct EndpointExample: Codable, Hashable, Sendable {
+    public struct EndpointExample: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/EndpointExample/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case endpointExample = "endpointExample"
       }
       /// - Remark: Generated from `#/components/schemas/EndpointExample/type`.
-      package var _type: Components.Schemas.EndpointExample._TypePayload
+      public var _type: Components.Schemas.EndpointExample._TypePayload
       /// - Remark: Generated from `#/components/schemas/EndpointExample/summary`.
-      package var summary: [Components.Schemas.RenderBlockContent]?
+      public var summary: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/EndpointExample/request`.
-      package var request: Components.Schemas.CodeExample
+      public var request: Components.Schemas.CodeExample
       /// - Remark: Generated from `#/components/schemas/EndpointExample/response`.
-      package var response: Components.Schemas.CodeExample
+      public var response: Components.Schemas.CodeExample
       /// Creates a new `EndpointExample`.
       ///
       /// - Parameters:
@@ -4749,7 +4748,7 @@ package enum Components {
       ///   - summary:
       ///   - request:
       ///   - response:
-      package init(
+      public init(
         _type: Components.Schemas.EndpointExample._TypePayload,
         summary: [Components.Schemas.RenderBlockContent]? = nil,
         request: Components.Schemas.CodeExample,
@@ -4760,7 +4759,7 @@ package enum Components {
         self.request = request
         self.response = response
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case summary
         case request
@@ -4768,24 +4767,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/DictionaryExample`.
-    package struct DictionaryExample: Codable, Hashable, Sendable {
+    public struct DictionaryExample: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DictionaryExample/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case dictionaryExample = "dictionaryExample"
       }
       /// - Remark: Generated from `#/components/schemas/DictionaryExample/type`.
-      package var _type: Components.Schemas.DictionaryExample._TypePayload
+      public var _type: Components.Schemas.DictionaryExample._TypePayload
       /// - Remark: Generated from `#/components/schemas/DictionaryExample/summary`.
-      package var summary: [Components.Schemas.RenderBlockContent]?
+      public var summary: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/DictionaryExample/example`.
-      package var example: Components.Schemas.CodeExample
+      public var example: Components.Schemas.CodeExample
       /// Creates a new `DictionaryExample`.
       ///
       /// - Parameters:
       ///   - _type:
       ///   - summary:
       ///   - example:
-      package init(
+      public init(
         _type: Components.Schemas.DictionaryExample._TypePayload,
         summary: [Components.Schemas.RenderBlockContent]? = nil,
         example: Components.Schemas.CodeExample
@@ -4794,14 +4793,14 @@ package enum Components {
         self.summary = summary
         self.example = example
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case summary
         case example
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderReference1`.
-    @frozen package enum RenderReference1: Codable, Hashable, Sendable {
+    @frozen public enum RenderReference1: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderReference1/case1`.
       case ImageRenderReference(Components.Schemas.ImageRenderReference)
       /// - Remark: Generated from `#/components/schemas/RenderReference1/case2`.
@@ -4820,7 +4819,7 @@ package enum Components {
       case UnresolvableRenderReference(Components.Schemas.UnresolvableRenderReference)
       /// - Remark: Generated from `#/components/schemas/RenderReference1/case9`.
       case LinkRenderReference(Components.Schemas.LinkRenderReference)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .ImageRenderReference(try .init(from: decoder))
@@ -4882,7 +4881,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .ImageRenderReference(let value):
           try value.encode(to: encoder)
@@ -4906,21 +4905,21 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/VideoRenderReference2`.
-    package struct VideoRenderReference2: Codable, Hashable, Sendable {
+    public struct VideoRenderReference2: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference2/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case video = "video"
       }
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference2/type`.
-      package var _type: Components.Schemas.VideoRenderReference2._TypePayload
+      public var _type: Components.Schemas.VideoRenderReference2._TypePayload
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference2/alt`.
-      package var alt: Swift.String?
+      public var alt: Swift.String?
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference2/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference2/poster`.
-      package var poster: Swift.String?
+      public var poster: Swift.String?
       /// - Remark: Generated from `#/components/schemas/VideoRenderReference2/variants`.
-      package var variants: [Components.Schemas.RenderReferenceVariant]
+      public var variants: [Components.Schemas.RenderReferenceVariant]
       /// Creates a new `VideoRenderReference2`.
       ///
       /// - Parameters:
@@ -4929,7 +4928,7 @@ package enum Components {
       ///   - identifier:
       ///   - poster:
       ///   - variants:
-      package init(
+      public init(
         _type: Components.Schemas.VideoRenderReference2._TypePayload,
         alt: Swift.String? = nil,
         identifier: Swift.String,
@@ -4942,7 +4941,7 @@ package enum Components {
         self.poster = poster
         self.variants = variants
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case alt
         case identifier
@@ -4951,24 +4950,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TopicRenderReference1`.
-    package struct TopicRenderReference1: Codable, Hashable, Sendable {
+    public struct TopicRenderReference1: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/abstract`.
-      package var abstract: [Components.Schemas.RenderInlineContent]?
+      public var abstract: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case topic = "topic"
         case section = "section"
       }
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/type`.
-      package var _type: Components.Schemas.TopicRenderReference1._TypePayload
+      public var _type: Components.Schemas.TopicRenderReference1._TypePayload
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case article = "article"
         case project = "project"
         case section = "section"
@@ -4977,40 +4976,40 @@ package enum Components {
         case root = "root"
       }
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/kind`.
-      package var kind: Components.Schemas.TopicRenderReference1.KindPayload
+      public var kind: Components.Schemas.TopicRenderReference1.KindPayload
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/required`.
-      package var required: Swift.Bool?
+      public var required: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/defaultImplementations`.
-      package var defaultImplementations: Swift.Double?
+      public var defaultImplementations: Swift.Double?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/fragments`.
-      package var fragments: [Components.Schemas.DeclarationToken1]?
+      public var fragments: [Components.Schemas.DeclarationToken1]?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/images`.
-      package var images: [Components.Schemas.TopicImage]?
+      public var images: [Components.Schemas.TopicImage]?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/navigatorTitle`.
-      package var navigatorTitle: [Components.Schemas.DeclarationToken1]?
+      public var navigatorTitle: [Components.Schemas.DeclarationToken1]?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/role`.
-      package var role: Components.Schemas.DocumentationRole?
+      public var role: Components.Schemas.DocumentationRole?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/conformance`.
-      package var conformance: Components.Schemas.ConformanceSection?
+      public var conformance: Components.Schemas.ConformanceSection?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/estimatedTime`.
-      package var estimatedTime: Swift.String?
+      public var estimatedTime: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/beta`.
-      package var beta: Swift.Bool?
+      public var beta: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/deprecated`.
-      package var deprecated: Swift.Bool?
+      public var deprecated: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/titleStyle`.
-      @frozen package enum TitleStylePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum TitleStylePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case title = "title"
         case symbol = "symbol"
       }
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/titleStyle`.
-      package var titleStyle: Components.Schemas.TopicRenderReference1.TitleStylePayload?
+      public var titleStyle: Components.Schemas.TopicRenderReference1.TitleStylePayload?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/name`.
-      package var name: Swift.String?
+      public var name: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/ideTitle`.
-      package var ideTitle: Swift.String?
+      public var ideTitle: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TopicRenderReference1/tags`.
-      package var tags: [Components.Schemas.SymbolTag]?
+      public var tags: [Components.Schemas.SymbolTag]?
       /// Creates a new `TopicRenderReference1`.
       ///
       /// - Parameters:
@@ -5034,7 +5033,7 @@ package enum Components {
       ///   - name:
       ///   - ideTitle:
       ///   - tags:
-      package init(
+      public init(
         title: Swift.String,
         abstract: [Components.Schemas.RenderInlineContent]? = nil,
         _type: Components.Schemas.TopicRenderReference1._TypePayload,
@@ -5077,7 +5076,7 @@ package enum Components {
         self.ideTitle = ideTitle
         self.tags = tags
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case abstract
         case _type = "type"
@@ -5101,10 +5100,10 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TopicColor`.
-    package struct TopicColor: Codable, Hashable, Sendable {
+    public struct TopicColor: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TopicColor/standardColorIdentifier`.
       @frozen
-      package enum StandardColorIdentifierPayload: String, Codable, Hashable, Sendable, CaseIterable
+      public enum StandardColorIdentifierPayload: String, Codable, Hashable, Sendable, CaseIterable
       {
         case blue = "blue"
         case gray = "gray"
@@ -5115,36 +5114,36 @@ package enum Components {
         case yellow = "yellow"
       }
       /// - Remark: Generated from `#/components/schemas/TopicColor/standardColorIdentifier`.
-      package var standardColorIdentifier:
+      public var standardColorIdentifier:
         Components.Schemas.TopicColor.StandardColorIdentifierPayload?
       /// Creates a new `TopicColor`.
       ///
       /// - Parameters:
       ///   - standardColorIdentifier:
-      package init(
+      public init(
         standardColorIdentifier: Components.Schemas.TopicColor.StandardColorIdentifierPayload? = nil
       ) {
         self.standardColorIdentifier = standardColorIdentifier
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case standardColorIdentifier
       }
     }
     /// - Remark: Generated from `#/components/schemas/DownloadRenderReference2`.
-    package struct DownloadRenderReference2: Codable, Hashable, Sendable {
+    public struct DownloadRenderReference2: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference2/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case download = "download"
         case externalLocation = "externalLocation"
       }
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference2/type`.
-      package var _type: Components.Schemas.DownloadRenderReference2._TypePayload
+      public var _type: Components.Schemas.DownloadRenderReference2._TypePayload
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference2/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference2/url`.
-      package var url: Swift.String
+      public var url: Swift.String
       /// - Remark: Generated from `#/components/schemas/DownloadRenderReference2/checksum`.
-      package var checksum: Swift.String?
+      public var checksum: Swift.String?
       /// Creates a new `DownloadRenderReference2`.
       ///
       /// - Parameters:
@@ -5152,7 +5151,7 @@ package enum Components {
       ///   - identifier:
       ///   - url:
       ///   - checksum:
-      package init(
+      public init(
         _type: Components.Schemas.DownloadRenderReference2._TypePayload,
         identifier: Swift.String,
         url: Swift.String,
@@ -5163,7 +5162,7 @@ package enum Components {
         self.url = url
         self.checksum = checksum
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case _type = "type"
         case identifier
         case url
@@ -5171,43 +5170,43 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TutorialsMetadata`.
-    package struct TutorialsMetadata: Codable, Hashable, Sendable {
+    public struct TutorialsMetadata: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TutorialsMetadata/category`.
-      package var category: Swift.String?
+      public var category: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TutorialsMetadata/categoryPathComponent`.
-      package var categoryPathComponent: Swift.String?
+      public var categoryPathComponent: Swift.String?
       /// Creates a new `TutorialsMetadata`.
       ///
       /// - Parameters:
       ///   - category:
       ///   - categoryPathComponent:
-      package init(
+      public init(
         category: Swift.String? = nil,
         categoryPathComponent: Swift.String? = nil
       ) {
         self.category = category
         self.categoryPathComponent = categoryPathComponent
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case category
         case categoryPathComponent
       }
     }
     /// - Remark: Generated from `#/components/schemas/Hierarchy`.
-    package struct Hierarchy: Codable, Hashable, Sendable {
+    public struct Hierarchy: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Hierarchy/reference`.
-      package var reference: Swift.String
+      public var reference: Swift.String
       /// - Remark: Generated from `#/components/schemas/Hierarchy/paths`.
-      package var paths: [[Swift.String]]?
+      public var paths: [[Swift.String]]?
       /// - Remark: Generated from `#/components/schemas/Hierarchy/modules`.
-      package var modules: [Components.Schemas.HierarchyModule]?
+      public var modules: [Components.Schemas.HierarchyModule]?
       /// Creates a new `Hierarchy`.
       ///
       /// - Parameters:
       ///   - reference:
       ///   - paths:
       ///   - modules:
-      package init(
+      public init(
         reference: Swift.String,
         paths: [[Swift.String]]? = nil,
         modules: [Components.Schemas.HierarchyModule]? = nil
@@ -5216,179 +5215,178 @@ package enum Components {
         self.paths = paths
         self.modules = modules
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case reference
         case paths
         case modules
       }
     }
     /// - Remark: Generated from `#/components/schemas/HierarchyModule`.
-    package struct HierarchyModule: Codable, Hashable, Sendable {
+    public struct HierarchyModule: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/HierarchyModule/reference`.
-      package var reference: Swift.String
+      public var reference: Swift.String
       /// - Remark: Generated from `#/components/schemas/HierarchyModule/projects`.
-      package var projects: [Components.Schemas.HierarchyProject]
+      public var projects: [Components.Schemas.HierarchyProject]
       /// Creates a new `HierarchyModule`.
       ///
       /// - Parameters:
       ///   - reference:
       ///   - projects:
-      package init(
+      public init(
         reference: Swift.String,
         projects: [Components.Schemas.HierarchyProject]
       ) {
         self.reference = reference
         self.projects = projects
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case reference
         case projects
       }
     }
     /// - Remark: Generated from `#/components/schemas/HierarchyProject`.
-    package struct HierarchyProject: Codable, Hashable, Sendable {
+    public struct HierarchyProject: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/HierarchyProject/reference`.
-      package var reference: Swift.String
+      public var reference: Swift.String
       /// - Remark: Generated from `#/components/schemas/HierarchyProject/sections`.
-      package var sections: [Components.Schemas.HierarchySection]
+      public var sections: [Components.Schemas.HierarchySection]
       /// Creates a new `HierarchyProject`.
       ///
       /// - Parameters:
       ///   - reference:
       ///   - sections:
-      package init(
+      public init(
         reference: Swift.String,
         sections: [Components.Schemas.HierarchySection]
       ) {
         self.reference = reference
         self.sections = sections
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case reference
         case sections
       }
     }
     /// - Remark: Generated from `#/components/schemas/HierarchySection`.
-    package struct HierarchySection: Codable, Hashable, Sendable {
+    public struct HierarchySection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/HierarchySection/reference`.
-      package var reference: Swift.String
+      public var reference: Swift.String
       /// - Remark: Generated from `#/components/schemas/HierarchySection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case task = "task"
         case assessment = "assessment"
         case heading = "heading"
       }
       /// - Remark: Generated from `#/components/schemas/HierarchySection/kind`.
-      package var kind: Components.Schemas.HierarchySection.KindPayload
+      public var kind: Components.Schemas.HierarchySection.KindPayload
       /// Creates a new `HierarchySection`.
       ///
       /// - Parameters:
       ///   - reference:
       ///   - kind:
-      package init(
+      public init(
         reference: Swift.String,
         kind: Components.Schemas.HierarchySection.KindPayload
       ) {
         self.reference = reference
         self.kind = kind
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case reference
         case kind
       }
     }
     /// - Remark: Generated from `#/components/schemas/DocumentationHierarchy`.
-    package struct DocumentationHierarchy: Codable, Hashable, Sendable {
+    public struct DocumentationHierarchy: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DocumentationHierarchy/paths`.
-      package var paths: [[Swift.String]]
+      public var paths: [[Swift.String]]
       /// Creates a new `DocumentationHierarchy`.
       ///
       /// - Parameters:
       ///   - paths:
-      package init(paths: [[Swift.String]]) {
+      public init(paths: [[Swift.String]]) {
         self.paths = paths
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case paths
       }
     }
     /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode`.
-    package struct DocumentationRenderNode: Codable, Hashable, Sendable {
+    public struct DocumentationRenderNode: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case symbol = "symbol"
         case article = "article"
       }
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/kind`.
-      package var kind: Components.Schemas.DocumentationRenderNode.KindPayload
+      public var kind: Components.Schemas.DocumentationRenderNode.KindPayload
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/identifier`.
-      package var identifier: Components.Schemas.ResolvedTopicReference
+      public var identifier: Components.Schemas.ResolvedTopicReference
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/schemaVersion`.
-      package var schemaVersion: Components.Schemas.SchemaVersion
+      public var schemaVersion: Components.Schemas.SchemaVersion
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/primaryContentSections`.
-      package var primaryContentSections: [Components.Schemas.DocumentationPrimaryRenderSection]?
+      public var primaryContentSections: [Components.Schemas.DocumentationPrimaryRenderSection]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/references`.
-      package struct ReferencesPayload: Codable, Hashable, Sendable {
+      public struct ReferencesPayload: Codable, Hashable, Sendable {
         /// A container of undocumented properties.
-        package var additionalProperties: [String: Components.Schemas.RenderReference1]
+        public var additionalProperties: [String: Components.Schemas.RenderReference1]
         /// Creates a new `ReferencesPayload`.
         ///
         /// - Parameters:
         ///   - additionalProperties: A container of undocumented properties.
-        package init(additionalProperties: [String: Components.Schemas.RenderReference1] = .init())
-        {
+        public init(additionalProperties: [String: Components.Schemas.RenderReference1] = .init()) {
           self.additionalProperties = additionalProperties
         }
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           try encoder.encodeAdditionalProperties(additionalProperties)
         }
       }
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/references`.
-      package var references: Components.Schemas.DocumentationRenderNode.ReferencesPayload?
+      public var references: Components.Schemas.DocumentationRenderNode.ReferencesPayload?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/metadata`.
-      package var metadata: Components.Schemas.DocumentationMetadata
+      public var metadata: Components.Schemas.DocumentationMetadata
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/hierarchy`.
-      package var hierarchy: Components.Schemas.DocumentationHierarchy
+      public var hierarchy: Components.Schemas.DocumentationHierarchy
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/abstract`.
-      package var abstract: [Components.Schemas.RenderInlineContent]?
+      public var abstract: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/topicSectionsStyle`.
       @frozen
-      package enum TopicSectionsStylePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      public enum TopicSectionsStylePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case list = "list"
         case compactGrid = "compactGrid"
         case detailedGrid = "detailedGrid"
         case hidden = "hidden"
       }
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/topicSectionsStyle`.
-      package var topicSectionsStyle:
+      public var topicSectionsStyle:
         Components.Schemas.DocumentationRenderNode.TopicSectionsStylePayload?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/topicSections`.
-      package var topicSections: [Components.Schemas.TasksGroupSection]?
+      public var topicSections: [Components.Schemas.TasksGroupSection]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/seeAlsoSections`.
-      package var seeAlsoSections: [Components.Schemas.TasksGroupSection]?
+      public var seeAlsoSections: [Components.Schemas.TasksGroupSection]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/defaultImplementationsSections`.
-      package var defaultImplementationsSections: [Components.Schemas.TasksGroupSection]?
+      public var defaultImplementationsSections: [Components.Schemas.TasksGroupSection]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/relationshipsSections`.
-      package var relationshipsSections: [Components.Schemas.RelationshipsGroupSection]?
+      public var relationshipsSections: [Components.Schemas.RelationshipsGroupSection]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/sampleCodeDownload`.
-      package var sampleCodeDownload: Components.Schemas.SampleDownload?
+      public var sampleCodeDownload: Components.Schemas.SampleDownload?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/downloadNotAvailableSummary`.
-      package var downloadNotAvailableSummary: [Components.Schemas.RenderBlockContent]?
+      public var downloadNotAvailableSummary: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/deprecationSummary`.
-      package var deprecationSummary: [Components.Schemas.RenderBlockContent]?
+      public var deprecationSummary: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/diffAvailability`.
-      package struct DiffAvailabilityPayload: Codable, Hashable, Sendable {
+      public struct DiffAvailabilityPayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/diffAvailability/beta`.
-        package var beta: Components.Schemas.DiffAvailabilityInfo?
+        public var beta: Components.Schemas.DiffAvailabilityInfo?
         /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/diffAvailability/minor`.
-        package var minor: Components.Schemas.DiffAvailabilityInfo?
+        public var minor: Components.Schemas.DiffAvailabilityInfo?
         /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/diffAvailability/major`.
-        package var major: Components.Schemas.DiffAvailabilityInfo?
+        public var major: Components.Schemas.DiffAvailabilityInfo?
         /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/diffAvailability/sdk`.
-        package var sdk: Components.Schemas.DiffAvailabilityInfo?
+        public var sdk: Components.Schemas.DiffAvailabilityInfo?
         /// Creates a new `DiffAvailabilityPayload`.
         ///
         /// - Parameters:
@@ -5396,7 +5394,7 @@ package enum Components {
         ///   - minor:
         ///   - major:
         ///   - sdk:
-        package init(
+        public init(
           beta: Components.Schemas.DiffAvailabilityInfo? = nil,
           minor: Components.Schemas.DiffAvailabilityInfo? = nil,
           major: Components.Schemas.DiffAvailabilityInfo? = nil,
@@ -5407,7 +5405,7 @@ package enum Components {
           self.major = major
           self.sdk = sdk
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case beta
           case minor
           case major
@@ -5415,14 +5413,14 @@ package enum Components {
         }
       }
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/diffAvailability`.
-      package var diffAvailability:
+      public var diffAvailability:
         Components.Schemas.DocumentationRenderNode.DiffAvailabilityPayload?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/sections`.
-      package var sections: [Components.Schemas.RenderSection]
+      public var sections: [Components.Schemas.RenderSection]
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/variants`.
-      package var variants: [Components.Schemas.RenderNodeVariant]?
+      public var variants: [Components.Schemas.RenderNodeVariant]?
       /// - Remark: Generated from `#/components/schemas/DocumentationRenderNode/variantOverrides`.
-      package var variantOverrides: [Components.Schemas.VariantOverride]?
+      public var variantOverrides: [Components.Schemas.VariantOverride]?
       /// Creates a new `DocumentationRenderNode`.
       ///
       /// - Parameters:
@@ -5446,7 +5444,7 @@ package enum Components {
       ///   - sections:
       ///   - variants:
       ///   - variantOverrides:
-      package init(
+      public init(
         kind: Components.Schemas.DocumentationRenderNode.KindPayload,
         identifier: Components.Schemas.ResolvedTopicReference,
         schemaVersion: Components.Schemas.SchemaVersion,
@@ -5490,7 +5488,7 @@ package enum Components {
         self.variants = variants
         self.variantOverrides = variantOverrides
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case identifier
         case schemaVersion
@@ -5514,73 +5512,73 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RenderNodeVariant`.
-    package struct RenderNodeVariant: Codable, Hashable, Sendable {
+    public struct RenderNodeVariant: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RenderNodeVariant/traits`.
-      package var traits: [Components.Schemas.RenderNodeVariantTrait]
+      public var traits: [Components.Schemas.RenderNodeVariantTrait]
       /// - Remark: Generated from `#/components/schemas/RenderNodeVariant/paths`.
-      package var paths: [Swift.String]
+      public var paths: [Swift.String]
       /// Creates a new `RenderNodeVariant`.
       ///
       /// - Parameters:
       ///   - traits:
       ///   - paths:
-      package init(
+      public init(
         traits: [Components.Schemas.RenderNodeVariantTrait],
         paths: [Swift.String]
       ) {
         self.traits = traits
         self.paths = paths
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case traits
         case paths
       }
     }
     /// - Remark: Generated from `#/components/schemas/VariantOverride`.
-    package struct VariantOverride: Codable, Hashable, Sendable {
+    public struct VariantOverride: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/VariantOverride/traits`.
-      package var traits: [Components.Schemas.RenderNodeVariantTrait]
+      public var traits: [Components.Schemas.RenderNodeVariantTrait]
       /// - Remark: Generated from `#/components/schemas/VariantOverride/patch`.
-      package var patch: Components.Schemas.JSONPatch
+      public var patch: Components.Schemas.JSONPatch
       /// Creates a new `VariantOverride`.
       ///
       /// - Parameters:
       ///   - traits:
       ///   - patch:
-      package init(
+      public init(
         traits: [Components.Schemas.RenderNodeVariantTrait],
         patch: Components.Schemas.JSONPatch
       ) {
         self.traits = traits
         self.patch = patch
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case traits
         case patch
       }
     }
     /// - Remark: Generated from `#/components/schemas/JSONPatch`.
-    @frozen package enum JSONPatchPayload: Codable, Hashable, Sendable {
+    @frozen public enum JSONPatchPayload: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/JSONPatch/case1`.
-      package struct Case1Payload: Codable, Hashable, Sendable {
+      public struct Case1Payload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case1/op`.
-        @frozen package enum OpPayload: String, Codable, Hashable, Sendable, CaseIterable {
+        @frozen public enum OpPayload: String, Codable, Hashable, Sendable, CaseIterable {
           case add = "add"
           case test = "test"
         }
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case1/op`.
-        package var op: Components.Schemas.JSONPatchPayload.Case1Payload.OpPayload
+        public var op: Components.Schemas.JSONPatchPayload.Case1Payload.OpPayload
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case1/path`.
-        package var path: Swift.String
+        public var path: Swift.String
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case1/value`.
-        package var value: OpenAPIRuntime.OpenAPIValueContainer
+        public var value: OpenAPIRuntime.OpenAPIValueContainer
         /// Creates a new `Case1Payload`.
         ///
         /// - Parameters:
         ///   - op:
         ///   - path:
         ///   - value:
-        package init(
+        public init(
           op: Components.Schemas.JSONPatchPayload.Case1Payload.OpPayload,
           path: Swift.String,
           value: OpenAPIRuntime.OpenAPIValueContainer
@@ -5589,7 +5587,7 @@ package enum Components {
           self.path = path
           self.value = value
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case op
           case path
           case value
@@ -5598,28 +5596,28 @@ package enum Components {
       /// - Remark: Generated from `#/components/schemas/JSONPatch/case1`.
       case case1(Components.Schemas.JSONPatchPayload.Case1Payload)
       /// - Remark: Generated from `#/components/schemas/JSONPatch/case2`.
-      package struct Case2Payload: Codable, Hashable, Sendable {
+      public struct Case2Payload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case2/op`.
-        @frozen package enum OpPayload: String, Codable, Hashable, Sendable, CaseIterable {
+        @frozen public enum OpPayload: String, Codable, Hashable, Sendable, CaseIterable {
           case remove = "remove"
         }
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case2/op`.
-        package var op: Components.Schemas.JSONPatchPayload.Case2Payload.OpPayload
+        public var op: Components.Schemas.JSONPatchPayload.Case2Payload.OpPayload
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case2/path`.
-        package var path: Swift.String
+        public var path: Swift.String
         /// Creates a new `Case2Payload`.
         ///
         /// - Parameters:
         ///   - op:
         ///   - path:
-        package init(
+        public init(
           op: Components.Schemas.JSONPatchPayload.Case2Payload.OpPayload,
           path: Swift.String
         ) {
           self.op = op
           self.path = path
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case op
           case path
         }
@@ -5627,25 +5625,25 @@ package enum Components {
       /// - Remark: Generated from `#/components/schemas/JSONPatch/case2`.
       case case2(Components.Schemas.JSONPatchPayload.Case2Payload)
       /// - Remark: Generated from `#/components/schemas/JSONPatch/case3`.
-      package struct Case3Payload: Codable, Hashable, Sendable {
+      public struct Case3Payload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case3/op`.
-        @frozen package enum OpPayload: String, Codable, Hashable, Sendable, CaseIterable {
+        @frozen public enum OpPayload: String, Codable, Hashable, Sendable, CaseIterable {
           case move = "move"
           case copy = "copy"
         }
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case3/op`.
-        package var op: Components.Schemas.JSONPatchPayload.Case3Payload.OpPayload
+        public var op: Components.Schemas.JSONPatchPayload.Case3Payload.OpPayload
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case3/path`.
-        package var path: Swift.String
+        public var path: Swift.String
         /// - Remark: Generated from `#/components/schemas/JSONPatch/case3/from`.
-        package var from: Swift.String
+        public var from: Swift.String
         /// Creates a new `Case3Payload`.
         ///
         /// - Parameters:
         ///   - op:
         ///   - path:
         ///   - from:
-        package init(
+        public init(
           op: Components.Schemas.JSONPatchPayload.Case3Payload.OpPayload,
           path: Swift.String,
           from: Swift.String
@@ -5654,7 +5652,7 @@ package enum Components {
           self.path = path
           self.from = from
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case op
           case path
           case from
@@ -5662,7 +5660,7 @@ package enum Components {
       }
       /// - Remark: Generated from `#/components/schemas/JSONPatch/case3`.
       case case3(Components.Schemas.JSONPatchPayload.Case3Payload)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .case1(try .init(from: decoder))
@@ -5688,7 +5686,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .case1(let value):
           try value.encode(to: encoder)
@@ -5700,38 +5698,38 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/JSONPatch`.
-    package typealias JSONPatch = [Components.Schemas.JSONPatchPayload]
+    public typealias JSONPatch = [Components.Schemas.JSONPatchPayload]
     /// - Remark: Generated from `#/components/schemas/DocumentationMetadata`.
-    package struct DocumentationMetadata: Codable, Hashable, Sendable {
+    public struct DocumentationMetadata: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/roleHeading`.
-      package var roleHeading: Swift.String?
+      public var roleHeading: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/role`.
-      package var role: Components.Schemas.DocumentationRole?
+      public var role: Components.Schemas.DocumentationRole?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/images`.
-      package var images: [Components.Schemas.TopicImage]?
+      public var images: [Components.Schemas.TopicImage]?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/color`.
-      package var color: Components.Schemas.TopicColor?
+      public var color: Components.Schemas.TopicColor?
       /// A dictionary containing arbitrary, user-provided metadata key/value pairs.
       ///
       /// These values are authored using the `@CustomMetadata(key:value:)` directive.
       ///
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/customMetadata`.
-      package struct CustomMetadataPayload: Codable, Hashable, Sendable {
+      public struct CustomMetadataPayload: Codable, Hashable, Sendable {
         /// A container of undocumented properties.
-        package var additionalProperties: [String: Swift.String]
+        public var additionalProperties: [String: Swift.String]
         /// Creates a new `CustomMetadataPayload`.
         ///
         /// - Parameters:
         ///   - additionalProperties: A container of undocumented properties.
-        package init(additionalProperties: [String: Swift.String] = .init()) {
+        public init(additionalProperties: [String: Swift.String] = .init()) {
           self.additionalProperties = additionalProperties
         }
-        package init(from decoder: any Decoder) throws {
+        public init(from decoder: any Decoder) throws {
           additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
         }
-        package func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder) throws {
           try encoder.encodeAdditionalProperties(additionalProperties)
         }
       }
@@ -5740,54 +5738,54 @@ package enum Components {
       /// These values are authored using the `@CustomMetadata(key:value:)` directive.
       ///
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/customMetadata`.
-      package var customMetadata: Components.Schemas.DocumentationMetadata.CustomMetadataPayload?
+      public var customMetadata: Components.Schemas.DocumentationMetadata.CustomMetadataPayload?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/modules`.
-      package var modules: [Components.Schemas.DocumentationMetadataModule]?
+      public var modules: [Components.Schemas.DocumentationMetadataModule]?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/extendedModule`.
-      package var extendedModule: Swift.String?
+      public var extendedModule: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/platforms`.
-      package var platforms: [Components.Schemas.PlatformAvailability]?
+      public var platforms: [Components.Schemas.PlatformAvailability]?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/required`.
-      package var required: Swift.Bool?
+      public var required: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/symbolKind`.
-      package var symbolKind: Components.Schemas.SymbolKind?
+      public var symbolKind: Components.Schemas.SymbolKind?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/externalID`.
-      package var externalID: Swift.String?
+      public var externalID: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/conformance`.
-      package var conformance: Components.Schemas.ConformanceSection?
+      public var conformance: Components.Schemas.ConformanceSection?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/fragments`.
-      package var fragments: [Components.Schemas.DeclarationToken1]?
+      public var fragments: [Components.Schemas.DeclarationToken1]?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/navigatorTitle`.
-      package var navigatorTitle: [Components.Schemas.DeclarationToken1]?
+      public var navigatorTitle: [Components.Schemas.DeclarationToken1]?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/sourceFileURI`.
-      package var sourceFileURI: Swift.String?
+      public var sourceFileURI: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/remoteSource`.
-      package struct RemoteSourcePayload: Codable, Hashable, Sendable {
+      public struct RemoteSourcePayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/remoteSource/fileName`.
-        package var fileName: Swift.String
+        public var fileName: Swift.String
         /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/remoteSource/url`.
-        package var url: Swift.String
+        public var url: Swift.String
         /// Creates a new `RemoteSourcePayload`.
         ///
         /// - Parameters:
         ///   - fileName:
         ///   - url:
-        package init(
+        public init(
           fileName: Swift.String,
           url: Swift.String
         ) {
           self.fileName = fileName
           self.url = url
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case fileName
           case url
         }
       }
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/remoteSource`.
-      package var remoteSource: Components.Schemas.DocumentationMetadata.RemoteSourcePayload?
+      public var remoteSource: Components.Schemas.DocumentationMetadata.RemoteSourcePayload?
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadata/tags`.
-      package var tags: [Components.Schemas.SymbolTag]?
+      public var tags: [Components.Schemas.SymbolTag]?
       /// Creates a new `DocumentationMetadata`.
       ///
       /// - Parameters:
@@ -5809,7 +5807,7 @@ package enum Components {
       ///   - sourceFileURI:
       ///   - remoteSource:
       ///   - tags:
-      package init(
+      public init(
         title: Swift.String,
         roleHeading: Swift.String? = nil,
         role: Components.Schemas.DocumentationRole? = nil,
@@ -5848,7 +5846,7 @@ package enum Components {
         self.remoteSource = remoteSource
         self.tags = tags
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case roleHeading
         case role
@@ -5870,32 +5868,32 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/DocumentationMetadataModule`.
-    package struct DocumentationMetadataModule: Codable, Hashable, Sendable {
+    public struct DocumentationMetadataModule: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadataModule/name`.
-      package var name: Swift.String
+      public var name: Swift.String
       /// - Remark: Generated from `#/components/schemas/DocumentationMetadataModule/relatedModules`.
-      package var relatedModules: [Swift.String]?
+      public var relatedModules: [Swift.String]?
       /// Creates a new `DocumentationMetadataModule`.
       ///
       /// - Parameters:
       ///   - name:
       ///   - relatedModules:
-      package init(
+      public init(
         name: Swift.String,
         relatedModules: [Swift.String]? = nil
       ) {
         self.name = name
         self.relatedModules = relatedModules
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case name
         case relatedModules
       }
     }
     /// - Remark: Generated from `#/components/schemas/SymbolKind`.
-    package typealias SymbolKind = Swift.String
+    public typealias SymbolKind = Swift.String
     /// - Remark: Generated from `#/components/schemas/DocumentationPrimaryRenderSection`.
-    @frozen package enum DocumentationPrimaryRenderSection: Codable, Hashable, Sendable {
+    @frozen public enum DocumentationPrimaryRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DocumentationPrimaryRenderSection/case1`.
       case MentionsRenderSection(Components.Schemas.MentionsRenderSection)
       /// - Remark: Generated from `#/components/schemas/DocumentationPrimaryRenderSection/case2`.
@@ -5920,7 +5918,7 @@ package enum Components {
       case AttributesSection(Components.Schemas.AttributesSection)
       /// - Remark: Generated from `#/components/schemas/DocumentationPrimaryRenderSection/case12`.
       case PropertiesSection(Components.Schemas.PropertiesSection)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .MentionsRenderSection(try .init(from: decoder))
@@ -6000,7 +5998,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .MentionsRenderSection(let value):
           try value.encode(to: encoder)
@@ -6030,39 +6028,39 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/MentionsRenderSection`.
-    package struct MentionsRenderSection: Codable, Hashable, Sendable {
+    public struct MentionsRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/MentionsRenderSection/mentions`.
-      package var mentions: [Swift.String]
+      public var mentions: [Swift.String]
       /// Creates a new `MentionsRenderSection`.
       ///
       /// - Parameters:
       ///   - mentions:
-      package init(mentions: [Swift.String]) {
+      public init(mentions: [Swift.String]) {
         self.mentions = mentions
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case mentions
       }
     }
     /// - Remark: Generated from `#/components/schemas/DeclarationsRenderSection`.
-    package struct DeclarationsRenderSection: Codable, Hashable, Sendable {
+    public struct DeclarationsRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DeclarationsRenderSection/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DeclarationsRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case declarations = "declarations"
       }
       /// - Remark: Generated from `#/components/schemas/DeclarationsRenderSection/kind`.
-      package var kind: Components.Schemas.DeclarationsRenderSection.KindPayload
+      public var kind: Components.Schemas.DeclarationsRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/DeclarationsRenderSection/declarations`.
-      package var declarations: [Components.Schemas.Declaration]
+      public var declarations: [Components.Schemas.Declaration]
       /// Creates a new `DeclarationsRenderSection`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - kind:
       ///   - declarations:
-      package init(
+      public init(
         title: Swift.String? = nil,
         kind: Components.Schemas.DeclarationsRenderSection.KindPayload,
         declarations: [Components.Schemas.Declaration]
@@ -6071,27 +6069,27 @@ package enum Components {
         self.kind = kind
         self.declarations = declarations
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case declarations
       }
     }
     /// - Remark: Generated from `#/components/schemas/Declaration`.
-    package struct Declaration: Codable, Hashable, Sendable {
+    public struct Declaration: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Declaration/platforms`.
-      package var platforms: [Swift.String]
+      public var platforms: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/Declaration/tokens`.
-      package var tokens: [Components.Schemas.DeclarationToken1]
+      public var tokens: [Components.Schemas.DeclarationToken1]
       /// - Remark: Generated from `#/components/schemas/Declaration/otherDeclarations`.
-      package var otherDeclarations: Components.Schemas.OtherDeclarations?
+      public var otherDeclarations: Components.Schemas.OtherDeclarations?
       /// Creates a new `Declaration`.
       ///
       /// - Parameters:
       ///   - platforms:
       ///   - tokens:
       ///   - otherDeclarations:
-      package init(
+      public init(
         platforms: [Swift.String],
         tokens: [Components.Schemas.DeclarationToken1],
         otherDeclarations: Components.Schemas.OtherDeclarations? = nil
@@ -6100,50 +6098,50 @@ package enum Components {
         self.tokens = tokens
         self.otherDeclarations = otherDeclarations
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case platforms
         case tokens
         case otherDeclarations
       }
     }
     /// - Remark: Generated from `#/components/schemas/OtherDeclarations`.
-    package struct OtherDeclarations: Codable, Hashable, Sendable {
+    public struct OtherDeclarations: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/OtherDeclarations/declarations`.
-      package var declarations: [Components.Schemas.OtherDeclaration]
+      public var declarations: [Components.Schemas.OtherDeclaration]
       /// - Remark: Generated from `#/components/schemas/OtherDeclarations/displayIndex`.
-      package var displayIndex: Swift.Int
+      public var displayIndex: Swift.Int
       /// Creates a new `OtherDeclarations`.
       ///
       /// - Parameters:
       ///   - declarations:
       ///   - displayIndex:
-      package init(
+      public init(
         declarations: [Components.Schemas.OtherDeclaration],
         displayIndex: Swift.Int
       ) {
         self.declarations = declarations
         self.displayIndex = displayIndex
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case declarations
         case displayIndex
       }
     }
     /// - Remark: Generated from `#/components/schemas/OtherDeclaration`.
-    package struct OtherDeclaration: Codable, Hashable, Sendable {
+    public struct OtherDeclaration: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/OtherDeclaration/tokens`.
-      package var tokens: [Components.Schemas.DeclarationToken1]
+      public var tokens: [Components.Schemas.DeclarationToken1]
       /// - Remark: Generated from `#/components/schemas/OtherDeclaration/identifier`.
-      package var identifier: Swift.String
+      public var identifier: Swift.String
       /// - Remark: Generated from `#/components/schemas/OtherDeclaration/conformance`.
-      package var conformance: Components.Schemas.ConformanceSection?
+      public var conformance: Components.Schemas.ConformanceSection?
       /// Creates a new `OtherDeclaration`.
       ///
       /// - Parameters:
       ///   - tokens:
       ///   - identifier:
       ///   - conformance:
-      package init(
+      public init(
         tokens: [Components.Schemas.DeclarationToken1],
         identifier: Swift.String,
         conformance: Components.Schemas.ConformanceSection? = nil
@@ -6152,18 +6150,18 @@ package enum Components {
         self.identifier = identifier
         self.conformance = conformance
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case tokens
         case identifier
         case conformance
       }
     }
     /// - Remark: Generated from `#/components/schemas/DeclarationToken1`.
-    package struct DeclarationToken1: Codable, Hashable, Sendable {
+    public struct DeclarationToken1: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DeclarationToken1/text`.
-      package var text: Swift.String
+      public var text: Swift.String
       /// - Remark: Generated from `#/components/schemas/DeclarationToken1/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case keyword = "keyword"
         case attribute = "attribute"
         case number = "number"
@@ -6177,17 +6175,17 @@ package enum Components {
         case label = "label"
       }
       /// - Remark: Generated from `#/components/schemas/DeclarationToken1/kind`.
-      package var kind: Components.Schemas.DeclarationToken1.KindPayload
+      public var kind: Components.Schemas.DeclarationToken1.KindPayload
       /// - Remark: Generated from `#/components/schemas/DeclarationToken1/identifier`.
-      package var identifier: Swift.String?
+      public var identifier: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DeclarationToken1/preciseIdentifier`.
-      package var preciseIdentifier: Swift.String?
+      public var preciseIdentifier: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DeclarationToken1/highlight`.
-      @frozen package enum HighlightPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum HighlightPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case changed = "changed"
       }
       /// - Remark: Generated from `#/components/schemas/DeclarationToken1/highlight`.
-      package var highlight: Components.Schemas.DeclarationToken1.HighlightPayload?
+      public var highlight: Components.Schemas.DeclarationToken1.HighlightPayload?
       /// Creates a new `DeclarationToken1`.
       ///
       /// - Parameters:
@@ -6196,7 +6194,7 @@ package enum Components {
       ///   - identifier:
       ///   - preciseIdentifier:
       ///   - highlight:
-      package init(
+      public init(
         text: Swift.String,
         kind: Components.Schemas.DeclarationToken1.KindPayload,
         identifier: Swift.String? = nil,
@@ -6209,7 +6207,7 @@ package enum Components {
         self.preciseIdentifier = preciseIdentifier
         self.highlight = highlight
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case text
         case kind
         case identifier
@@ -6218,24 +6216,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/ParametersRenderSection`.
-    package struct ParametersRenderSection: Codable, Hashable, Sendable {
+    public struct ParametersRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ParametersRenderSection/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/ParametersRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case parameters = "parameters"
       }
       /// - Remark: Generated from `#/components/schemas/ParametersRenderSection/kind`.
-      package var kind: Components.Schemas.ParametersRenderSection.KindPayload
+      public var kind: Components.Schemas.ParametersRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/ParametersRenderSection/parameters`.
-      package var parameters: [Components.Schemas.DocumentationParameter]
+      public var parameters: [Components.Schemas.DocumentationParameter]
       /// Creates a new `ParametersRenderSection`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - kind:
       ///   - parameters:
-      package init(
+      public init(
         title: Swift.String? = nil,
         kind: Components.Schemas.ParametersRenderSection.KindPayload,
         parameters: [Components.Schemas.DocumentationParameter]
@@ -6244,76 +6242,76 @@ package enum Components {
         self.kind = kind
         self.parameters = parameters
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case parameters
       }
     }
     /// - Remark: Generated from `#/components/schemas/DocumentationParameter`.
-    package struct DocumentationParameter: Codable, Hashable, Sendable {
+    public struct DocumentationParameter: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DocumentationParameter/name`.
-      package var name: Swift.String
+      public var name: Swift.String
       /// - Remark: Generated from `#/components/schemas/DocumentationParameter/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `DocumentationParameter`.
       ///
       /// - Parameters:
       ///   - name:
       ///   - content:
-      package init(
+      public init(
         name: Swift.String,
         content: [Components.Schemas.RenderBlockContent]
       ) {
         self.name = name
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case name
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/ContentRenderSection`.
-    package struct ContentRenderSection: Codable, Hashable, Sendable {
+    public struct ContentRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ContentRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case content = "content"
       }
       /// - Remark: Generated from `#/components/schemas/ContentRenderSection/kind`.
-      package var kind: Components.Schemas.ContentRenderSection.KindPayload
+      public var kind: Components.Schemas.ContentRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/ContentRenderSection/content`.
-      package var content: [Components.Schemas.RenderBlockContent]
+      public var content: [Components.Schemas.RenderBlockContent]
       /// Creates a new `ContentRenderSection`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - content:
-      package init(
+      public init(
         kind: Components.Schemas.ContentRenderSection.KindPayload,
         content: [Components.Schemas.RenderBlockContent]
       ) {
         self.kind = kind
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case content
       }
     }
     /// - Remark: Generated from `#/components/schemas/TasksGroupSection`.
-    package struct TasksGroupSection: Codable, Hashable, Sendable {
+    public struct TasksGroupSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TasksGroupSection/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TasksGroupSection/abstract`.
-      package var abstract: [Components.Schemas.RenderInlineContent]?
+      public var abstract: [Components.Schemas.RenderInlineContent]?
       /// - Remark: Generated from `#/components/schemas/TasksGroupSection/discussion`.
-      package var discussion: Components.Schemas.ContentRenderSection?
+      public var discussion: Components.Schemas.ContentRenderSection?
       /// - Remark: Generated from `#/components/schemas/TasksGroupSection/identifiers`.
-      package var identifiers: [Swift.String]
+      public var identifiers: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/TasksGroupSection/generated`.
-      package var generated: Swift.Bool?
+      public var generated: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TasksGroupSection/anchor`.
-      package var anchor: Swift.String?
+      public var anchor: Swift.String?
       /// Creates a new `TasksGroupSection`.
       ///
       /// - Parameters:
@@ -6323,7 +6321,7 @@ package enum Components {
       ///   - identifiers:
       ///   - generated:
       ///   - anchor:
-      package init(
+      public init(
         title: Swift.String? = nil,
         abstract: [Components.Schemas.RenderInlineContent]? = nil,
         discussion: Components.Schemas.ContentRenderSection? = nil,
@@ -6338,7 +6336,7 @@ package enum Components {
         self.generated = generated
         self.anchor = anchor
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case abstract
         case discussion
@@ -6348,26 +6346,26 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RelationshipsGroupSection`.
-    package struct RelationshipsGroupSection: Codable, Hashable, Sendable {
+    public struct RelationshipsGroupSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RelationshipsGroupSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case relationships = "relationships"
       }
       /// - Remark: Generated from `#/components/schemas/RelationshipsGroupSection/kind`.
-      package var kind: Components.Schemas.RelationshipsGroupSection.KindPayload
+      public var kind: Components.Schemas.RelationshipsGroupSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/RelationshipsGroupSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/RelationshipsGroupSection/type`.
-      @frozen package enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case conformsTo = "conformsTo"
         case conformingTypes = "conformingTypes"
         case inheritsFrom = "inheritsFrom"
         case inheritedBy = "inheritedBy"
       }
       /// - Remark: Generated from `#/components/schemas/RelationshipsGroupSection/type`.
-      package var _type: Components.Schemas.RelationshipsGroupSection._TypePayload
+      public var _type: Components.Schemas.RelationshipsGroupSection._TypePayload
       /// - Remark: Generated from `#/components/schemas/RelationshipsGroupSection/identifiers`.
-      package var identifiers: [Swift.String]
+      public var identifiers: [Swift.String]
       /// Creates a new `RelationshipsGroupSection`.
       ///
       /// - Parameters:
@@ -6375,7 +6373,7 @@ package enum Components {
       ///   - title:
       ///   - _type:
       ///   - identifiers:
-      package init(
+      public init(
         kind: Components.Schemas.RelationshipsGroupSection.KindPayload,
         title: Swift.String,
         _type: Components.Schemas.RelationshipsGroupSection._TypePayload,
@@ -6386,7 +6384,7 @@ package enum Components {
         self._type = _type
         self.identifiers = identifiers
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case title
         case _type = "type"
@@ -6394,25 +6392,25 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RESTParametersRenderSection`.
-    package struct RESTParametersRenderSection: Codable, Hashable, Sendable {
+    public struct RESTParametersRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RESTParametersRenderSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/RESTParametersRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case restParameters = "restParameters"
       }
       /// - Remark: Generated from `#/components/schemas/RESTParametersRenderSection/kind`.
-      package var kind: Components.Schemas.RESTParametersRenderSection.KindPayload
+      public var kind: Components.Schemas.RESTParametersRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/RESTParametersRenderSection/items`.
-      package var items: [Components.Schemas.TypedProperty]
+      public var items: [Components.Schemas.TypedProperty]
       /// - Remark: Generated from `#/components/schemas/RESTParametersRenderSection/source`.
-      @frozen package enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case query = "query"
         case path = "path"
         case header = "header"
       }
       /// - Remark: Generated from `#/components/schemas/RESTParametersRenderSection/source`.
-      package var source: Components.Schemas.RESTParametersRenderSection.SourcePayload
+      public var source: Components.Schemas.RESTParametersRenderSection.SourcePayload
       /// Creates a new `RESTParametersRenderSection`.
       ///
       /// - Parameters:
@@ -6420,7 +6418,7 @@ package enum Components {
       ///   - kind:
       ///   - items:
       ///   - source:
-      package init(
+      public init(
         title: Swift.String,
         kind: Components.Schemas.RESTParametersRenderSection.KindPayload,
         items: [Components.Schemas.TypedProperty],
@@ -6431,7 +6429,7 @@ package enum Components {
         self.items = items
         self.source = source
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case items
@@ -6439,24 +6437,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RESTResponsesRenderSection`.
-    package struct RESTResponsesRenderSection: Codable, Hashable, Sendable {
+    public struct RESTResponsesRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RESTResponsesRenderSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/RESTResponsesRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case restResponses = "restResponses"
       }
       /// - Remark: Generated from `#/components/schemas/RESTResponsesRenderSection/kind`.
-      package var kind: Components.Schemas.RESTResponsesRenderSection.KindPayload
+      public var kind: Components.Schemas.RESTResponsesRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/RESTResponsesRenderSection/items`.
-      package var items: [Components.Schemas.RESTResponse]
+      public var items: [Components.Schemas.RESTResponse]
       /// Creates a new `RESTResponsesRenderSection`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - kind:
       ///   - items:
-      package init(
+      public init(
         title: Swift.String,
         kind: Components.Schemas.RESTResponsesRenderSection.KindPayload,
         items: [Components.Schemas.RESTResponse]
@@ -6465,24 +6463,24 @@ package enum Components {
         self.kind = kind
         self.items = items
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case items
       }
     }
     /// - Remark: Generated from `#/components/schemas/RESTResponse`.
-    package struct RESTResponse: Codable, Hashable, Sendable {
+    public struct RESTResponse: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RESTResponse/status`.
-      package var status: Swift.Double
+      public var status: Swift.Double
       /// - Remark: Generated from `#/components/schemas/RESTResponse/reason`.
-      package var reason: Swift.String?
+      public var reason: Swift.String?
       /// - Remark: Generated from `#/components/schemas/RESTResponse/mimeType`.
-      package var mimeType: Swift.String?
+      public var mimeType: Swift.String?
       /// - Remark: Generated from `#/components/schemas/RESTResponse/type`.
-      package var _type: [Components.Schemas.DeclarationToken1]
+      public var _type: [Components.Schemas.DeclarationToken1]
       /// - Remark: Generated from `#/components/schemas/RESTResponse/content`.
-      package var content: [Components.Schemas.RenderBlockContent]?
+      public var content: [Components.Schemas.RenderBlockContent]?
       /// Creates a new `RESTResponse`.
       ///
       /// - Parameters:
@@ -6491,7 +6489,7 @@ package enum Components {
       ///   - mimeType:
       ///   - _type:
       ///   - content:
-      package init(
+      public init(
         status: Swift.Double,
         reason: Swift.String? = nil,
         mimeType: Swift.String? = nil,
@@ -6504,7 +6502,7 @@ package enum Components {
         self._type = _type
         self.content = content
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case status
         case reason
         case mimeType
@@ -6513,24 +6511,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/RESTEndpointRenderSection`.
-    package struct RESTEndpointRenderSection: Codable, Hashable, Sendable {
+    public struct RESTEndpointRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RESTEndpointRenderSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/RESTEndpointRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case restEndpoint = "restEndpoint"
       }
       /// - Remark: Generated from `#/components/schemas/RESTEndpointRenderSection/kind`.
-      package var kind: Components.Schemas.RESTEndpointRenderSection.KindPayload
+      public var kind: Components.Schemas.RESTEndpointRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/RESTEndpointRenderSection/tokens`.
-      package var tokens: [Components.Schemas.EndpointToken]
+      public var tokens: [Components.Schemas.EndpointToken]
       /// Creates a new `RESTEndpointRenderSection`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - kind:
       ///   - tokens:
-      package init(
+      public init(
         title: Swift.String,
         kind: Components.Schemas.RESTEndpointRenderSection.KindPayload,
         tokens: [Components.Schemas.EndpointToken]
@@ -6539,16 +6537,16 @@ package enum Components {
         self.kind = kind
         self.tokens = tokens
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case tokens
       }
     }
     /// - Remark: Generated from `#/components/schemas/EndpointToken`.
-    package struct EndpointToken: Codable, Hashable, Sendable {
+    public struct EndpointToken: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/EndpointToken/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case method = "method"
         case baseURL = "baseURL"
         case path = "path"
@@ -6556,44 +6554,44 @@ package enum Components {
         case text = "text"
       }
       /// - Remark: Generated from `#/components/schemas/EndpointToken/kind`.
-      package var kind: Components.Schemas.EndpointToken.KindPayload
+      public var kind: Components.Schemas.EndpointToken.KindPayload
       /// - Remark: Generated from `#/components/schemas/EndpointToken/text`.
-      package var text: Swift.String
+      public var text: Swift.String
       /// Creates a new `EndpointToken`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - text:
-      package init(
+      public init(
         kind: Components.Schemas.EndpointToken.KindPayload,
         text: Swift.String
       ) {
         self.kind = kind
         self.text = text
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case text
       }
     }
     /// - Remark: Generated from `#/components/schemas/RESTBodyRenderSection`.
-    package struct RESTBodyRenderSection: Codable, Hashable, Sendable {
+    public struct RESTBodyRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/RESTBodyRenderSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/RESTBodyRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case restBody = "restBody"
       }
       /// - Remark: Generated from `#/components/schemas/RESTBodyRenderSection/kind`.
-      package var kind: Components.Schemas.RESTBodyRenderSection.KindPayload
+      public var kind: Components.Schemas.RESTBodyRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/RESTBodyRenderSection/mimeType`.
-      package var mimeType: Swift.String
+      public var mimeType: Swift.String
       /// - Remark: Generated from `#/components/schemas/RESTBodyRenderSection/bodyContentType`.
-      package var bodyContentType: [Components.Schemas.DeclarationToken1]
+      public var bodyContentType: [Components.Schemas.DeclarationToken1]
       /// - Remark: Generated from `#/components/schemas/RESTBodyRenderSection/content`.
-      package var content: [Components.Schemas.RenderBlockContent]?
+      public var content: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/RESTBodyRenderSection/parameters`.
-      package var parameters: [Components.Schemas.TypedProperty]?
+      public var parameters: [Components.Schemas.TypedProperty]?
       /// Creates a new `RESTBodyRenderSection`.
       ///
       /// - Parameters:
@@ -6603,7 +6601,7 @@ package enum Components {
       ///   - bodyContentType:
       ///   - content:
       ///   - parameters:
-      package init(
+      public init(
         title: Swift.String,
         kind: Components.Schemas.RESTBodyRenderSection.KindPayload,
         mimeType: Swift.String,
@@ -6618,7 +6616,7 @@ package enum Components {
         self.content = content
         self.parameters = parameters
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case mimeType
@@ -6628,24 +6626,24 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/DetailsRenderSection`.
-    package struct DetailsRenderSection: Codable, Hashable, Sendable {
+    public struct DetailsRenderSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DetailsRenderSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case details = "details"
       }
       /// - Remark: Generated from `#/components/schemas/DetailsRenderSection/kind`.
-      package var kind: Components.Schemas.DetailsRenderSection.KindPayload
+      public var kind: Components.Schemas.DetailsRenderSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/DetailsRenderSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/DetailsRenderSection/details`.
-      package var details: Components.Schemas.DetailsSection
+      public var details: Components.Schemas.DetailsSection
       /// Creates a new `DetailsRenderSection`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - title:
       ///   - details:
-      package init(
+      public init(
         kind: Components.Schemas.DetailsRenderSection.KindPayload,
         title: Swift.String,
         details: Components.Schemas.DetailsSection
@@ -6654,31 +6652,31 @@ package enum Components {
         self.title = title
         self.details = details
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case title
         case details
       }
     }
     /// - Remark: Generated from `#/components/schemas/DetailsSection`.
-    package struct DetailsSection: Codable, Hashable, Sendable {
+    public struct DetailsSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DetailsSection/name`.
-      package var name: Swift.String
+      public var name: Swift.String
       /// - Remark: Generated from `#/components/schemas/DetailsSection/value`.
-      package var value: [Components.Schemas.TypeDetails]
+      public var value: [Components.Schemas.TypeDetails]
       /// - Remark: Generated from `#/components/schemas/DetailsSection/platforms`.
-      package var platforms: [Swift.String]
+      public var platforms: [Swift.String]
       /// - Remark: Generated from `#/components/schemas/DetailsSection/ideTitle`.
-      package var ideTitle: Swift.String?
+      public var ideTitle: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DetailsSection/rawName`.
-      package var rawName: Swift.String?
+      public var rawName: Swift.String?
       /// - Remark: Generated from `#/components/schemas/DetailsSection/titleStyle`.
-      @frozen package enum TitleStylePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum TitleStylePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case title = "title"
         case symbol = "symbol"
       }
       /// - Remark: Generated from `#/components/schemas/DetailsSection/titleStyle`.
-      package var titleStyle: Components.Schemas.DetailsSection.TitleStylePayload
+      public var titleStyle: Components.Schemas.DetailsSection.TitleStylePayload
       /// Creates a new `DetailsSection`.
       ///
       /// - Parameters:
@@ -6688,7 +6686,7 @@ package enum Components {
       ///   - ideTitle:
       ///   - rawName:
       ///   - titleStyle:
-      package init(
+      public init(
         name: Swift.String,
         value: [Components.Schemas.TypeDetails],
         platforms: [Swift.String],
@@ -6703,7 +6701,7 @@ package enum Components {
         self.rawName = rawName
         self.titleStyle = titleStyle
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case name
         case value
         case platforms
@@ -6713,50 +6711,50 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/PossibleValuesSection`.
-    package struct PossibleValuesSection: Codable, Hashable, Sendable {
+    public struct PossibleValuesSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/PossibleValuesSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case possibleValues = "possibleValues"
       }
       /// - Remark: Generated from `#/components/schemas/PossibleValuesSection/kind`.
-      package var kind: Components.Schemas.PossibleValuesSection.KindPayload
+      public var kind: Components.Schemas.PossibleValuesSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/PossibleValuesSection/title`.
-      package var title: Swift.String?
+      public var title: Swift.String?
       /// - Remark: Generated from `#/components/schemas/PossibleValuesSection/ValuesPayload`.
-      package struct ValuesPayloadPayload: Codable, Hashable, Sendable {
+      public struct ValuesPayloadPayload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/PossibleValuesSection/ValuesPayload/name`.
-        package var name: Swift.String
+        public var name: Swift.String
         /// - Remark: Generated from `#/components/schemas/PossibleValuesSection/ValuesPayload/content`.
-        package var content: [Components.Schemas.RenderBlockContent]?
+        public var content: [Components.Schemas.RenderBlockContent]?
         /// Creates a new `ValuesPayloadPayload`.
         ///
         /// - Parameters:
         ///   - name:
         ///   - content:
-        package init(
+        public init(
           name: Swift.String,
           content: [Components.Schemas.RenderBlockContent]? = nil
         ) {
           self.name = name
           self.content = content
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case name
           case content
         }
       }
       /// - Remark: Generated from `#/components/schemas/PossibleValuesSection/values`.
-      package typealias ValuesPayload = [Components.Schemas.PossibleValuesSection
+      public typealias ValuesPayload = [Components.Schemas.PossibleValuesSection
         .ValuesPayloadPayload]
       /// - Remark: Generated from `#/components/schemas/PossibleValuesSection/values`.
-      package var values: Components.Schemas.PossibleValuesSection.ValuesPayload
+      public var values: Components.Schemas.PossibleValuesSection.ValuesPayload
       /// Creates a new `PossibleValuesSection`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - title:
       ///   - values:
-      package init(
+      public init(
         kind: Components.Schemas.PossibleValuesSection.KindPayload,
         title: Swift.String? = nil,
         values: Components.Schemas.PossibleValuesSection.ValuesPayload
@@ -6765,31 +6763,31 @@ package enum Components {
         self.title = title
         self.values = values
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case title
         case values
       }
     }
     /// - Remark: Generated from `#/components/schemas/AttributesSection`.
-    package struct AttributesSection: Codable, Hashable, Sendable {
+    public struct AttributesSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/AttributesSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/AttributesSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case attributes = "attributes"
       }
       /// - Remark: Generated from `#/components/schemas/AttributesSection/kind`.
-      package var kind: Components.Schemas.AttributesSection.KindPayload
+      public var kind: Components.Schemas.AttributesSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/AttributesSection/attributes`.
-      package var attributes: [Components.Schemas.Attribute]?
+      public var attributes: [Components.Schemas.Attribute]?
       /// Creates a new `AttributesSection`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - kind:
       ///   - attributes:
-      package init(
+      public init(
         title: Swift.String,
         kind: Components.Schemas.AttributesSection.KindPayload,
         attributes: [Components.Schemas.Attribute]? = nil
@@ -6798,21 +6796,21 @@ package enum Components {
         self.kind = kind
         self.attributes = attributes
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case attributes
       }
     }
     /// - Remark: Generated from `#/components/schemas/Attribute`.
-    @frozen package enum Attribute: Codable, Hashable, Sendable {
+    @frozen public enum Attribute: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/Attribute/case1`.
       case StringAttribute(Components.Schemas.StringAttribute)
       /// - Remark: Generated from `#/components/schemas/Attribute/case2`.
       case ArrayAttribute(Components.Schemas.ArrayAttribute)
       /// - Remark: Generated from `#/components/schemas/Attribute/case3`.
       case TypesAttribute(Components.Schemas.TypesAttribute)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .StringAttribute(try .init(from: decoder))
@@ -6838,7 +6836,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .StringAttribute(let value):
           try value.encode(to: encoder)
@@ -6850,9 +6848,9 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/StringAttribute`.
-    package struct StringAttribute: Codable, Hashable, Sendable {
+    public struct StringAttribute: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/StringAttribute/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case _default = "default"
         case minimum = "minimum"
         case minimumExclusive = "minimumExclusive"
@@ -6860,18 +6858,18 @@ package enum Components {
         case maximumExclusive = "maximumExclusive"
       }
       /// - Remark: Generated from `#/components/schemas/StringAttribute/kind`.
-      package var kind: Components.Schemas.StringAttribute.KindPayload
+      public var kind: Components.Schemas.StringAttribute.KindPayload
       /// - Remark: Generated from `#/components/schemas/StringAttribute/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/StringAttribute/value`.
-      package var value: Swift.String
+      public var value: Swift.String
       /// Creates a new `StringAttribute`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - title:
       ///   - value:
-      package init(
+      public init(
         kind: Components.Schemas.StringAttribute.KindPayload,
         title: Swift.String,
         value: Swift.String
@@ -6880,31 +6878,31 @@ package enum Components {
         self.title = title
         self.value = value
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case title
         case value
       }
     }
     /// - Remark: Generated from `#/components/schemas/ArrayAttribute`.
-    package struct ArrayAttribute: Codable, Hashable, Sendable {
+    public struct ArrayAttribute: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/ArrayAttribute/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case allowedValues = "allowedValues"
       }
       /// - Remark: Generated from `#/components/schemas/ArrayAttribute/kind`.
-      package var kind: Components.Schemas.ArrayAttribute.KindPayload
+      public var kind: Components.Schemas.ArrayAttribute.KindPayload
       /// - Remark: Generated from `#/components/schemas/ArrayAttribute/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/ArrayAttribute/values`.
-      package var values: [Swift.String]
+      public var values: [Swift.String]
       /// Creates a new `ArrayAttribute`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - title:
       ///   - values:
-      package init(
+      public init(
         kind: Components.Schemas.ArrayAttribute.KindPayload,
         title: Swift.String,
         values: [Swift.String]
@@ -6913,31 +6911,31 @@ package enum Components {
         self.title = title
         self.values = values
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case title
         case values
       }
     }
     /// - Remark: Generated from `#/components/schemas/TypesAttribute`.
-    package struct TypesAttribute: Codable, Hashable, Sendable {
+    public struct TypesAttribute: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TypesAttribute/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case allowedTypes = "allowedTypes"
       }
       /// - Remark: Generated from `#/components/schemas/TypesAttribute/kind`.
-      package var kind: Components.Schemas.TypesAttribute.KindPayload
+      public var kind: Components.Schemas.TypesAttribute.KindPayload
       /// - Remark: Generated from `#/components/schemas/TypesAttribute/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/TypesAttribute/values`.
-      package var values: [[Components.Schemas.DeclarationToken1]]
+      public var values: [[Components.Schemas.DeclarationToken1]]
       /// Creates a new `TypesAttribute`.
       ///
       /// - Parameters:
       ///   - kind:
       ///   - title:
       ///   - values:
-      package init(
+      public init(
         kind: Components.Schemas.TypesAttribute.KindPayload,
         title: Swift.String,
         values: [[Components.Schemas.DeclarationToken1]]
@@ -6946,31 +6944,31 @@ package enum Components {
         self.title = title
         self.values = values
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case kind
         case title
         case values
       }
     }
     /// - Remark: Generated from `#/components/schemas/PropertiesSection`.
-    package struct PropertiesSection: Codable, Hashable, Sendable {
+    public struct PropertiesSection: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/PropertiesSection/title`.
-      package var title: Swift.String
+      public var title: Swift.String
       /// - Remark: Generated from `#/components/schemas/PropertiesSection/kind`.
-      @frozen package enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
         case properties = "properties"
       }
       /// - Remark: Generated from `#/components/schemas/PropertiesSection/kind`.
-      package var kind: Components.Schemas.PropertiesSection.KindPayload
+      public var kind: Components.Schemas.PropertiesSection.KindPayload
       /// - Remark: Generated from `#/components/schemas/PropertiesSection/items`.
-      package var items: [Components.Schemas.TypedProperty]?
+      public var items: [Components.Schemas.TypedProperty]?
       /// Creates a new `PropertiesSection`.
       ///
       /// - Parameters:
       ///   - title:
       ///   - kind:
       ///   - items:
-      package init(
+      public init(
         title: Swift.String,
         kind: Components.Schemas.PropertiesSection.KindPayload,
         items: [Components.Schemas.TypedProperty]? = nil
@@ -6979,34 +6977,34 @@ package enum Components {
         self.kind = kind
         self.items = items
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case title
         case kind
         case items
       }
     }
     /// - Remark: Generated from `#/components/schemas/TypedProperty`.
-    package struct TypedProperty: Codable, Hashable, Sendable {
+    public struct TypedProperty: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TypedProperty/name`.
-      package var name: Swift.String
+      public var name: Swift.String
       /// - Remark: Generated from `#/components/schemas/TypedProperty/type`.
-      package var _type: [Components.Schemas.DeclarationToken1]
+      public var _type: [Components.Schemas.DeclarationToken1]
       /// - Remark: Generated from `#/components/schemas/TypedProperty/typeDetails`.
-      package var typeDetails: [Components.Schemas.TypeDetails]?
+      public var typeDetails: [Components.Schemas.TypeDetails]?
       /// - Remark: Generated from `#/components/schemas/TypedProperty/content`.
-      package var content: [Components.Schemas.RenderBlockContent]?
+      public var content: [Components.Schemas.RenderBlockContent]?
       /// - Remark: Generated from `#/components/schemas/TypedProperty/attributes`.
-      package var attributes: [Components.Schemas.Attribute]?
+      public var attributes: [Components.Schemas.Attribute]?
       /// - Remark: Generated from `#/components/schemas/TypedProperty/mimeType`.
-      package var mimeType: Swift.String?
+      public var mimeType: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TypedProperty/readOnly`.
-      package var readOnly: Swift.Bool?
+      public var readOnly: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TypedProperty/required`.
-      package var required: Swift.Bool?
+      public var required: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TypedProperty/deprecated`.
-      package var deprecated: Swift.Bool?
+      public var deprecated: Swift.Bool?
       /// - Remark: Generated from `#/components/schemas/TypedProperty/introducedVersion`.
-      package var introducedVersion: Swift.String?
+      public var introducedVersion: Swift.String?
       /// Creates a new `TypedProperty`.
       ///
       /// - Parameters:
@@ -7020,7 +7018,7 @@ package enum Components {
       ///   - required:
       ///   - deprecated:
       ///   - introducedVersion:
-      package init(
+      public init(
         name: Swift.String,
         _type: [Components.Schemas.DeclarationToken1],
         typeDetails: [Components.Schemas.TypeDetails]? = nil,
@@ -7043,7 +7041,7 @@ package enum Components {
         self.deprecated = deprecated
         self.introducedVersion = introducedVersion
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case name
         case _type = "type"
         case typeDetails
@@ -7057,64 +7055,64 @@ package enum Components {
       }
     }
     /// - Remark: Generated from `#/components/schemas/TypeDetails`.
-    package struct TypeDetails: Codable, Hashable, Sendable {
+    public struct TypeDetails: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/TypeDetails/baseType`.
-      package var baseType: Swift.String?
+      public var baseType: Swift.String?
       /// - Remark: Generated from `#/components/schemas/TypeDetails/arrayMode`.
-      package var arrayMode: Swift.Bool?
+      public var arrayMode: Swift.Bool?
       /// Creates a new `TypeDetails`.
       ///
       /// - Parameters:
       ///   - baseType:
       ///   - arrayMode:
-      package init(
+      public init(
         baseType: Swift.String? = nil,
         arrayMode: Swift.Bool? = nil
       ) {
         self.baseType = baseType
         self.arrayMode = arrayMode
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case baseType
         case arrayMode
       }
     }
     /// - Remark: Generated from `#/components/schemas/SampleDownload`.
-    package struct SampleDownload: Codable, Hashable, Sendable {
+    public struct SampleDownload: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/SampleDownload/action`.
-      package var action: Components.Schemas.Reference
+      public var action: Components.Schemas.Reference
       /// Creates a new `SampleDownload`.
       ///
       /// - Parameters:
       ///   - action:
-      package init(action: Components.Schemas.Reference) {
+      public init(action: Components.Schemas.Reference) {
         self.action = action
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case action
       }
     }
     /// - Remark: Generated from `#/components/schemas/DiffAvailabilityInfo`.
-    package struct DiffAvailabilityInfo: Codable, Hashable, Sendable {
+    public struct DiffAvailabilityInfo: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DiffAvailabilityInfo/change`.
-      @frozen package enum ChangePayload: String, Codable, Hashable, Sendable, CaseIterable {
+      @frozen public enum ChangePayload: String, Codable, Hashable, Sendable, CaseIterable {
         case added = "added"
         case modified = "modified"
         case deprecated = "deprecated"
       }
       /// - Remark: Generated from `#/components/schemas/DiffAvailabilityInfo/change`.
-      package var change: Components.Schemas.DiffAvailabilityInfo.ChangePayload
+      public var change: Components.Schemas.DiffAvailabilityInfo.ChangePayload
       /// - Remark: Generated from `#/components/schemas/DiffAvailabilityInfo/platform`.
-      package var platform: Swift.String
+      public var platform: Swift.String
       /// - Remark: Generated from `#/components/schemas/DiffAvailabilityInfo/versions`.
-      package var versions: [Swift.String]
+      public var versions: [Swift.String]
       /// Creates a new `DiffAvailabilityInfo`.
       ///
       /// - Parameters:
       ///   - change:
       ///   - platform:
       ///   - versions:
-      package init(
+      public init(
         change: Components.Schemas.DiffAvailabilityInfo.ChangePayload,
         platform: Swift.String,
         versions: [Swift.String]
@@ -7123,7 +7121,7 @@ package enum Components {
         self.platform = platform
         self.versions = versions
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case change
         case platform
         case versions
@@ -7132,534 +7130,534 @@ package enum Components {
     /// Settings for customizing the look and feel of the website.
     ///
     /// - Remark: Generated from `#/components/schemas/ThemeSettings`.
-    package struct ThemeSettings: Codable, Hashable, Sendable {
+    public struct ThemeSettings: Codable, Hashable, Sendable {
       /// Metadata concerning the website as a whole, like the website title.
       ///
       /// - Remark: Generated from `#/components/schemas/ThemeSettings/meta`.
-      package struct MetaPayload: Codable, Hashable, Sendable {
+      public struct MetaPayload: Codable, Hashable, Sendable {
         /// A title for the website, which will be appended to the title of the page in the HTML `<title>` tag with the `"|"` character separating the two.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/meta/title`.
-        package var title: Swift.String?
+        public var title: Swift.String?
         /// Creates a new `MetaPayload`.
         ///
         /// - Parameters:
         ///   - title: A title for the website, which will be appended to the title of the page in the HTML `<title>` tag with the `"|"` character separating the two.
-        package init(title: Swift.String? = nil) {
+        public init(title: Swift.String? = nil) {
           self.title = title
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case title
         }
       }
       /// Metadata concerning the website as a whole, like the website title.
       ///
       /// - Remark: Generated from `#/components/schemas/ThemeSettings/meta`.
-      package var meta: Components.Schemas.ThemeSettings.MetaPayload?
+      public var meta: Components.Schemas.ThemeSettings.MetaPayload?
       /// Settings concerning the visual appearance of the website and the styling of its components.
       ///
       /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme`.
-      package struct ThemePayload: Codable, Hashable, Sendable {
+      public struct ThemePayload: Codable, Hashable, Sendable {
         /// Settings concerning "aside" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/aside`.
-        package struct AsidePayload: Codable, Hashable, Sendable {
+        public struct AsidePayload: Codable, Hashable, Sendable {
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/aside/value1`.
-          package var value1: Components.Schemas.BorderAttributes
+          public var value1: Components.Schemas.BorderAttributes
           /// Creates a new `AsidePayload`.
           ///
           /// - Parameters:
           ///   - value1:
-          package init(value1: Components.Schemas.BorderAttributes) {
+          public init(value1: Components.Schemas.BorderAttributes) {
             self.value1 = value1
           }
-          package init(from decoder: any Decoder) throws {
+          public init(from decoder: any Decoder) throws {
             self.value1 = try .init(from: decoder)
           }
-          package func encode(to encoder: any Encoder) throws {
+          public func encode(to encoder: any Encoder) throws {
             try self.value1.encode(to: encoder)
           }
         }
         /// Settings concerning "aside" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/aside`.
-        package var aside: Components.Schemas.ThemeSettings.ThemePayload.AsidePayload?
+        public var aside: Components.Schemas.ThemeSettings.ThemePayload.AsidePayload?
         /// Settings concerning "badge" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/badge`.
-        package struct BadgePayload: Codable, Hashable, Sendable {
+        public struct BadgePayload: Codable, Hashable, Sendable {
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/badge/value1`.
-          package var value1: Components.Schemas.BorderAttributes
+          public var value1: Components.Schemas.BorderAttributes
           /// Creates a new `BadgePayload`.
           ///
           /// - Parameters:
           ///   - value1:
-          package init(value1: Components.Schemas.BorderAttributes) {
+          public init(value1: Components.Schemas.BorderAttributes) {
             self.value1 = value1
           }
-          package init(from decoder: any Decoder) throws {
+          public init(from decoder: any Decoder) throws {
             self.value1 = try .init(from: decoder)
           }
-          package func encode(to encoder: any Encoder) throws {
+          public func encode(to encoder: any Encoder) throws {
             try self.value1.encode(to: encoder)
           }
         }
         /// Settings concerning "badge" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/badge`.
-        package var badge: Components.Schemas.ThemeSettings.ThemePayload.BadgePayload?
+        public var badge: Components.Schemas.ThemeSettings.ThemePayload.BadgePayload?
         /// The CSS border-radius value used globally for elements like code listings and asides.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/border-radius`.
-        package var borderRadius: Swift.String?
+        public var borderRadius: Swift.String?
         /// Settings concerning "button" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/button`.
-        package struct ButtonPayload: Codable, Hashable, Sendable {
+        public struct ButtonPayload: Codable, Hashable, Sendable {
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/button/value1`.
-          package var value1: Components.Schemas.BorderAttributes
+          public var value1: Components.Schemas.BorderAttributes
           /// Creates a new `ButtonPayload`.
           ///
           /// - Parameters:
           ///   - value1:
-          package init(value1: Components.Schemas.BorderAttributes) {
+          public init(value1: Components.Schemas.BorderAttributes) {
             self.value1 = value1
           }
-          package init(from decoder: any Decoder) throws {
+          public init(from decoder: any Decoder) throws {
             self.value1 = try .init(from: decoder)
           }
-          package func encode(to encoder: any Encoder) throws {
+          public func encode(to encoder: any Encoder) throws {
             try self.value1.encode(to: encoder)
           }
         }
         /// Settings concerning "button" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/button`.
-        package var button: Components.Schemas.ThemeSettings.ThemePayload.ButtonPayload?
+        public var button: Components.Schemas.ThemeSettings.ThemePayload.ButtonPayload?
         /// Settings concerning "code listing" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/code`.
-        package struct CodePayload: Codable, Hashable, Sendable {
+        public struct CodePayload: Codable, Hashable, Sendable {
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/code/value1`.
-          package var value1: Components.Schemas.BorderAttributes
+          public var value1: Components.Schemas.BorderAttributes
           /// Creates a new `CodePayload`.
           ///
           /// - Parameters:
           ///   - value1:
-          package init(value1: Components.Schemas.BorderAttributes) {
+          public init(value1: Components.Schemas.BorderAttributes) {
             self.value1 = value1
           }
-          package init(from decoder: any Decoder) throws {
+          public init(from decoder: any Decoder) throws {
             self.value1 = try .init(from: decoder)
           }
-          package func encode(to encoder: any Encoder) throws {
+          public func encode(to encoder: any Encoder) throws {
             try self.value1.encode(to: encoder)
           }
         }
         /// Settings concerning "code listing" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/code`.
-        package var code: Components.Schemas.ThemeSettings.ThemePayload.CodePayload?
+        public var code: Components.Schemas.ThemeSettings.ThemePayload.CodePayload?
         /// An object where each key represents the name of a color variable referenced in the renderer. A CSS property in the form `--color-[key]` will either be created or overwritten with the value associated with it.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color`.
-        package struct ColorPayload: Codable, Hashable, Sendable {
+        public struct ColorPayload: Codable, Hashable, Sendable {
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/article-background`.
-          package var articleBackground: Components.Schemas.Color?
+          public var articleBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/article-body-background`.
-          package var articleBodyBackground: Components.Schemas.Color?
+          public var articleBodyBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-deprecated`.
-          package var asideDeprecated: Components.Schemas.Color?
+          public var asideDeprecated: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-deprecated-background`.
-          package var asideDeprecatedBackground: Components.Schemas.Color?
+          public var asideDeprecatedBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-deprecated-border`.
-          package var asideDeprecatedBorder: Components.Schemas.Color?
+          public var asideDeprecatedBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-experiment`.
-          package var asideExperiment: Components.Schemas.Color?
+          public var asideExperiment: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-experiment-background`.
-          package var asideExperimentBackground: Components.Schemas.Color?
+          public var asideExperimentBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-experiment-border`.
-          package var asideExperimentBorder: Components.Schemas.Color?
+          public var asideExperimentBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-important`.
-          package var asideImportant: Components.Schemas.Color?
+          public var asideImportant: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-important-background`.
-          package var asideImportantBackground: Components.Schemas.Color?
+          public var asideImportantBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-important-border`.
-          package var asideImportantBorder: Components.Schemas.Color?
+          public var asideImportantBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-note`.
-          package var asideNote: Components.Schemas.Color?
+          public var asideNote: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-note-background`.
-          package var asideNoteBackground: Components.Schemas.Color?
+          public var asideNoteBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-note-border`.
-          package var asideNoteBorder: Components.Schemas.Color?
+          public var asideNoteBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-tip`.
-          package var asideTip: Components.Schemas.Color?
+          public var asideTip: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-tip-background`.
-          package var asideTipBackground: Components.Schemas.Color?
+          public var asideTipBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-tip-border`.
-          package var asideTipBorder: Components.Schemas.Color?
+          public var asideTipBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-warning`.
-          package var asideWarning: Components.Schemas.Color?
+          public var asideWarning: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-warning-background`.
-          package var asideWarningBackground: Components.Schemas.Color?
+          public var asideWarningBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/aside-warning-border`.
-          package var asideWarningBorder: Components.Schemas.Color?
+          public var asideWarningBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/badge-beta`.
-          package var badgeBeta: Components.Schemas.Color?
+          public var badgeBeta: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/badge-dark-beta`.
-          package var badgeDarkBeta: Components.Schemas.Color?
+          public var badgeDarkBeta: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/badge-dark-default`.
-          package var badgeDarkDefault: Components.Schemas.Color?
+          public var badgeDarkDefault: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/badge-dark-deprecated`.
-          package var badgeDarkDeprecated: Components.Schemas.Color?
+          public var badgeDarkDeprecated: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/badge-default`.
-          package var badgeDefault: Components.Schemas.Color?
+          public var badgeDefault: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/badge-deprecated`.
-          package var badgeDeprecated: Components.Schemas.Color?
+          public var badgeDeprecated: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/button-background`.
-          package var buttonBackground: Components.Schemas.Color?
+          public var buttonBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/button-background-active`.
-          package var buttonBackgroundActive: Components.Schemas.Color?
+          public var buttonBackgroundActive: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/button-background-hover`.
-          package var buttonBackgroundHover: Components.Schemas.Color?
+          public var buttonBackgroundHover: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/button-border`.
-          package var buttonBorder: Components.Schemas.Color?
+          public var buttonBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/button-text`.
-          package var buttonText: Components.Schemas.Color?
+          public var buttonText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/call-to-action-background`.
-          package var callToActionBackground: Components.Schemas.Color?
+          public var callToActionBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/changes-added`.
-          package var changesAdded: Components.Schemas.Color?
+          public var changesAdded: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/changes-added-hover`.
-          package var changesAddedHover: Components.Schemas.Color?
+          public var changesAddedHover: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/changes-deprecated`.
-          package var changesDeprecated: Components.Schemas.Color?
+          public var changesDeprecated: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/changes-deprecated-hover`.
-          package var changesDeprecatedHover: Components.Schemas.Color?
+          public var changesDeprecatedHover: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/changes-modified`.
-          package var changesModified: Components.Schemas.Color?
+          public var changesModified: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/changes-modified-hover`.
-          package var changesModifiedHover: Components.Schemas.Color?
+          public var changesModifiedHover: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/changes-modified-previous-background`.
-          package var changesModifiedPreviousBackground: Components.Schemas.Color?
+          public var changesModifiedPreviousBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/code-background`.
-          package var codeBackground: Components.Schemas.Color?
+          public var codeBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/code-collapsible-background`.
-          package var codeCollapsibleBackground: Components.Schemas.Color?
+          public var codeCollapsibleBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/code-collapsible-text`.
-          package var codeCollapsibleText: Components.Schemas.Color?
+          public var codeCollapsibleText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/code-line-highlight`.
-          package var codeLineHighlight: Components.Schemas.Color?
+          public var codeLineHighlight: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/code-line-highlight-border`.
-          package var codeLineHighlightBorder: Components.Schemas.Color?
+          public var codeLineHighlightBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/code-plain`.
-          package var codePlain: Components.Schemas.Color?
+          public var codePlain: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/documentation-intro-accent`.
-          package var documentationIntroAccent: Components.Schemas.Color?
+          public var documentationIntroAccent: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/documentation-intro-eyebrow`.
-          package var documentationIntroEyebrow: Components.Schemas.Color?
+          public var documentationIntroEyebrow: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/documentation-intro-figure`.
-          package var documentationIntroFigure: Components.Schemas.Color?
+          public var documentationIntroFigure: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/documentation-intro-fill`.
-          package var documentationIntroFill: Components.Schemas.Color?
+          public var documentationIntroFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/documentation-intro-title`.
-          package var documentationIntroTitle: Components.Schemas.Color?
+          public var documentationIntroTitle: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/dropdown-background`.
-          package var dropdownBackground: Components.Schemas.Color?
+          public var dropdownBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/dropdown-border`.
-          package var dropdownBorder: Components.Schemas.Color?
+          public var dropdownBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/dropdown-dark-background`.
-          package var dropdownDarkBackground: Components.Schemas.Color?
+          public var dropdownDarkBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/dropdown-dark-border`.
-          package var dropdownDarkBorder: Components.Schemas.Color?
+          public var dropdownDarkBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/dropdown-dark-option-text`.
-          package var dropdownDarkOptionText: Components.Schemas.Color?
+          public var dropdownDarkOptionText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/dropdown-dark-text`.
-          package var dropdownDarkText: Components.Schemas.Color?
+          public var dropdownDarkText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/dropdown-option-text`.
-          package var dropdownOptionText: Components.Schemas.Color?
+          public var dropdownOptionText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/dropdown-text`.
-          package var dropdownText: Components.Schemas.Color?
+          public var dropdownText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/eyebrow`.
-          package var eyebrow: Components.Schemas.Color?
+          public var eyebrow: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-blue`.
-          package var figureBlue: Components.Schemas.Color?
+          public var figureBlue: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-gray`.
-          package var figureGray: Components.Schemas.Color?
+          public var figureGray: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-gray-secondary`.
-          package var figureGraySecondary: Components.Schemas.Color?
+          public var figureGraySecondary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-gray-secondary-alt`.
-          package var figureGraySecondaryAlt: Components.Schemas.Color?
+          public var figureGraySecondaryAlt: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-gray-tertiary`.
-          package var figureGrayTertiary: Components.Schemas.Color?
+          public var figureGrayTertiary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-green`.
-          package var figureGreen: Components.Schemas.Color?
+          public var figureGreen: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-light-gray`.
-          package var figureLightGray: Components.Schemas.Color?
+          public var figureLightGray: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-orange`.
-          package var figureOrange: Components.Schemas.Color?
+          public var figureOrange: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/figure-red`.
-          package var figureRed: Components.Schemas.Color?
+          public var figureRed: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill`.
-          package var fill: Components.Schemas.Color?
+          public var fill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-blue`.
-          package var fillBlue: Components.Schemas.Color?
+          public var fillBlue: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-gray`.
-          package var fillGray: Components.Schemas.Color?
+          public var fillGray: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-gray-quaternary`.
-          package var fillGrayQuaternary: Components.Schemas.Color?
+          public var fillGrayQuaternary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-gray-secondary`.
-          package var fillGraySecondary: Components.Schemas.Color?
+          public var fillGraySecondary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-gray-tertiary`.
-          package var fillGrayTertiary: Components.Schemas.Color?
+          public var fillGrayTertiary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-green-secondary`.
-          package var fillGreenSecondary: Components.Schemas.Color?
+          public var fillGreenSecondary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-light-blue-secondary`.
-          package var fillLightBlueSecondary: Components.Schemas.Color?
+          public var fillLightBlueSecondary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-orange-secondary`.
-          package var fillOrangeSecondary: Components.Schemas.Color?
+          public var fillOrangeSecondary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-quaternary`.
-          package var fillQuaternary: Components.Schemas.Color?
+          public var fillQuaternary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-red-secondary`.
-          package var fillRedSecondary: Components.Schemas.Color?
+          public var fillRedSecondary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-secondary`.
-          package var fillSecondary: Components.Schemas.Color?
+          public var fillSecondary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/fill-tertiary`.
-          package var fillTertiary: Components.Schemas.Color?
+          public var fillTertiary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/focus-border-color`.
-          package var focusBorderColor: Components.Schemas.Color?
+          public var focusBorderColor: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/focus-color`.
-          package var focusColor: Components.Schemas.Color?
+          public var focusColor: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/form-error`.
-          package var formError: Components.Schemas.Color?
+          public var formError: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/form-error-background`.
-          package var formErrorBackground: Components.Schemas.Color?
+          public var formErrorBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/form-valid`.
-          package var formValid: Components.Schemas.Color?
+          public var formValid: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/form-valid-background`.
-          package var formValidBackground: Components.Schemas.Color?
+          public var formValidBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/generic-modal-background`.
-          package var genericModalBackground: Components.Schemas.Color?
+          public var genericModalBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/grid`.
-          package var grid: Components.Schemas.Color?
+          public var grid: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/header-text`.
-          package var headerText: Components.Schemas.Color?
+          public var headerText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/hero-eyebrow`.
-          package var heroEyebrow: Components.Schemas.Color?
+          public var heroEyebrow: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/link`.
-          package var link: Components.Schemas.Color?
+          public var link: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/loading-placeholder-background`.
-          package var loadingPlaceholderBackground: Components.Schemas.Color?
+          public var loadingPlaceholderBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-color`.
-          package var navColor: Components.Schemas.Color?
+          public var navColor: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-current-link`.
-          package var navCurrentLink: Components.Schemas.Color?
+          public var navCurrentLink: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-border-top-color`.
-          package var navDarkBorderTopColor: Components.Schemas.Color?
+          public var navDarkBorderTopColor: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-color`.
-          package var navDarkColor: Components.Schemas.Color?
+          public var navDarkColor: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-current-link`.
-          package var navDarkCurrentLink: Components.Schemas.Color?
+          public var navDarkCurrentLink: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-expanded`.
-          package var navDarkExpanded: Components.Schemas.Color?
+          public var navDarkExpanded: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-hierarchy-collapse-background`.
-          package var navDarkHierarchyCollapseBackground: Components.Schemas.Color?
+          public var navDarkHierarchyCollapseBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-hierarchy-collapse-borders`.
-          package var navDarkHierarchyCollapseBorders: Components.Schemas.Color?
+          public var navDarkHierarchyCollapseBorders: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-hierarchy-item-borders`.
-          package var navDarkHierarchyItemBorders: Components.Schemas.Color?
+          public var navDarkHierarchyItemBorders: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-keyline`.
-          package var navDarkKeyline: Components.Schemas.Color?
+          public var navDarkKeyline: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-link-color`.
-          package var navDarkLinkColor: Components.Schemas.Color?
+          public var navDarkLinkColor: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-link-color-hover`.
-          package var navDarkLinkColorHover: Components.Schemas.Color?
+          public var navDarkLinkColorHover: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-outlines`.
-          package var navDarkOutlines: Components.Schemas.Color?
+          public var navDarkOutlines: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-root-subhead`.
-          package var navDarkRootSubhead: Components.Schemas.Color?
+          public var navDarkRootSubhead: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-rule`.
-          package var navDarkRule: Components.Schemas.Color?
+          public var navDarkRule: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-solid-background`.
-          package var navDarkSolidBackground: Components.Schemas.Color?
+          public var navDarkSolidBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-sticking-expanded-keyline`.
-          package var navDarkStickingExpandedKeyline: Components.Schemas.Color?
+          public var navDarkStickingExpandedKeyline: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-stuck`.
-          package var navDarkStuck: Components.Schemas.Color?
+          public var navDarkStuck: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-uiblur-expanded`.
-          package var navDarkUiblurExpanded: Components.Schemas.Color?
+          public var navDarkUiblurExpanded: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-dark-uiblur-stuck`.
-          package var navDarkUiblurStuck: Components.Schemas.Color?
+          public var navDarkUiblurStuck: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-expanded`.
-          package var navExpanded: Components.Schemas.Color?
+          public var navExpanded: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-hierarchy-collapse-background`.
-          package var navHierarchyCollapseBackground: Components.Schemas.Color?
+          public var navHierarchyCollapseBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-hierarchy-collapse-borders`.
-          package var navHierarchyCollapseBorders: Components.Schemas.Color?
+          public var navHierarchyCollapseBorders: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-hierarchy-item-borders`.
-          package var navHierarchyItemBorders: Components.Schemas.Color?
+          public var navHierarchyItemBorders: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-keyline`.
-          package var navKeyline: Components.Schemas.Color?
+          public var navKeyline: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-link-color`.
-          package var navLinkColor: Components.Schemas.Color?
+          public var navLinkColor: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-link-color-hover`.
-          package var navLinkColorHover: Components.Schemas.Color?
+          public var navLinkColorHover: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-outlines`.
-          package var navOutlines: Components.Schemas.Color?
+          public var navOutlines: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-root-subhead`.
-          package var navRootSubhead: Components.Schemas.Color?
+          public var navRootSubhead: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-root-title`.
-          package var navRootTitle: Components.Schemas.Color?
+          public var navRootTitle: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-rule`.
-          package var navRule: Components.Schemas.Color?
+          public var navRule: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-solid-background`.
-          package var navSolidBackground: Components.Schemas.Color?
+          public var navSolidBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-sticking-expanded-keyline`.
-          package var navStickingExpandedKeyline: Components.Schemas.Color?
+          public var navStickingExpandedKeyline: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-stuck`.
-          package var navStuck: Components.Schemas.Color?
+          public var navStuck: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-uiblur-expanded`.
-          package var navUiblurExpanded: Components.Schemas.Color?
+          public var navUiblurExpanded: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/nav-uiblur-stuck`.
-          package var navUiblurStuck: Components.Schemas.Color?
+          public var navUiblurStuck: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/navigator-item-hover`.
-          package var navigatorItemHover: Components.Schemas.Color?
+          public var navigatorItemHover: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/runtime-preview-background`.
-          package var runtimePreviewBackground: Components.Schemas.Color?
+          public var runtimePreviewBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/runtime-preview-disabled-text`.
-          package var runtimePreviewDisabledText: Components.Schemas.Color?
+          public var runtimePreviewDisabledText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/runtime-preview-text`.
-          package var runtimePreviewText: Components.Schemas.Color?
+          public var runtimePreviewText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/secondary-label`.
-          package var secondaryLabel: Components.Schemas.Color?
+          public var secondaryLabel: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/standard-blue-documentation-intro-fill`.
-          package var standardBlueDocumentationIntroFill: Components.Schemas.Color?
+          public var standardBlueDocumentationIntroFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/standard-gray-documentation-intro-fill`.
-          package var standardGrayDocumentationIntroFill: Components.Schemas.Color?
+          public var standardGrayDocumentationIntroFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/standard-green-documentation-intro-fill`.
-          package var standardGreenDocumentationIntroFill: Components.Schemas.Color?
+          public var standardGreenDocumentationIntroFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/standard-orange-documentation-intro-fill`.
-          package var standardOrangeDocumentationIntroFill: Components.Schemas.Color?
+          public var standardOrangeDocumentationIntroFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/standard-purple-documentation-intro-fill`.
-          package var standardPurpleDocumentationIntroFill: Components.Schemas.Color?
+          public var standardPurpleDocumentationIntroFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/standard-red-documentation-intro-fill`.
-          package var standardRedDocumentationIntroFill: Components.Schemas.Color?
+          public var standardRedDocumentationIntroFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/standard-yellow-documentation-intro-fill`.
-          package var standardYellowDocumentationIntroFill: Components.Schemas.Color?
+          public var standardYellowDocumentationIntroFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/step-background`.
-          package var stepBackground: Components.Schemas.Color?
+          public var stepBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/step-caption`.
-          package var stepCaption: Components.Schemas.Color?
+          public var stepCaption: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/step-focused`.
-          package var stepFocused: Components.Schemas.Color?
+          public var stepFocused: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/step-text`.
-          package var stepText: Components.Schemas.Color?
+          public var stepText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/svg-icon`.
-          package var svgIcon: Components.Schemas.Color?
+          public var svgIcon: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-attributes`.
-          package var syntaxAttributes: Components.Schemas.Color?
+          public var syntaxAttributes: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-characters`.
-          package var syntaxCharacters: Components.Schemas.Color?
+          public var syntaxCharacters: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-comments`.
-          package var syntaxComments: Components.Schemas.Color?
+          public var syntaxComments: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-documentation-markup`.
-          package var syntaxDocumentationMarkup: Components.Schemas.Color?
+          public var syntaxDocumentationMarkup: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-documentation-markup-keywords`.
-          package var syntaxDocumentationMarkupKeywords: Components.Schemas.Color?
+          public var syntaxDocumentationMarkupKeywords: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-heading`.
-          package var syntaxHeading: Components.Schemas.Color?
+          public var syntaxHeading: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-keywords`.
-          package var syntaxKeywords: Components.Schemas.Color?
+          public var syntaxKeywords: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-marks`.
-          package var syntaxMarks: Components.Schemas.Color?
+          public var syntaxMarks: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-numbers`.
-          package var syntaxNumbers: Components.Schemas.Color?
+          public var syntaxNumbers: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-other-class-names`.
-          package var syntaxOtherClassNames: Components.Schemas.Color?
+          public var syntaxOtherClassNames: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-other-constants`.
-          package var syntaxOtherConstants: Components.Schemas.Color?
+          public var syntaxOtherConstants: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-other-declarations`.
-          package var syntaxOtherDeclarations: Components.Schemas.Color?
+          public var syntaxOtherDeclarations: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-other-function-and-method-names`.
-          package var syntaxOtherFunctionAndMethodNames: Components.Schemas.Color?
+          public var syntaxOtherFunctionAndMethodNames: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-other-instance-variables-and-globals`.
-          package var syntaxOtherInstanceVariablesAndGlobals: Components.Schemas.Color?
+          public var syntaxOtherInstanceVariablesAndGlobals: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-other-preprocessor-macros`.
-          package var syntaxOtherPreprocessorMacros: Components.Schemas.Color?
+          public var syntaxOtherPreprocessorMacros: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-other-type-names`.
-          package var syntaxOtherTypeNames: Components.Schemas.Color?
+          public var syntaxOtherTypeNames: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-param-internal-name`.
-          package var syntaxParamInternalName: Components.Schemas.Color?
+          public var syntaxParamInternalName: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-plain-text`.
-          package var syntaxPlainText: Components.Schemas.Color?
+          public var syntaxPlainText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-preprocessor-statements`.
-          package var syntaxPreprocessorStatements: Components.Schemas.Color?
+          public var syntaxPreprocessorStatements: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-project-class-names`.
-          package var syntaxProjectClassNames: Components.Schemas.Color?
+          public var syntaxProjectClassNames: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-project-constants`.
-          package var syntaxProjectConstants: Components.Schemas.Color?
+          public var syntaxProjectConstants: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-project-function-and-method-names`.
-          package var syntaxProjectFunctionAndMethodNames: Components.Schemas.Color?
+          public var syntaxProjectFunctionAndMethodNames: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-project-instance-variables-and-globals`.
-          package var syntaxProjectInstanceVariablesAndGlobals: Components.Schemas.Color?
+          public var syntaxProjectInstanceVariablesAndGlobals: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-project-preprocessor-macros`.
-          package var syntaxProjectPreprocessorMacros: Components.Schemas.Color?
+          public var syntaxProjectPreprocessorMacros: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-project-type-names`.
-          package var syntaxProjectTypeNames: Components.Schemas.Color?
+          public var syntaxProjectTypeNames: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-strings`.
-          package var syntaxStrings: Components.Schemas.Color?
+          public var syntaxStrings: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-type-declarations`.
-          package var syntaxTypeDeclarations: Components.Schemas.Color?
+          public var syntaxTypeDeclarations: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/syntax-urls`.
-          package var syntaxUrls: Components.Schemas.Color?
+          public var syntaxUrls: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tabnav-item-border-color`.
-          package var tabnavItemBorderColor: Components.Schemas.Color?
+          public var tabnavItemBorderColor: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/text`.
-          package var text: Components.Schemas.Color?
+          public var text: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/text-background`.
-          package var textBackground: Components.Schemas.Color?
+          public var textBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorial-assessments-background`.
-          package var tutorialAssessmentsBackground: Components.Schemas.Color?
+          public var tutorialAssessmentsBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorial-background`.
-          package var tutorialBackground: Components.Schemas.Color?
+          public var tutorialBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorial-hero-background`.
-          package var tutorialHeroBackground: Components.Schemas.Color?
+          public var tutorialHeroBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorial-hero-text`.
-          package var tutorialHeroText: Components.Schemas.Color?
+          public var tutorialHeroText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorial-navbar-dropdown-background`.
-          package var tutorialNavbarDropdownBackground: Components.Schemas.Color?
+          public var tutorialNavbarDropdownBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorial-navbar-dropdown-border`.
-          package var tutorialNavbarDropdownBorder: Components.Schemas.Color?
+          public var tutorialNavbarDropdownBorder: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorial-quiz-border-active`.
-          package var tutorialQuizBorderActive: Components.Schemas.Color?
+          public var tutorialQuizBorderActive: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-background`.
-          package var tutorialsOverviewBackground: Components.Schemas.Color?
+          public var tutorialsOverviewBackground: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-content`.
-          package var tutorialsOverviewContent: Components.Schemas.Color?
+          public var tutorialsOverviewContent: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-content-alt`.
-          package var tutorialsOverviewContentAlt: Components.Schemas.Color?
+          public var tutorialsOverviewContentAlt: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-eyebrow`.
-          package var tutorialsOverviewEyebrow: Components.Schemas.Color?
+          public var tutorialsOverviewEyebrow: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-fill`.
-          package var tutorialsOverviewFill: Components.Schemas.Color?
+          public var tutorialsOverviewFill: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-fill-secondary`.
-          package var tutorialsOverviewFillSecondary: Components.Schemas.Color?
+          public var tutorialsOverviewFillSecondary: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-header-text`.
-          package var tutorialsOverviewHeaderText: Components.Schemas.Color?
+          public var tutorialsOverviewHeaderText: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-icon`.
-          package var tutorialsOverviewIcon: Components.Schemas.Color?
+          public var tutorialsOverviewIcon: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-link`.
-          package var tutorialsOverviewLink: Components.Schemas.Color?
+          public var tutorialsOverviewLink: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-navigation-link`.
-          package var tutorialsOverviewNavigationLink: Components.Schemas.Color?
+          public var tutorialsOverviewNavigationLink: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-navigation-link-active`.
-          package var tutorialsOverviewNavigationLinkActive: Components.Schemas.Color?
+          public var tutorialsOverviewNavigationLinkActive: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-overview-navigation-link-hover`.
-          package var tutorialsOverviewNavigationLinkHover: Components.Schemas.Color?
+          public var tutorialsOverviewNavigationLinkHover: Components.Schemas.Color?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color/tutorials-teal`.
-          package var tutorialsTeal: Components.Schemas.Color?
+          public var tutorialsTeal: Components.Schemas.Color?
           /// A container of undocumented properties.
-          package var additionalProperties: [String: Components.Schemas.Color]
+          public var additionalProperties: [String: Components.Schemas.Color]
           /// Creates a new `ColorPayload`.
           ///
           /// - Parameters:
@@ -7861,7 +7859,7 @@ package enum Components {
           ///   - tutorialsOverviewNavigationLinkHover:
           ///   - tutorialsTeal:
           ///   - additionalProperties: A container of undocumented properties.
-          package init(
+          public init(
             articleBackground: Components.Schemas.Color? = nil,
             articleBodyBackground: Components.Schemas.Color? = nil,
             asideDeprecated: Components.Schemas.Color? = nil,
@@ -8260,7 +8258,7 @@ package enum Components {
             self.tutorialsTeal = tutorialsTeal
             self.additionalProperties = additionalProperties
           }
-          package enum CodingKeys: String, CodingKey {
+          public enum CodingKeys: String, CodingKey {
             case articleBackground = "article-background"
             case articleBodyBackground = "article-body-background"
             case asideDeprecated = "aside-deprecated"
@@ -8461,7 +8459,7 @@ package enum Components {
             case tutorialsOverviewNavigationLinkHover = "tutorials-overview-navigation-link-hover"
             case tutorialsTeal = "tutorials-teal"
           }
-          package init(from decoder: any Decoder) throws {
+          public init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             self.articleBackground = try container.decodeIfPresent(
               Components.Schemas.Color.self,
@@ -9451,7 +9449,7 @@ package enum Components {
               "tutorials-teal",
             ])
           }
-          package func encode(to encoder: any Encoder) throws {
+          public func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encodeIfPresent(
               self.articleBackground,
@@ -10247,97 +10245,97 @@ package enum Components {
         /// An object where each key represents the name of a color variable referenced in the renderer. A CSS property in the form `--color-[key]` will either be created or overwritten with the value associated with it.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/color`.
-        package var color: Components.Schemas.ThemeSettings.ThemePayload.ColorPayload?
+        public var color: Components.Schemas.ThemeSettings.ThemePayload.ColorPayload?
         /// An object where each key represents a kind of icon used in the website which can be overwritten by providing a relative or absolute URL to an alternate SVG asset.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons`.
-        package struct IconsPayload: Codable, Hashable, Sendable {
+        public struct IconsPayload: Codable, Hashable, Sendable {
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/api-reference`.
-          package var apiReference: Components.Schemas.Url?
+          public var apiReference: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/article`.
-          package var article: Components.Schemas.Url?
+          public var article: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/check-circle`.
-          package var checkCircle: Components.Schemas.Url?
+          public var checkCircle: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/chevron`.
-          package var chevron: Components.Schemas.Url?
+          public var chevron: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/chevron-rounded`.
-          package var chevronRounded: Components.Schemas.Url?
+          public var chevronRounded: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/clear-rounded`.
-          package var clearRounded: Components.Schemas.Url?
+          public var clearRounded: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/close`.
-          package var close: Components.Schemas.Url?
+          public var close: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/collection`.
-          package var collection: Components.Schemas.Url?
+          public var collection: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/curly-brackets`.
-          package var curlyBrackets: Components.Schemas.Url?
+          public var curlyBrackets: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/diagonal-arrow`.
-          package var diagonalArrow: Components.Schemas.Url?
+          public var diagonalArrow: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/document`.
-          package var document: Components.Schemas.Url?
+          public var document: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/download`.
-          package var download: Components.Schemas.Url?
+          public var download: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/ellipsis`.
-          package var ellipsis: Components.Schemas.Url?
+          public var ellipsis: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/endpoint`.
-          package var endpoint: Components.Schemas.Url?
+          public var endpoint: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/filter`.
-          package var filter: Components.Schemas.Url?
+          public var filter: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/forum`.
-          package var forum: Components.Schemas.Url?
+          public var forum: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/generic-file`.
-          package var genericFile: Components.Schemas.Url?
+          public var genericFile: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-chevron-down-circle`.
-          package var inlineChevronDownCircle: Components.Schemas.Url?
+          public var inlineChevronDownCircle: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-chevron-down`.
-          package var inlineChevronDown: Components.Schemas.Url?
+          public var inlineChevronDown: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-chevron-right`.
-          package var inlineChevronRight: Components.Schemas.Url?
+          public var inlineChevronRight: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-close`.
-          package var inlineClose: Components.Schemas.Url?
+          public var inlineClose: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-download`.
-          package var inlineDownload: Components.Schemas.Url?
+          public var inlineDownload: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-minus-circle-solid`.
-          package var inlineMinusCircleSolid: Components.Schemas.Url?
+          public var inlineMinusCircleSolid: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-plus-circle`.
-          package var inlinePlusCircle: Components.Schemas.Url?
+          public var inlinePlusCircle: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-plus-circle-solid`.
-          package var inlinePlusCircleSolid: Components.Schemas.Url?
+          public var inlinePlusCircleSolid: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/inline-replay`.
-          package var inlineReplay: Components.Schemas.Url?
+          public var inlineReplay: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/magnifier`.
-          package var magnifier: Components.Schemas.Url?
+          public var magnifier: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/path`.
-          package var path: Components.Schemas.Url?
+          public var path: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/play`.
-          package var play: Components.Schemas.Url?
+          public var play: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/reset-circle`.
-          package var resetCircle: Components.Schemas.Url?
+          public var resetCircle: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/search`.
-          package var search: Components.Schemas.Url?
+          public var search: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/sidenav`.
-          package var sidenav: Components.Schemas.Url?
+          public var sidenav: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/single-letter`.
-          package var singleLetter: Components.Schemas.Url?
+          public var singleLetter: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/spinner`.
-          package var spinner: Components.Schemas.Url?
+          public var spinner: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/swift-file`.
-          package var swiftFile: Components.Schemas.Url?
+          public var swiftFile: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/technology`.
-          package var technology: Components.Schemas.Url?
+          public var technology: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/timer`.
-          package var timer: Components.Schemas.Url?
+          public var timer: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/topic-func`.
-          package var topicFunc: Components.Schemas.Url?
+          public var topicFunc: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/topic-func-op`.
-          package var topicFuncOp: Components.Schemas.Url?
+          public var topicFuncOp: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/topic-subscript`.
-          package var topicSubscript: Components.Schemas.Url?
+          public var topicSubscript: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/tutorial`.
-          package var tutorial: Components.Schemas.Url?
+          public var tutorial: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/two-letter`.
-          package var twoLetter: Components.Schemas.Url?
+          public var twoLetter: Components.Schemas.Url?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons/xcode`.
-          package var xcode: Components.Schemas.Url?
+          public var xcode: Components.Schemas.Url?
           /// Creates a new `IconsPayload`.
           ///
           /// - Parameters:
@@ -10384,7 +10382,7 @@ package enum Components {
           ///   - tutorial:
           ///   - twoLetter:
           ///   - xcode:
-          package init(
+          public init(
             apiReference: Components.Schemas.Url? = nil,
             article: Components.Schemas.Url? = nil,
             checkCircle: Components.Schemas.Url? = nil,
@@ -10473,7 +10471,7 @@ package enum Components {
             self.twoLetter = twoLetter
             self.xcode = xcode
           }
-          package enum CodingKeys: String, CodingKey {
+          public enum CodingKeys: String, CodingKey {
             case apiReference = "api-reference"
             case article
             case checkCircle = "check-circle"
@@ -10522,55 +10520,55 @@ package enum Components {
         /// An object where each key represents a kind of icon used in the website which can be overwritten by providing a relative or absolute URL to an alternate SVG asset.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/icons`.
-        package var icons: Components.Schemas.ThemeSettings.ThemePayload.IconsPayload?
+        public var icons: Components.Schemas.ThemeSettings.ThemePayload.IconsPayload?
         /// Settings related to "tutorial step" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/tutorial-step`.
-        package struct TutorialStepPayload: Codable, Hashable, Sendable {
+        public struct TutorialStepPayload: Codable, Hashable, Sendable {
           /// A CSS value for `border-radius`.
           ///
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/tutorial-step/border-radius`.
-          package var borderRadius: Swift.String?
+          public var borderRadius: Swift.String?
           /// Creates a new `TutorialStepPayload`.
           ///
           /// - Parameters:
           ///   - borderRadius: A CSS value for `border-radius`.
-          package init(borderRadius: Swift.String? = nil) {
+          public init(borderRadius: Swift.String? = nil) {
             self.borderRadius = borderRadius
           }
-          package enum CodingKeys: String, CodingKey {
+          public enum CodingKeys: String, CodingKey {
             case borderRadius = "border-radius"
           }
         }
         /// Settings related to "tutorial step" elements.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/tutorial-step`.
-        package var tutorialStep: Components.Schemas.ThemeSettings.ThemePayload.TutorialStepPayload?
+        public var tutorialStep: Components.Schemas.ThemeSettings.ThemePayload.TutorialStepPayload?
         /// Settings related to typography.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/typography`.
-        package struct TypographyPayload: Codable, Hashable, Sendable {
+        public struct TypographyPayload: Codable, Hashable, Sendable {
           /// The CSS font-family value to be used globally for text in documentation.
           ///
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/typography/html-font`.
-          package var htmlFont: Swift.String?
+          public var htmlFont: Swift.String?
           /// The CSS font-family value to be used for monospaced code-voice text in documentation.
           ///
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/typography/html-font-mono`.
-          package var htmlFontMono: Swift.String?
+          public var htmlFontMono: Swift.String?
           /// Creates a new `TypographyPayload`.
           ///
           /// - Parameters:
           ///   - htmlFont: The CSS font-family value to be used globally for text in documentation.
           ///   - htmlFontMono: The CSS font-family value to be used for monospaced code-voice text in documentation.
-          package init(
+          public init(
             htmlFont: Swift.String? = nil,
             htmlFontMono: Swift.String? = nil
           ) {
             self.htmlFont = htmlFont
             self.htmlFontMono = htmlFontMono
           }
-          package enum CodingKeys: String, CodingKey {
+          public enum CodingKeys: String, CodingKey {
             case htmlFont = "html-font"
             case htmlFontMono = "html-font-mono"
           }
@@ -10578,31 +10576,31 @@ package enum Components {
         /// Settings related to typography.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/typography`.
-        package var typography: Components.Schemas.ThemeSettings.ThemePayload.TypographyPayload?
+        public var typography: Components.Schemas.ThemeSettings.ThemePayload.TypographyPayload?
         /// Adds new DeviceFrames. The keys are used as names for the frames.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/device-frames`.
-        package struct DeviceFramesPayload: Codable, Hashable, Sendable {
+        public struct DeviceFramesPayload: Codable, Hashable, Sendable {
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/device-frames/value1`.
-          package var value1: Components.Schemas.DeviceFrameAttributes
+          public var value1: Components.Schemas.DeviceFrameAttributes
           /// Creates a new `DeviceFramesPayload`.
           ///
           /// - Parameters:
           ///   - value1:
-          package init(value1: Components.Schemas.DeviceFrameAttributes) {
+          public init(value1: Components.Schemas.DeviceFrameAttributes) {
             self.value1 = value1
           }
-          package init(from decoder: any Decoder) throws {
+          public init(from decoder: any Decoder) throws {
             self.value1 = try .init(from: decoder)
           }
-          package func encode(to encoder: any Encoder) throws {
+          public func encode(to encoder: any Encoder) throws {
             try self.value1.encode(to: encoder)
           }
         }
         /// Adds new DeviceFrames. The keys are used as names for the frames.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme/device-frames`.
-        package var deviceFrames: Components.Schemas.ThemeSettings.ThemePayload.DeviceFramesPayload?
+        public var deviceFrames: Components.Schemas.ThemeSettings.ThemePayload.DeviceFramesPayload?
         /// Creates a new `ThemePayload`.
         ///
         /// - Parameters:
@@ -10616,7 +10614,7 @@ package enum Components {
         ///   - tutorialStep: Settings related to "tutorial step" elements.
         ///   - typography: Settings related to typography.
         ///   - deviceFrames: Adds new DeviceFrames. The keys are used as names for the frames.
-        package init(
+        public init(
           aside: Components.Schemas.ThemeSettings.ThemePayload.AsidePayload? = nil,
           badge: Components.Schemas.ThemeSettings.ThemePayload.BadgePayload? = nil,
           borderRadius: Swift.String? = nil,
@@ -10639,7 +10637,7 @@ package enum Components {
           self.typography = typography
           self.deviceFrames = deviceFrames
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case aside
           case badge
           case borderRadius = "border-radius"
@@ -10655,28 +10653,28 @@ package enum Components {
       /// Settings concerning the visual appearance of the website and the styling of its components.
       ///
       /// - Remark: Generated from `#/components/schemas/ThemeSettings/theme`.
-      package var theme: Components.Schemas.ThemeSettings.ThemePayload?
+      public var theme: Components.Schemas.ThemeSettings.ThemePayload?
       /// Flags for enabling or disabling features of the website.
       ///
       /// - Remark: Generated from `#/components/schemas/ThemeSettings/features`.
-      package struct FeaturesPayload: Codable, Hashable, Sendable {
+      public struct FeaturesPayload: Codable, Hashable, Sendable {
         /// flags for enabling or disabling `/documentation` page features.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/features/docs`.
-        package struct DocsPayload: Codable, Hashable, Sendable {
+        public struct DocsPayload: Codable, Hashable, Sendable {
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/features/docs/quickNavigation`.
-          package var quickNavigation: Components.Schemas.FeatureFlagEnable?
+          public var quickNavigation: Components.Schemas.FeatureFlagEnable?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/features/docs/onThisPageNavigator`.
-          package var onThisPageNavigator: Components.Schemas.FeatureFlagDisable?
+          public var onThisPageNavigator: Components.Schemas.FeatureFlagDisable?
           /// - Remark: Generated from `#/components/schemas/ThemeSettings/features/docs/i18n`.
-          package var i18n: Components.Schemas.FeatureFlagEnable?
+          public var i18n: Components.Schemas.FeatureFlagEnable?
           /// Creates a new `DocsPayload`.
           ///
           /// - Parameters:
           ///   - quickNavigation:
           ///   - onThisPageNavigator:
           ///   - i18n:
-          package init(
+          public init(
             quickNavigation: Components.Schemas.FeatureFlagEnable? = nil,
             onThisPageNavigator: Components.Schemas.FeatureFlagDisable? = nil,
             i18n: Components.Schemas.FeatureFlagEnable? = nil
@@ -10685,7 +10683,7 @@ package enum Components {
             self.onThisPageNavigator = onThisPageNavigator
             self.i18n = i18n
           }
-          package enum CodingKeys: String, CodingKey {
+          public enum CodingKeys: String, CodingKey {
             case quickNavigation
             case onThisPageNavigator
             case i18n
@@ -10694,29 +10692,29 @@ package enum Components {
         /// flags for enabling or disabling `/documentation` page features.
         ///
         /// - Remark: Generated from `#/components/schemas/ThemeSettings/features/docs`.
-        package var docs: Components.Schemas.ThemeSettings.FeaturesPayload.DocsPayload?
+        public var docs: Components.Schemas.ThemeSettings.FeaturesPayload.DocsPayload?
         /// Creates a new `FeaturesPayload`.
         ///
         /// - Parameters:
         ///   - docs: flags for enabling or disabling `/documentation` page features.
-        package init(docs: Components.Schemas.ThemeSettings.FeaturesPayload.DocsPayload? = nil) {
+        public init(docs: Components.Schemas.ThemeSettings.FeaturesPayload.DocsPayload? = nil) {
           self.docs = docs
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case docs
         }
       }
       /// Flags for enabling or disabling features of the website.
       ///
       /// - Remark: Generated from `#/components/schemas/ThemeSettings/features`.
-      package var features: Components.Schemas.ThemeSettings.FeaturesPayload?
+      public var features: Components.Schemas.ThemeSettings.FeaturesPayload?
       /// Creates a new `ThemeSettings`.
       ///
       /// - Parameters:
       ///   - meta: Metadata concerning the website as a whole, like the website title.
       ///   - theme: Settings concerning the visual appearance of the website and the styling of its components.
       ///   - features: Flags for enabling or disabling features of the website.
-      package init(
+      public init(
         meta: Components.Schemas.ThemeSettings.MetaPayload? = nil,
         theme: Components.Schemas.ThemeSettings.ThemePayload? = nil,
         features: Components.Schemas.ThemeSettings.FeaturesPayload? = nil
@@ -10725,33 +10723,33 @@ package enum Components {
         self.theme = theme
         self.features = features
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case meta
         case theme
         case features
       }
     }
     /// - Remark: Generated from `#/components/schemas/BorderAttributes`.
-    package struct BorderAttributes: Codable, Hashable, Sendable {
+    public struct BorderAttributes: Codable, Hashable, Sendable {
       /// A CSS value for `border-radius`.
       ///
       /// - Remark: Generated from `#/components/schemas/BorderAttributes/border-radius`.
-      package var borderRadius: Swift.String?
+      public var borderRadius: Swift.String?
       /// A CSS value for `border-style`.
       ///
       /// - Remark: Generated from `#/components/schemas/BorderAttributes/border-style`.
-      package var borderStyle: Swift.String?
+      public var borderStyle: Swift.String?
       /// A CSS value for `border-width`.
       ///
       /// - Remark: Generated from `#/components/schemas/BorderAttributes/border-width`.
-      package var borderWidth: Swift.String?
+      public var borderWidth: Swift.String?
       /// Creates a new `BorderAttributes`.
       ///
       /// - Parameters:
       ///   - borderRadius: A CSS value for `border-radius`.
       ///   - borderStyle: A CSS value for `border-style`.
       ///   - borderWidth: A CSS value for `border-width`.
-      package init(
+      public init(
         borderRadius: Swift.String? = nil,
         borderStyle: Swift.String? = nil,
         borderWidth: Swift.String? = nil
@@ -10760,14 +10758,14 @@ package enum Components {
         self.borderStyle = borderStyle
         self.borderWidth = borderWidth
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case borderRadius = "border-radius"
         case borderStyle = "border-style"
         case borderWidth = "border-width"
       }
     }
     /// - Remark: Generated from `#/components/schemas/Color`.
-    @frozen package enum Color: Codable, Hashable, Sendable {
+    @frozen public enum Color: Codable, Hashable, Sendable {
       /// Any valid CSS color value.
       ///
       /// - Remark: Generated from `#/components/schemas/Color/case1`.
@@ -10775,24 +10773,24 @@ package enum Components {
       /// A map of light and dark CSS color values to use as appropriate.
       ///
       /// - Remark: Generated from `#/components/schemas/Color/case2`.
-      package struct Case2Payload: Codable, Hashable, Sendable {
+      public struct Case2Payload: Codable, Hashable, Sendable {
         /// - Remark: Generated from `#/components/schemas/Color/case2/dark`.
-        package var dark: Swift.String
+        public var dark: Swift.String
         /// - Remark: Generated from `#/components/schemas/Color/case2/light`.
-        package var light: Swift.String
+        public var light: Swift.String
         /// Creates a new `Case2Payload`.
         ///
         /// - Parameters:
         ///   - dark:
         ///   - light:
-        package init(
+        public init(
           dark: Swift.String,
           light: Swift.String
         ) {
           self.dark = dark
           self.light = light
         }
-        package enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
           case dark
           case light
         }
@@ -10801,7 +10799,7 @@ package enum Components {
       ///
       /// - Remark: Generated from `#/components/schemas/Color/case2`.
       case case2(Components.Schemas.Color.Case2Payload)
-      package init(from decoder: any Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         var errors: [any Error] = []
         do {
           self = .case1(try decoder.decodeFromSingleValueContainer())
@@ -10821,7 +10819,7 @@ package enum Components {
           errors: errors
         )
       }
-      package func encode(to encoder: any Encoder) throws {
+      public func encode(to encoder: any Encoder) throws {
         switch self {
         case .case1(let value):
           try encoder.encodeToSingleValueContainer(value)
@@ -10833,61 +10831,61 @@ package enum Components {
     /// Enables a feature if `enable` is `true`.
     ///
     /// - Remark: Generated from `#/components/schemas/FeatureFlagEnable`.
-    package struct FeatureFlagEnable: Codable, Hashable, Sendable {
+    public struct FeatureFlagEnable: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/FeatureFlagEnable/enable`.
-      package var enable: Swift.Bool
+      public var enable: Swift.Bool
       /// Creates a new `FeatureFlagEnable`.
       ///
       /// - Parameters:
       ///   - enable:
-      package init(enable: Swift.Bool) {
+      public init(enable: Swift.Bool) {
         self.enable = enable
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case enable
       }
     }
     /// Disables a feature if `disable` is `true`.
     ///
     /// - Remark: Generated from `#/components/schemas/FeatureFlagDisable`.
-    package struct FeatureFlagDisable: Codable, Hashable, Sendable {
+    public struct FeatureFlagDisable: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/FeatureFlagDisable/disable`.
-      package var disable: Swift.Bool
+      public var disable: Swift.Bool
       /// Creates a new `FeatureFlagDisable`.
       ///
       /// - Parameters:
       ///   - disable:
-      package init(disable: Swift.Bool) {
+      public init(disable: Swift.Bool) {
         self.disable = disable
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case disable
       }
     }
     /// An absolute URL or relative path.
     ///
     /// - Remark: Generated from `#/components/schemas/URL`.
-    package typealias Url = Swift.String
+    public typealias Url = Swift.String
     /// A definition for a device frame
     ///
     /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes`.
-    package struct DeviceFrameAttributes: Codable, Hashable, Sendable {
+    public struct DeviceFrameAttributes: Codable, Hashable, Sendable {
       /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes/screenTop`.
-      package var screenTop: Swift.Double?
+      public var screenTop: Swift.Double?
       /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes/screenWidth`.
-      package var screenWidth: Swift.Double?
+      public var screenWidth: Swift.Double?
       /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes/screenHeight`.
-      package var screenHeight: Swift.Double?
+      public var screenHeight: Swift.Double?
       /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes/screenLeft`.
-      package var screenLeft: Swift.Double?
+      public var screenLeft: Swift.Double?
       /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes/frameWidth`.
-      package var frameWidth: Swift.Double?
+      public var frameWidth: Swift.Double?
       /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes/frameHeight`.
-      package var frameHeight: Swift.Double?
+      public var frameHeight: Swift.Double?
       /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes/lightUrl`.
-      package var lightUrl: Components.Schemas.Url?
+      public var lightUrl: Components.Schemas.Url?
       /// - Remark: Generated from `#/components/schemas/DeviceFrameAttributes/darkUrl`.
-      package var darkUrl: Components.Schemas.Url?
+      public var darkUrl: Components.Schemas.Url?
       /// Creates a new `DeviceFrameAttributes`.
       ///
       /// - Parameters:
@@ -10899,7 +10897,7 @@ package enum Components {
       ///   - frameHeight:
       ///   - lightUrl:
       ///   - darkUrl:
-      package init(
+      public init(
         screenTop: Swift.Double? = nil,
         screenWidth: Swift.Double? = nil,
         screenHeight: Swift.Double? = nil,
@@ -10918,7 +10916,7 @@ package enum Components {
         self.lightUrl = lightUrl
         self.darkUrl = darkUrl
       }
-      package enum CodingKeys: String, CodingKey {
+      public enum CodingKeys: String, CodingKey {
         case screenTop
         case screenWidth
         case screenHeight
@@ -10931,14 +10929,14 @@ package enum Components {
     }
   }
   /// Types generated from the `#/components/parameters` section of the OpenAPI document.
-  package enum Parameters {}
+  public enum Parameters {}
   /// Types generated from the `#/components/requestBodies` section of the OpenAPI document.
-  package enum RequestBodies {}
+  public enum RequestBodies {}
   /// Types generated from the `#/components/responses` section of the OpenAPI document.
-  package enum Responses {}
+  public enum Responses {}
   /// Types generated from the `#/components/headers` section of the OpenAPI document.
-  package enum Headers {}
+  public enum Headers {}
 }
 
 /// API operations, with input and output types, generated from `#/paths` in the OpenAPI document.
-package enum Operations {}
+public enum Operations {}

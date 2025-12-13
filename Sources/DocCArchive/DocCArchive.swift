@@ -3,6 +3,7 @@ import Elementary
 import Foundation
 import NIOCore  // experiment - ByteBuffer
 import NIOFileSystem  // experiment - NIOFilesystem
+import Synchronization
 
 // Elementary
 struct Thing: HTML {
@@ -27,6 +28,8 @@ public struct Archive {
   public init(path: String) {
     self.baseArchivePath = path
   }
+
+  let channel = AsyncChannel<String>()
 
   let decoder = JSONDecoder()
   // TODO(PERF): maybe allow this to be provided - use alternate decoders (Ikagi, swift-extras, etc) if
@@ -139,7 +142,7 @@ public struct Archive {
 
   func convert<T>(transformer: some Transformer<T>) throws -> [T] {
 
-    // this ends up needing to be package because everything boils down to depending on the generated types, which I'm keeping at "package" access.
+    // this ends up needing to be package because everything boils down to depending on the generated types, which I'm keeping at "package" access?
     // That may be a mistake.
 
     var results: [T] = []
@@ -189,42 +192,32 @@ public struct Archive {
 
   // This is going to be tricky - mostly getting the right understanding of what's sendable, isolated, etc - in order to provide access to the channel. Classic Swift advice says to serialize this to something like MainActor
 
-  //  /// provide access to an AsyncChannel of strings that make up the transformed content
-  //  public func withChunks(t: Transformer, s: ChunkStrategy, processChunk: nonisolated(nonsending) (AsyncChannel<String>) async -> ()) async throws {
+  /// provide access to an AsyncChannel of strings that make up the transformed content
+  //    nonisolated(nonsending) public func withChunks(
+  //        t: any Transformer,
+  //        s: ChunkStrategy,
+  //        _body: @escaping (AsyncChannel<String>) async -> ()) async throws {
   //
-  //    // create an AsyncStream and present it to the processChunk closure to provide access to it
-  //    let channel = AsyncChannel<String>()
+  //            // create an AsyncStream and present it to the processChunk closure to provide access to it
   //
-  ////    Task {
-  ////    print("Consumer Task: Waiting for messages...")
-  ////    for await message in channel {
-  ////        print("Consumer Task: Received -> \(message)")
-  ////    }
-  ////    print("Consumer Task: Channel closed. Exiting.")
-  ////    }
-  //    // consuming the channel
-  //    try await withThrowingDiscardingTaskGroup { group in
-  //      group.addTask {
-  //        await processChunk(channel)
+  //            defer { self.channel.finish() }
+  //
+  //            try await withThrowingDiscardingTaskGroup { group in
+  //                group.addTask {
+  //                    await self.channel.send("one")
+  //                    await self.channel.send("two")
+  //                    await self.channel.send("three")
+  //                    await self.channel.send("four")
+  //                    await self.channel.send("five")
+  //                }
+  //                group.addTask {
+  //                    await _body(self.channel)
+  //                    for await message in channel {
+  //                        print("Consumer Task: Received -> \(message)")
+  //                    }
+  //                }
+  //            }
   //      }
-  //    }
-  //
-  //    // 3. Task B: The producer (sender)
-  //    // This task sends messages and then finishes the channel.
-  //    Task {
-  //        print("Producer Task: Sending 'Hello'...")
-  //        await channel.send("Hello") // send will suspend until a receiver is ready
-  //
-  //        print("Producer Task: Sending 'World'...")
-  //        await channel.send("World")
-  //
-  //        print("Producer Task: Finishing channel...")
-  //        // Calling finish() signals the end of the sequence to the consumer task.
-  //        channel.finish()
-  //    }
-  //
-  //  }
-
 }
 
 /// The strategy for converting the tree of nodes into sequences that get rendered into contiguous, static content
@@ -237,21 +230,24 @@ public enum ChunkStrategy {
   case collapsedToType
 }
 
-protocol Transformer<T> {
+// Is this really public? Is the intent here that external modules can provide a transformer,
+// which then needs to know and understand RenderNode and what's inside it, to return something
+// interesting to the transformer?
+public protocol Transformer<T> {
   associatedtype T
   func convert(node: Components.Schemas.RenderNode) throws -> T
 }
 
 // make into a protocol - implement a "MarkdownTransformer", "HTMLTransformer"
 public struct MyHTMLTransformer: Transformer {
-  func convert(node: Components.Schemas.RenderNode) throws -> some HTML {
+  public func convert(node: Components.Schemas.RenderNode) throws -> some HTML {
     // this may need access to look up/load other nodes for their content...
     return HTMLRaw("<!-- what? -->")
   }
 }
 
 public struct MyMarkdownTransformer: Transformer {
-  func convert(node: Components.Schemas.RenderNode) throws -> String {
+  public func convert(node: Components.Schemas.RenderNode) throws -> String {
     // this may need access to look up/load other nodes for their content...
     return ""
   }
