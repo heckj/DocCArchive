@@ -11,7 +11,7 @@ npx openapi-merge-cli
 
 cd ${THIS_SCRIPT_DIR}/..
 swift run swift-openapi-generator generate --mode types \
-    --access-modifier package \
+    --access-modifier public \
     --naming-strategy idiomatic \
     --output-directory Sources/DocCArchive/generated \
     Sources/DocCArchive/Vendored/merged-spec.json

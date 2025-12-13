@@ -35,3 +35,4 @@ playground.xcworkspace
 Sources/DocCArchive/Vendored/node_modules/
 Sources/DocCArchive/Vendored/package-lock.json
 
+.symbolgraphs

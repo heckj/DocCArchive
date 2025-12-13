@@ -21,6 +21,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-nio", from: "2.0.0"),
     .package(url: "https://github.com/sliemeobn/elementary.git", from: "0.3.2"),
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.0"),
+    .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.0.0"),
   ],
   targets: [
     .target(

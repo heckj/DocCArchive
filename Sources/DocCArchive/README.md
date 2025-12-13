@@ -13,9 +13,9 @@ the [Swift Project](https://swift.org/):
 ./Sources/SwiftDocC/SwiftDocC.docc/Resources/Assets.json
 ```
 
-The files sourced from commit `5915e66d1eb071a4410bcf6aea0d9219a21a1f8e` on November 25, 2025
+The files come from commit `5915e66d1eb071a4410bcf6aea0d9219a21a1f8e` on November 25, 2025
 from the `main` development branch, which includes fixes for some of the JSON files.
-At the time of this vendoring, the files *are not* verified or built from spec. They are updated manually,
+At the time of this vendoring, the files *aren't* verified or built from spec. They're updated manually
 and can include errors or mismatches to internal DocC types.
 
 OpenAPI generator accepts a single OpenAPI spec file, so this directory merges them using
@@ -39,4 +39,4 @@ swift run swift-openapi-generator generate --mode types \
     Vendored/merged-spec.json
 ``` 
 
-This is combined together in `Scripts/regenerate-types.sh` in this package.
+This merges them together in `Scripts/regenerate-types.sh` in this package.

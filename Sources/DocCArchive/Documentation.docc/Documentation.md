@@ -4,17 +4,17 @@ A library to load and process DocC archives.
 
 ## Overview
 
-This library (and executable) exists to read DocC Archives and iterate through the contents of the archive, transforming it into another set of files, with varying format. 
-A goal is to support reading files either locally on disk, or remotely from URL locations if they are hosted and available.
-My primary goal is to generate a single large HTML, a few large HTML files, several markdown files, or even an ePub document - all of which are static content and don't require JavaScript to present it.
+This library (and executable) reads DocC Archives and iterates through the contents of the archive, transforming it into another set of files with varying formats.
+A goal is to support reading files either locally on disk or remotely from URL locations if they're hosted and available.
+The primary goal is to generate a single large HTML file, a few large HTML files, several markdown files, or even an ePub document—all of which are static content and don't require JavaScript to present.
 
 The use cases I've run into that I'd like this to support:
 
-- Render an archive out to flat, static HTML that doesn't require JavaScript to present, and with a simpler URL structure than DocC provides today, and that doesn't use `:` in the file names to enable easier Windows and cross-platform support to viewing the documentation from an archive.
-- Render each symbol into a markdown file that you could ingest into a Vector Database to support LLM based interactions - answering questions, agentic coding, etc.
-- Render an archive into an ePub for transfer offline viewing without a hosting setup.
+- Render an archive out to flat, static HTML that doesn't require JavaScript to present, with a simpler URL structure than DocC provides today, and that doesn't use `:` in the file names to enable easier Windows and cross-platform support for viewing the documentation from an archive.
+- Render each symbol into a markdown file that you can ingest into a vector database to support LLM-based interactions—answering questions, agentic coding, and more.
+- Render an archive into an ePub for offline viewing without a hosting setup.
 
-The internal structure of a DocC archive is a tree of "nodes", with each node represented within an index, and the data for each node maintained separately in a file.
+The internal structure of a DocC archive is a tree of "nodes," with each node represented within an index and the data for each node maintained separately in a file.
 Read <doc:UnderstandingDocCArchiveStructure> for a full description of the data structures.
 
 ### API DevNotes
@@ -70,3 +70,26 @@ Embeddings w/ MLTensor: https://github.com/jkrukowski/swift-embeddings
 
 ## Topics
 
+
+<!-- The content below this line is auto-generated and is redundant. You should either incorporate it into your content above this line or delete it. -->
+
+## Topics
+
+### Protocols
+
+- ``APIProtocol``
+- ``Transformer``
+
+### Structures
+
+- ``Archive``
+- ``MyHTMLTransformer``
+- ``MyMarkdownTransformer``
+
+### Enumerations
+
+- ``ChunkStrategy``
+- ``Components``
+- ``Operations``
+- ``Servers``
+- ``VendoredVersion``
