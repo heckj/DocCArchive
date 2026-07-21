@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page: Tutorials Overview — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="index.html" class="active" aria-current="page">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">page</p>
+<h1>Tutorials Overview (Table of Contents)</h1>
+<p class="wire-value">Route: <code>/tutorials/:id</code> &rarr; <code>views/TutorialsOverview.vue</code> (kind <code>"overview"</code>)</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#route-dispatch">1. Route &amp; dispatch</a> &middot; <a href="#chrome">2. Chrome</a> &middot; <a href="#hierarchy-tree">3. Hierarchy tree</a> &middot; <a href="#content-dispatch">4. Content dispatch</a> &middot; <a href="#cross-reference">5. Cross-reference</a></nav>
+<section id="route-dispatch"><h2>1. Route and component dispatch</h2>
+<p>
+A Tutorials Overview page is what swift-docc emits from the technology-root <code>@Tutorials</code>
+directive &mdash; the "table of contents" page that lists a technology's volumes/chapters and its
+resources block. On the wire it is a <code>TutorialsPageRenderNode</code> with
+<code>kind: "overview"</code> (see <a href="../kinds/node-overview.html"><code>kinds/node-overview.html</code></a>
+for the full data sheet and the routing-vs-string-comparison nuance summarized again below).
+</p>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/routes.js#L32-L39"><code>routes.js</code></a>
+matches the bare technology-root URL shape <code>/tutorials/:id</code> (no further path segments) to
+the route named <code>tutorials-overview</code>, whose component is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/TutorialsOverview.vue#L1-L88"><code>views/TutorialsOverview.vue</code></a>.
+Any deeper path under the same technology (<code>/tutorials/:id/*</code>, e.g. an individual tutorial
+or tutorial article) instead routes to <code>Topic.vue</code>, a completely different view chain
+documented on the <a href="tutorial-project.html">Tutorial Project</a> and
+<a href="tutorial-article.html">Tutorial Article</a> hierarchy pages. Dispatch to this page therefore
+happens entirely at the router/URL-shape level &mdash; nothing in the component tree below the route
+ever compares a <code>kind</code> string against the literal <code>"overview"</code>.
+</p>
+<p>
+The route-level view component fetches the RenderNode JSON for the current route and forwards exactly
+three of its top-level fields (<code>metadata</code>, <code>references</code>, <code>sections</code>)
+as props to the real presentational component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview.vue#L1-L162"><code>components/TutorialsOverview.vue</code></a>
+(locally aliased <code>Overview</code>):
+</p>
+<pre><code>&lt;template&gt;
+  &lt;Overview v-if="topicData" v-bind="overviewProps" :key="topicKey" /&gt;
+&lt;/template&gt;
+...
+overviewProps: ({ topicData: { metadata, references, sections } }) =&gt; ({
+  metadata, references, sections,
+}),</code></pre>
+<p>
+<code>components/TutorialsOverview.vue</code> is the actual layout root. It partitions the incoming
+<code>sections</code> array by section <code>kind</code> into a single <code>hero</code> section and
+"everything else," then renders a dark-themed <code>Nav</code>, a <code>Hero</code> fed the hero
+section, and a <code>LearningPath</code> fed every other section
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview.vue#L15-L34">lines 15&ndash;34</a>):
+</p>
+<pre><code>&lt;div class="tutorials-overview"&gt;
+  &lt;Nav v-if="!isTargetIDE" :sections="otherSections" class="theme-dark"&gt;{{ title }}&lt;/Nav&gt;
+  &lt;main id="app-main" tabindex="0" class="main"&gt;
+    &lt;div class="radial-gradient"&gt;
+      &lt;Hero v-if="heroSection" :action="heroSection.action" :content="heroSection.content"
+            :estimatedTime="metadata.estimatedTime" :image="heroSection.image"
+            :title="heroSection.title" /&gt;
+    &lt;/div&gt;
+    &lt;LearningPath v-if="otherSections.length &gt; 0" :sections="otherSections" /&gt;
+  &lt;/main&gt;
+&lt;/div&gt;</code></pre>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/LearningPath.vue#L11-L36"><code>TutorialsOverview/LearningPath.vue</code></a>
+is the actual per-non-hero-section dispatch site. It splits its <code>sections</code> prop into
+<code>volumes</code> (<code>kind === 'volume'</code>, rendered through a dedicated
+<code>&lt;Volume v-for&gt;</code> loop) and <code>otherSections</code> (dispatched generically through
+a <code>componentFor</code>/<code>propsFor</code> lookup table, whose only populated key today is
+<code>resources</code> &rarr; <code>Resources.vue</code>):
+</p>
+<pre><code>const SectionKind = { resources: 'resources', volume: 'volume' };
+componentFor: ({ kind }) => ({
+  [SectionKind.resources]: Resources,
+  [SectionKind.volume]: Volume,
+}[kind]),</code></pre>
+<p>
+<code>Volume.vue</code> renders an optional <code>VolumeName</code> header/blurb plus one
+<code>Chapter</code> per <code>chapters[]</code> entry; <code>Resources.vue</code> renders the same
+shared <code>VolumeName</code> component (fed a localized "Resources" title instead of an authored
+one) plus a <code>ResourcesTileGroup</code> grid of <code>ResourcesTile</code> cards. Both of these
+subtrees, and the intro/hero band above them, are walked in full in section 3's DOM hierarchy tree.
+</p>
+</section>
+
+<section id="chrome"><h2>2. Page chrome (non-schema)</h2>
+<p>
+Unlike a Documentation Topic page, the Tutorials Overview page has <strong>no sidebar
+navigator and no search field</strong> &mdash; the same is true of the Tutorial (Project) and
+Tutorial Article page kinds, since all three share this dark, tutorials-specific chrome rather than
+the light documentation chrome. The only persistent navigation surface is the top nav bar; there is no
+<code>&lt;Navigator&gt;</code> tree and no <code>NavigatorLink</code>/filter UI anywhere in this view chain.
+</p>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/Nav.vue#L11-L26"><code>TutorialsOverview/Nav.vue</code></a>
+wraps the generic <a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/NavBase.vue#L1-L80"><code>NavBase.vue</code></a>
+(root element <code>nav.nav</code>, the same base bar every page kind uses), supplying a
+<code>NavTitleContainer</code> whose visible title is the page's own <code>metadata.category</code>
+string (via the parent's <code>title</code> computed) and whose subhead is the localized plural
+"Tutorials" string (<code>$tc('tutorials.title', 2)</code>). Its menu-items slot always includes one
+<code>NavMenuItemBase.in-page-navigation</code> wrapping a
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/TutorialsNavigation.vue#L11-L36"><code>TutorialsNavigation</code></a>
+component &mdash; the in-nav "jump to volume" menu &mdash; fed the same non-hero <code>sections</code>
+array <code>LearningPath.vue</code> also receives.
+</p>
+<p>
+The parent, <code>components/TutorialsOverview.vue</code>, always applies <code>class="theme-dark"</code>
+to this <code>Nav</code> (<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview.vue#L16-L20">lines 16&ndash;20</a>),
+so the top bar is dark-themed unconditionally, regardless of the site-wide light/dark/auto color-scheme
+preference &mdash; matching the enclosing page's own forced-dark background
+(<code>body:has(.tutorials-overview) { --color-text-background: #{dark-color(fill)}; }</code>, a
+global, non-scoped style rule in that same component). The <code>Nav</code> is only omitted entirely
+when <code>isTargetIDE</code> is true, i.e. when the page is rendered inside Xcode's built-in
+documentation viewer rather than a browser.
+</p>
+<p>
+<code>TutorialsNavigation.vue</code> renders a flat <code>nav.tutorials-navigation &gt;
+TutorialsNavigationList</code> with one <code>&lt;li&gt;</code> per section: a named
+<code>volume</code> becomes an expandable <code>TutorialsNavigationMenu</code> (a
+<code>button.toggle</code> + <code>transition-expand</code>-animated content panel, listing each
+chapter as a plain link and collapsed by default unless it is the currently "active" volume), an
+<em>unnamed</em> volume becomes a flat <code>TutorialsNavigationList</code> of its chapters with no
+enclosing toggle, and a <code>resources</code> section becomes a single plain
+<code>TutorialsNavigationLink</code> labelled with the same localized "Resources" string
+<code>Resources.vue</code> uses for its own heading. "Which volume is active" is tracked in the shared
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/stores/TutorialsOverviewStore.js#L11-L31"><code>TutorialsOverviewStore</code></a>,
+written both by clicking a menu toggle (<code>select-menu</code>/<code>deselect-menu</code> events)
+and by scroll position (each <code>Volume</code>/<code>Chapter</code>/<code>Resources</code>
+component mixes in <code>onIntersectViewport</code> to call <code>setActiveVolume</code>/
+<code>setActiveSidebarLink</code> as it crosses the viewport). This scroll-and-click-driven jump menu
+is the only client-side interactive chrome specific to this page kind; see
+<a href="../kinds/section-volume.html">kinds/section-volume.html</a> section 5 for the fuller
+"native <code>&lt;details&gt;</code> could replace part of this" analysis.
+</p>
+</section>
+
+<section id="hierarchy-tree"><h2>3. DOM hierarchy: root &rarr; chrome &rarr; content &rarr; leaves</h2>
+<p>
+The tree below is assembled from <code>components/TutorialsOverview.vue</code> (root/hero/learning-path
+scaffolding), <code>Nav.vue</code>/<code>TutorialsNavigation.vue</code> (chrome), and
+<code>LearningPath.vue</code> &rarr; <code>Volume.vue</code>/<code>Resources.vue</code> and their
+children (content). It walks one representative volume (with a named header, one chapter, and a
+resolved tutorial topic link) and one resources block (with a two-tile grid) down to leaf inline
+content, matching the tier labels used across <code>kinds/*.html</code>.
+</p>
+<ul class="hierarchy-tree">
+<li><span class="tag node">NODE</span> <code>div.tutorials-overview</code> &mdash; root element from
+<code>components/TutorialsOverview.vue</code>; the whole page is unconditionally dark-themed.
+<a href="../kinds/node-overview.html">overview</a>
+<ul>
+<li><span class="tag chrome">CHROME</span> <code>nav.nav.theme-dark</code> &mdash; <code>Nav.vue</code>
+on top of <code>NavBase.vue</code>; no sidebar navigator, no search (same as Tutorial/Tutorial Article
+pages).
+<ul>
+<li><span class="tag chrome">CHROME</span> <code>div.nav-title &gt; NavTitleContainer</code> &mdash;
+title = <code>metadata.category</code>, subhead = localized "Tutorials".</li>
+<li><span class="tag chrome">CHROME</span> <code>div.nav-menu &gt; nav.tutorials-navigation</code>
+&mdash; the volume-jump menu (<code>TutorialsNavigation.vue</code>).
+<ul>
+<li><span class="tag chrome">CHROME</span> <code>li.volume.volume--named &gt;
+div.tutorials-navigation-menu</code> &mdash; one named volume, expandable
+(<code>TutorialsNavigationMenu</code>, <code>button.toggle</code> + collapsible chapter list).
+<span class="note">click and/or scroll toggles <code>collapsed</code> via the shared store.</span></li>
+<li><span class="tag chrome">CHROME</span> <code>li.resource &gt; a (TutorialsNavigationLink)</code>
+&mdash; plain "Resources" jump link, no expand/collapse.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span class="tag chrome">CHROME</span> <code>main#app-main.main &gt; div.radial-gradient</code>
+&mdash; wraps the hero band; background is the CSS radial-gradient effect, not schema-driven.
+<ul>
+<li><span class="tag section">SECTION</span> <code>section.hero</code> &mdash; <code>Hero.vue</code>,
+rendered only when a <code>hero</code>-kind section is present (always true for a well-formed
+overview page). <a href="../kinds/section-hero.html">hero</a>
+<ul>
+<li><span class="tag chrome">CHROME</span> <code>div.copy-container &gt; h1.title</code> &mdash;
+the hero's own <code>title</code> field, plain text (schema field, not a dispatched node/section, so
+tagged chrome rather than block/inline).</li>
+<li><span class="tag block">BLOCK</span> <code>div.content &gt; p</code> &mdash; hero
+<code>content</code>, dispatched through <code>ContentNode.vue</code>.
+<a href="../kinds/block-paragraph.html">paragraph</a>
+<ul>
+<li><span class="tag inline">INLINE</span> <code>#text</code> &mdash; plain text run.
+<a href="../kinds/inline-text.html">text</a></li>
+</ul>
+</li>
+<li><span class="tag chrome">CHROME</span> <code>p.meta &gt; TimerIcon + span</code> &mdash;
+<code>metadata.estimatedTime</code> row (top-level page metadata, not a section field).</li>
+<li><span class="tag reference">REFERENCE</span> <code>CallToActionButton</code> &mdash; optional
+hero <code>action</code>, resolved via <code>DestinationDataProvider</code>.
+<a href="../kinds/reference-topic.html">topic</a> / <a href="../kinds/reference-link.html">link</a></li>
+<li><span class="tag reference">REFERENCE</span> <code>Asset</code> &mdash; optional hero
+<code>image</code>, resolved against the page's <code>references</code> map.
+<a href="../kinds/reference-image.html">image</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span class="tag chrome">CHROME</span> <code>div.learning-path &gt; div.main-container</code>
+&mdash; <code>LearningPath.vue</code>'s outer scaffolding; rendered only when at least one non-hero
+section exists.
+<ul>
+<li><span class="tag chrome">CHROME</span> <code>div.secondary-content-container &gt;
+nav.tutorials-navigation</code> &mdash; the sticky side-rail duplicate of the nav's in-page jump
+menu (same component, hidden below the <code>small</code> breakpoint and whenever
+<code>isTargetIDE</code>).</li>
+<li><span class="tag chrome">CHROME</span> <code>div.primary-content-container &gt;
+div.content-sections-container</code> &mdash; holds one child per non-hero section, each wrapped in
+a shared <code>.content-section</code> class for spacing/rounded corners.
+<ul>
+<li><span class="tag section">SECTION</span> <code>section.volume.content-section</code> &mdash;
+one <code>Volume.vue</code> per <code>VolumeRenderSection</code> in <code>sections</code>.
+<a href="../kinds/section-volume.html">volume</a>
+<ul>
+<li><span class="tag chrome">CHROME</span> <code>div.volume-name</code> &mdash;
+<code>VolumeName.vue</code>, rendered only when the volume has a <code>name</code>; contains an
+optional <code>Asset.image</code>, <code>h2.name</code>, and the volume's intro
+<code>content</code> (block content, tagged separately below).
+<ul>
+<li><span class="tag reference">REFERENCE</span> <code>Asset.image</code> &mdash; optional
+volume-header image reference. <a href="../kinds/reference-image.html">image</a></li>
+<li><span class="tag block">BLOCK</span> <code>div.content &gt; p</code> &mdash; volume intro
+content via <code>ContentNode.vue</code>. <a href="../kinds/block-paragraph.html">paragraph</a>
+<ul>
+<li><span class="tag inline">INLINE</span> <code>#text</code>
+<a href="../kinds/inline-text.html">text</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span class="tag chrome">CHROME</span> <code>section.chapter.tile</code> &mdash;
+<code>Chapter.vue</code>, one per <code>chapters[]</code> entry (not itself a discriminated
+<code>kind</code>, so tagged chrome rather than a schema-kind tier, consistent with
+<code>kinds/section-volume.html</code> treating <code>Chapter.vue</code> as out of scope for the
+<code>volume</code> kind page).
+<ul>
+<li><span class="tag reference">REFERENCE</span> <code>Asset</code> &mdash; per-chapter
+<code>image</code>. <a href="../kinds/reference-image.html">image</a></li>
+<li><span class="tag chrome">CHROME</span> <code>h3.name &gt; span.eyebrow + span.name-text</code>
+&mdash; "Chapter N" eyebrow plus <code>chapter.name</code> heading text (plain schema string
+fields, not dispatched nodes).</li>
+<li><span class="tag block">BLOCK</span> <code>div.content &gt; p</code> &mdash; chapter
+<code>content</code>. <a href="../kinds/block-paragraph.html">paragraph</a>
+<ul>
+<li><span class="tag inline">INLINE</span> <code>#text</code>
+<a href="../kinds/inline-text.html">text</a></li>
+</ul>
+</li>
+<li><span class="tag chrome">CHROME</span> <code>ChapterTopicList &gt; ul &gt; li</code> &mdash;
+one row per resolved entry in <code>chapter.tutorials</code> (identifiers looked up against the
+page's <code>references</code> map by <code>Volume.vue</code>'s <code>lookupTopics()</code>).
+<ul>
+<li><span class="tag reference">REFERENCE</span> <code>a</code> (topic link) &mdash; the
+resolved tutorial/article reference for one <code>tutorials[]</code> identifier.
+<a href="../kinds/reference-topic.html">topic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span class="tag section">SECTION</span> <code>section.resources.content-section#resources</code>
+&mdash; <code>Resources.vue</code>, rendered for the (at most one, typically trailing)
+<code>ResourcesRenderSection</code> in <code>sections</code>.
+<a href="../kinds/section-resources.html">resources</a>
+<ul>
+<li><span class="tag chrome">CHROME</span> <code>div.volume-name</code> &mdash; the same
+<code>VolumeName.vue</code> reused with a localized "Resources" title instead of an authored
+<code>name</code>.
+<ul>
+<li><span class="tag block">BLOCK</span> <code>div.content &gt; p</code> &mdash; the resources
+section's own <code>content</code> abstract. <a href="../kinds/block-paragraph.html">paragraph</a>
+<ul>
+<li><span class="tag inline">INLINE</span> <code>#text</code>
+<a href="../kinds/inline-text.html">text</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span class="tag chrome">CHROME</span> <code>div.tile-group.count-2</code> &mdash;
+<code>ResourcesTileGroup.vue</code>'s CSS grid wrapper, class chosen from <code>tiles.length</code>.
+<ul>
+<li><span class="tag reference">REFERENCE</span> <code>div.tile</code> &mdash;
+<code>ResourcesTile.vue</code>, one per <code>tiles[]</code> entry; treated as reference-tier here
+(matching <code>kinds/section-tile.html</code>'s classification of <code>RenderTile</code> as an
+untagged embedded object under <code>ResourcesRenderSection.tiles[]</code>, not its own discriminated
+section). <a href="../kinds/section-tile.html">tile</a>
+<ul>
+<li><span class="tag chrome">CHROME</span> <code>div.icon</code> &mdash; icon selected from
+<code>tiles[].identifier</code> (documentation/downloads/forums/sampleCode/videos; none for
+<code>featured</code>).</li>
+<li><span class="tag chrome">CHROME</span> <code>div.title</code> &mdash;
+<code>tiles[].title</code>, plain text.</li>
+<li><span class="tag block">BLOCK</span> <code>ContentNode</code> output &mdash;
+<code>tiles[].content</code>. <a href="../kinds/block-paragraph.html">paragraph</a>
+<ul>
+<li><span class="tag inline">INLINE</span> <code>#text</code>
+<a href="../kinds/inline-text.html">text</a></li>
+</ul>
+</li>
+<li><span class="tag reference">REFERENCE</span> <code>a.link</code> &mdash; optional
+<code>tiles[].action</code> call-to-action, resolved via <code>DestinationDataProvider</code>.
+<a href="../kinds/reference-topic.html">topic</a> / <a href="../kinds/reference-link.html">link</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="note">
+(<code>tiles[].media</code>, a nullable reference-format string declared on the wire schema, is not
+walked above because &mdash; per <a href="../kinds/section-resources.html">kinds/section-resources.html</a>
+and <a href="../kinds/section-tile.html">kinds/section-tile.html</a> &mdash; it is not read by
+<code>ResourcesTileGroup.vue</code>'s <code>propsFor</code> or by <code>ResourcesTile.vue</code>'s own
+props, i.e. it is present on the wire but dead data for this page's current rendering.)
+</p>
+</section>
+
+<section id="content-dispatch"><h2>4. RenderNode content dispatch (schema-driven)</h2>
+<p>
+Kinds actually reachable on a real Tutorials Overview page, in the order the component tree dispatches
+them (top-level <code>sections</code> partition first, then nested block/inline/reference dispatch
+inside whichever section matched):
+</p>
+<table>
+<thead><tr><th>Dispatch site</th><th>Kind</th><th>Tier</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>components/TutorialsOverview.vue</code> <code>partitionedSections</code></td>
+<td><a href="../kinds/section-hero.html">hero</a></td><td>section</td>
+<td>Exactly one expected per page; everything else falls into <code>otherSections</code>.</td></tr>
+<tr><td><code>LearningPath.vue</code> <code>partitionedSections</code></td>
+<td><a href="../kinds/section-volume.html">volume</a></td><td>section</td>
+<td>Zero or more; rendered via a dedicated <code>&lt;Volume v-for&gt;</code> loop, not the generic
+lookup table.</td></tr>
+<tr><td><code>LearningPath.vue</code> <code>componentFor</code>/<code>propsFor</code></td>
+<td><a href="../kinds/section-resources.html">resources</a></td><td>section</td>
+<td>At most one in practice (the map's only other populated key); dispatched generically, unlike
+<code>volume</code>.</td></tr>
+<tr><td><code>Resources.vue</code> &gt; <code>ResourcesTileGroup.vue</code> per-tile loop</td>
+<td><a href="../kinds/section-tile.html">tile</a></td><td>section-embedded (untagged on the wire)</td>
+<td>Not a discriminated <code>kind</code>; one <code>RenderTile</code> object per
+<code>resources.tiles[]</code> entry.</td></tr>
+<tr><td><code>ContentNode.vue</code> (hero/volume/chapter/tile <code>content</code> arrays)</td>
+<td><a href="../kinds/block-paragraph.html">paragraph</a> and any other <code>RenderBlockContent</code> case an author writes</td>
+<td>block</td>
+<td>Whatever block kinds appear in authored prose are reachable here; <code>paragraph</code> is shown
+as the representative case in section 3's tree.</td></tr>
+<tr><td><code>ContentNode.vue</code> inline dispatch (within the above blocks)</td>
+<td><a href="../kinds/inline-text.html">text</a> and any other <code>RenderInlineContent</code> case</td>
+<td>inline</td>
+<td>Same caveat as above &mdash; <code>text</code> is the representative leaf case.</td></tr>
+<tr><td><code>Volume.vue</code> <code>lookupTopics()</code> / chapter tutorial links</td>
+<td><a href="../kinds/reference-topic.html">topic</a></td><td>reference</td>
+<td>Each <code>chapters[].tutorials[]</code> identifier resolved against the page's
+<code>references</code> map.</td></tr>
+<tr><td><code>ResourcesTile.vue</code> <code>action</code> / <code>Hero.vue</code> <code>action</code></td>
+<td><a href="../kinds/reference-topic.html">topic</a> / <a href="../kinds/reference-link.html">link</a></td><td>reference</td>
+<td>Resolved via <code>DestinationDataProvider</code>; internal doc links resolve as <code>topic</code>,
+external URLs as <code>link</code>.</td></tr>
+<tr><td><code>Hero.vue</code>/<code>VolumeName.vue</code>/<code>Chapter.vue</code> <code>Asset</code></td>
+<td><a href="../kinds/reference-image.html">image</a></td><td>reference</td>
+<td>Hero/volume/chapter illustration identifiers resolved against <code>references</code>.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="cross-reference"><h2>5. Kind cross-reference table</h2>
+<p>Exhaustive list of every kind documented elsewhere in this reference that is reachable from a
+Tutorials Overview page, for use as backlink source data.</p>
+<table>
+<tr><th>Kind</th><th>Tier</th><th>Kind file</th></tr>
+<tr><td><code>overview</code></td><td>node</td><td><a href="../kinds/node-overview.html">node-overview.html</a></td></tr>
+<tr><td><code>hero</code></td><td>section</td><td><a href="../kinds/section-hero.html">section-hero.html</a></td></tr>
+<tr><td><code>volume</code></td><td>section</td><td><a href="../kinds/section-volume.html">section-volume.html</a></td></tr>
+<tr><td><code>resources</code></td><td>section</td><td><a href="../kinds/section-resources.html">section-resources.html</a></td></tr>
+<tr><td><code>tile</code></td><td>section (embedded/untagged)</td><td><a href="../kinds/section-tile.html">section-tile.html</a></td></tr>
+<tr><td><code>paragraph</code></td><td>block</td><td><a href="../kinds/block-paragraph.html">block-paragraph.html</a></td></tr>
+<tr><td><code>text</code></td><td>inline</td><td><a href="../kinds/inline-text.html">inline-text.html</a></td></tr>
+<tr><td><code>topic</code></td><td>reference</td><td><a href="../kinds/reference-topic.html">reference-topic.html</a></td></tr>
+<tr><td><code>link</code></td><td>reference</td><td><a href="../kinds/reference-link.html">reference-link.html</a></td></tr>
+<tr><td><code>image</code></td><td>reference</td><td><a href="../kinds/reference-image.html">reference-image.html</a></td></tr>
+</table>
+<p class="note">
+Any other <code>RenderBlockContent</code>/<code>RenderInlineContent</code> case an author writes inside
+a hero/volume/chapter/tile's <code>content</code> array is also reachable in principle (the
+<code>ContentNode.vue</code> dispatcher used there is fully generic and not restricted by page kind) &mdash;
+the block/inline rows above list only the representative leaf case actually walked in section 3, not an
+exhaustive claim that no other block/inline kind can appear on this page.
+</p>
+</section>
+
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page: Tutorial (Project) — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="index.html" class="active" aria-current="page">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">page</p>
+<h1>Tutorial (Project)</h1>
+<p class="wire-value">Route: <code>/tutorials/:id/*</code> &rarr; <code>views/Topic.vue</code> &rarr; <code>components/Tutorial.vue</code> (kind <code>"project"</code>)</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#route-dispatch">1. Route &amp; dispatch</a> &middot; <a href="#chrome">2. Chrome</a> &middot; <a href="#hierarchy-tree">3. Hierarchy tree</a> &middot; <a href="#content-dispatch">4. Content dispatch</a> &middot; <a href="#cross-reference">5. Cross-reference</a></nav>
+<section id="route-dispatch"><h2>1. Route and component dispatch</h2>
+<p>
+This page is the interactive DocC tutorial: a full <code>RenderNode</code> whose top-level
+<code>kind</code> discriminator is the wire value <code>"project"</code> (swift-docc's
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNode.swift#L253-L278"><code>RenderNode.Kind</code></a>
+declares <code>case tutorial = "project"</code>, line 256 &mdash; every layer above the wire
+calls this a "tutorial", but <code>"project"</code> is what actually lands on disk). Full
+route/dispatch details and citations are documented in
+<a href="../kinds/node-tutorial.html">kinds/node-tutorial.html &sect;1</a>; summarized here for
+this page's own tree.
+</p>
+<p>
+The route-level dispatcher is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/Topic.vue#L37-L115"><code>views/Topic.vue</code></a>,
+which switches on <code>topic.kind</code> via a local <code>TopicKind</code> map
+(<code>{ article: 'article', tutorial: 'project' }</code>) and, for
+<code>kind: "project"</code>, renders
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial.vue#L1-L172"><code>components/Tutorial.vue</code></a>,
+passing exactly five props derived from the RenderNode:
+</p>
+<pre><code>propsFor(topic) {
+  const {
+    hierarchy, kind, metadata, references, sections, identifier,
+  } = topic;
+  return {
+    [TopicKind.tutorial]: {
+      hierarchy, metadata, references, sections, identifierUrl: identifier.url,
+    },
+    ...
+  }[kind];
+}</code></pre>
+<p>
+<code>hierarchy</code> and <code>metadata</code> feed the page chrome
+(<a href="#chrome">section 2</a>); <code>sections</code> is the array this page's own body is
+built from, each entry re-dispatched by its own <code>kind</code> field through
+<code>Tutorial.vue</code>'s local <code>SectionComponents</code> map
+(<code>hero</code> &rarr; <code>Hero.vue</code>, <code>tasks</code> &rarr;
+<code>SectionList.vue</code>, <code>assessments</code> &rarr; <code>Assessments.vue</code>,
+<code>callToAction</code> &rarr; <code>CallToAction.vue</code>); <code>references</code> is the
+identifier-keyed lookup table those sections resolve topic links, images, code files, and
+downloads against. This same five-prop hand-off and section dispatch table is what
+<a href="../kinds/node-tutorial.html#render-consumption">kinds/node-tutorial.html &sect;1</a>
+walks through with full line citations &mdash; see that page for the
+<code>RenderNode.Kind</code>/<code>SectionComponents</code> source excerpts verbatim.
+</p>
+</section>
+
+<section id="chrome"><h2>2. Page chrome (non-schema)</h2>
+<p>
+<code>Tutorial.vue</code>'s root template renders exactly one chrome component above the
+section list:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/NavigationBar.vue#L1-L56"><code>components/Tutorial/NavigationBar.vue</code></a>,
+conditionally rendered only when <code>!isTargetIDE</code> (line 14 of
+<code>Tutorial.vue</code>: <code>&lt;NavigationBar v-if="!isTargetIDE" .../&gt;</code> &mdash;
+Xcode's embedded IDE documentation viewer suppresses this bar entirely).
+</p>
+<p>
+<code>NavigationBar.vue</code> builds on the shared
+<code>docc-render/components/NavBase.vue</code>: its template renders
+<code>&lt;NavBase id="nav" :aria-label="technology" hasSolidBackground&gt;</code>, giving the
+root chrome element the id <code>#nav</code> and a solid (non-translucent) dark background,
+distinct from the default, scroll-transparent nav used on documentation pages. Inside
+<code>NavBase</code>'s default slot it places a <code>NavTitleContainer</code> showing the
+technology name (<code>metadata.category</code>) as the title and a localized "Tutorials"
+subhead, linked back to the tutorial's technology root via a
+<code>ReferenceUrlProvider</code> wrapping <code>hierarchy.reference</code>. Inside the
+<code>tray</code> slot it places, in order:
+</p>
+<ul>
+<li><code>.mobile-dropdown-container &gt; MobileDropdown</code> &mdash; a single combined
+chapter+section picker shown only at small breakpoints (the container is
+<code>display: none</code> otherwise).</li>
+<li><code>.dropdown-container &gt; .primary-dropdown (PrimaryDropdown.vue)</code> &mdash; the
+chapter/tutorial picker, built from <code>chapters</code> (<code>hierarchy.modules</code>) with
+<code>currentOption</code> set to the page's own title (<code>tutorialTitle</code>, derived from
+the <code>hero</code> section, not from the RenderNode's own optional <code>title</code>
+field).</li>
+<li><code>ChevronIcon.icon-inline</code> &mdash; a static separator glyph between the primary and
+secondary dropdowns.</li>
+<li><code>.secondary-dropdown (SecondaryDropdown.vue)</code> &mdash; rendered only
+<code>v-if="currentSection"</code>; lists the current tutorial's own <code>@Section</code>
+anchors (<code>optionsForSections</code>, derived from <code>hierarchy.modules[*].projects[*]
+.sections</code> plus a synthetic "Introduction" first entry) with a live section-progress
+indicator (<code>sectionIndicatorText</code>, e.g. "Section 2 of 4").</li>
+</ul>
+<p>
+Both <code>PrimaryDropdown.vue</code> and <code>SecondaryDropdown.vue</code> delegate their
+open/closed toggle behavior to the shared <code>DropdownCustom.vue</code>, and
+<code>SecondaryDropdown</code>'s selection additionally drives a manual
+<code>scrollToElement</code> mixin call (working around a vue-router scroll-restoration bug)
+rather than a plain in-page anchor jump. <code>NavigationBar.vue</code>'s own scoped CSS layers
+dark-themed dropdown backgrounds (<code>--color-tutorial-navbar-dropdown-background</code> /
+<code>-border</code>) on top of the shared <code>NavBase</code> styles, and collapses the
+desktop grid (<code>.dropdown-container</code>, <code>.separator</code>) in favor of the mobile
+dropdown at the <code>nav-in-breakpoint</code> mixin's breakpoint.
+</p>
+<p>
+<strong>This page has no sidebar navigator and no search.</strong> Unlike the Documentation
+Topic page (<code>DocumentationTopic.vue</code>, wire kind <code>"symbol"</code>/<code>"article"
+"</code> &mdash; see <a href="doc-topic.html">doc-topic.html</a> for its
+<code>NavigatorDataProvider</code>/left-rail tree and its <code>Navigator</code>-embedded search
+field), <code>Tutorial.vue</code>'s template contains no navigator sidebar component and no
+search input at all: navigation within a tutorial project is limited to the
+Primary/Secondary/Mobile chapter+section dropdowns described above, plus the page's own
+in-content anchors and the trailing <code>callToAction</code> section's "what's next" link. This
+is a structural fact of <code>Tutorial.vue</code>'s template (no sidebar/search components are
+imported or rendered anywhere in it), not a configuration flag that could be toggled on.
+</p>
+</section>
+
+<section id="hierarchy-tree"><h2>3. DOM hierarchy: root &rarr; chrome &rarr; content &rarr; leaves</h2>
+<p>
+Below is a representative (not exhaustive) walk of the rendered DOM for a tutorial project page,
+one example subtree per section kind <code>Tutorial.vue</code> actually dispatches on. Tag
+legend: <span class="tag chrome">chrome</span> non-schema UI,
+<span class="tag node">node</span> top-level RenderNode kind,
+<span class="tag section">section</span> RenderSectionKind,
+<span class="tag block">block</span> RenderBlockContent,
+<span class="tag inline">inline</span> RenderInlineContent,
+<span class="tag reference">reference</span> RenderReference (from the <code>references</code>
+map).
+</p>
+<ul class="hierarchy-tree">
+<li><span class="tag node">node</span> <code>div.tutorial</code> &mdash; root element for the whole page; wraps the entire <code>TutorialsPageRenderNode</code> (kind <code>"project"</code>). <a href="../kinds/node-tutorial.html">kinds/node-tutorial.html</a>
+  <ul>
+    <li><span class="tag chrome">chrome</span> <code>#nav (NavigationBar.vue &gt; NavBase.vue)</code> &mdash; technology/chapter/section navigation bar; rendered only when <code>!isTargetIDE</code>; no sidebar, no search (see <a href="#chrome">section 2</a>).
+      <ul>
+        <li><span class="tag chrome">chrome</span> <code>.nav-title (NavTitleContainer)</code> &mdash; technology name + "Tutorials" subhead, linking to <code>hierarchy.reference</code>.</li>
+        <li><span class="tag chrome">chrome</span> <code>.mobile-dropdown-container &gt; MobileDropdown</code> &mdash; combined chapter+section picker (small breakpoint only).</li>
+        <li><span class="tag chrome">chrome</span> <code>.dropdown-container &gt; .primary-dropdown (PrimaryDropdown.vue)</code> &mdash; chapter/tutorial picker built from <code>hierarchy.modules</code>.</li>
+        <li><span class="tag chrome">chrome</span> <code>.secondary-dropdown (SecondaryDropdown.vue)</code> &mdash; current tutorial's own <code>@Section</code> anchors + progress indicator.</li>
+      </ul>
+    </li>
+    <li><span class="tag chrome">chrome</span> <code>main#app-main[tabindex="0"]</code> &mdash; wraps the <code>sections</code> array; one child per entry, dispatched by each section's own <code>kind</code>.
+      <ul>
+        <li><span class="tag section">section</span> <code>.tutorial-hero &gt; div.hero.dark (Hero.vue)</code> &mdash; <code>kind: "hero"</code> intro section. <a href="../kinds/section-hero.html">kinds/section-hero.html</a>
+          <ul>
+            <li><span class="tag chrome">chrome</span> <code>.bg</code> &mdash; optional background-image layer, resolved from <code>backgroundImage</code> against the light-variant <span class="tag reference">reference</span> entry in <code>references</code>.</li>
+            <li><span class="tag block">block</span> <code>h1.headline &gt; span.eyebrow</code> &mdash; <code>Headline</code> component; eyebrow text is the hero's <code>chapter</code> string, title is the hero's own <code>title</code> string (both plain strings on the section, not block/inline content).</li>
+            <li><span class="tag block">block</span> <code>.intro (ContentNode.vue dispatch)</code> &mdash; renders the hero's <code>content</code> array.
+              <ul>
+                <li><span class="tag block">block</span> <code>p (paragraph)</code> &mdash; <code>kind: "paragraph"</code>. <a href="../kinds/block-paragraph.html">kinds/block-paragraph.html</a>
+                  <ul>
+                    <li><span class="tag inline">inline</span> <code>(bare text node)</code> &mdash; <code>type: "text"</code>, spliced in as a raw DOM string. <a href="../kinds/inline-text.html">kinds/inline-text.html</a></li>
+                    <li><span class="tag inline">inline</span> <code>code.inline-code</code> &mdash; <code>type: "codeVoice"</code>, e.g. a symbol name mentioned in the intro copy. <a href="../kinds/inline-codevoice.html">kinds/inline-codevoice.html</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li><span class="tag chrome">chrome</span> <code>a.call-to-action &gt; PlayIcon</code> + <code>GenericModal &gt; Asset.video-asset</code> &mdash; "Watch intro video" trigger, shown only when the hero's <code>video</code> field is set; resolves to a <span class="tag reference">reference</span> <code>video</code> entry. <a href="../kinds/reference-video.html">kinds/reference-video.html</a></li>
+            <li><span class="tag chrome">chrome</span> <code>.metadata (HeroMetadata.vue)</code> &mdash; renders <code>estimatedTimeInMinutes</code>, and resolves <code>projectFiles</code> / <code>xcodeRequirement</code> to <span class="tag reference">reference</span> entries.
+              <ul>
+                <li><span class="tag reference">reference</span> <code>(download link)</code> &mdash; <code>projectFiles</code> identifier resolved against the references map. <a href="../kinds/reference-download.html">kinds/reference-download.html</a></li>
+                <li><span class="tag reference">reference</span> <code>(Xcode requirement chip)</code> &mdash; <code>xcodeRequirement</code> identifier resolved against the references map. <a href="../kinds/reference-xcoderequirement.html">kinds/reference-xcoderequirement.html</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li><span class="tag section">section</span> <code>.sections &gt; .section (SectionList.vue &gt; Section.vue)</code> &mdash; <code>kind: "tasks"</code>, one <code>.section</code> per entry in <code>tasks</code>. <a href="../kinds/section-tasks.html">kinds/section-tasks.html</a>
+          <ul>
+            <li><span class="tag chrome">chrome</span> <code>(SectionIntro.vue, via Section.vue's Intro)</code> &mdash; renders the task's <code>contentSection</code> intro content/media (non-step body of the <code>@Section</code>/<code>@Steps</code> block).</li>
+            <li><span class="tag block">block</span> <code>.steps &gt; .content-container &gt; .step-container &gt; .step (SectionSteps.vue &gt; Step.vue)</code> &mdash; one per <code>step</code> entry in <code>stepsSection</code>. <a href="../kinds/block-step.html">kinds/block-step.html</a>
+              <ul>
+                <li><span class="tag block">block</span> <code>p.step-label</code> &mdash; "Step N" label (plain, non-schema chrome text driven by the computed <code>stepNumber</code>).</li>
+                <li><span class="tag block">block</span> <code>(ContentNode.vue dispatch over content)</code> &mdash; the step's instructional prose.
+                  <ul>
+                    <li><span class="tag block">block</span> <code>p (paragraph)</code> <a href="../kinds/block-paragraph.html">kinds/block-paragraph.html</a>
+                      <ul>
+                        <li><span class="tag inline">inline</span> <code>strong</code> &mdash; <code>type: "strong"</code>. <a href="../kinds/inline-strong.html">kinds/inline-strong.html</a></li>
+                        <li><span class="tag inline">inline</span> <code>a (reference)</code> &mdash; <code>type: "reference"</code>, an inline link resolved via <code>identifier</code> against <code>references</code>, e.g. to a <span class="tag reference">reference</span> <code>topic</code> entry. <a href="../kinds/inline-reference.html">kinds/inline-reference.html</a> / <a href="../kinds/reference-topic.html">kinds/reference-topic.html</a></li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+                <li><span class="tag chrome">chrome</span> <code>.asset-container &gt; CodePreview &gt; CodeListing (or Asset for media)</code> &mdash; the step's <code>code</code> identifier resolves to a <span class="tag reference">reference</span> <code>file</code> entry rendered by the shared code-listing component; the step's <code>media</code> identifier resolves to an <span class="tag reference">reference</span> <code>image</code>/<code>video</code> entry. <a href="../kinds/reference-file.html">kinds/reference-file.html</a>
+                  <ul>
+                    <li><span class="tag block">block</span> <code>pre &gt; code (codeListing, via CodeListing.vue)</code> &mdash; syntax-highlighted lines of the step's associated code file. <a href="../kinds/block-codelisting.html">kinds/block-codelisting.html</a></li>
+                  </ul>
+                </li>
+                <li><span class="tag block">block</span> <code>.caption (ContentNode.vue dispatch over caption)</code> &mdash; optional step caption content, same block/inline shapes as the main step content.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li><span class="tag section">section</span> <code>.assessments-wrapper &gt; .assessments (Assessments.vue)</code> &mdash; <code>kind: "assessments"</code>, one instance for the section's whole <code>assessments</code> array (quiz questions are stepped through client-side, not all rendered as siblings). <a href="../kinds/section-assessments.html">kinds/section-assessments.html</a>
+          <ul>
+            <li><span class="tag chrome">chrome</span> <code>h2.title</code> &mdash; localized "Check Your Understanding" banner (not schema content).</li>
+            <li><span class="tag chrome">chrome</span> <code>AssessmentsProgress</code> &mdash; "Question N of M" progress indicator, computed from array length/index, not itself schema content.</li>
+            <li><span class="tag block">block</span> <code>.quiz (Quiz.vue)</code> &mdash; renders one <code>assessments[activeIndex]</code> entry at a time.
+              <ul>
+                <li><span class="tag block">block</span> <code>.title (ContentNode.vue over title)</code> &mdash; the active question's <code>title</code> block content.</li>
+                <li><span class="tag block">block</span> <code>.question-content (ContentNode.vue over content)</code> &mdash; the active question's supporting <code>content</code> block content (optional).</li>
+                <li><span class="tag block">block</span> <code>fieldset.choices &gt; label</code> &mdash; one per entry in <code>choices</code>.
+                  <ul>
+                    <li><span class="tag block">block</span> <code>.question (ContentNode.vue over choice.content)</code> &mdash; the choice's own label content.</li>
+                    <li><span class="tag block">block</span> <code>.answer (ContentNode.vue over choice.justification)</code> &mdash; revealed only after that choice is checked; the justification/feedback content.</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li><span class="tag section">section</span> <code>(CallToAction.vue &gt; shared CallToAction.vue "BaseCTA")</code> &mdash; <code>kind: "callToAction"</code>, DocC's auto-generated "what's next" panel. <a href="../kinds/section-calltoaction.html">kinds/section-calltoaction.html</a>
+          <ul>
+            <li><span class="tag chrome">chrome</span> <code>(featured media figure)</code> &mdash; the section's <code>media</code> identifier resolved to an <span class="tag reference">reference</span> <code>image</code> entry. <a href="../kinds/reference-image.html">kinds/reference-image.html</a></li>
+            <li><span class="tag block">block</span> <code>(ContentNode.vue over abstract)</code> &mdash; the panel's abstract text.
+              <ul>
+                <li><span class="tag inline">inline</span> <code>(bare text node)</code> &mdash; <code>type: "text"</code>. <a href="../kinds/inline-text.html">kinds/inline-text.html</a></li>
+              </ul>
+            </li>
+            <li><span class="tag reference">reference</span> <code>a (action link)</code> &mdash; the panel's <code>action</code> object, an inline-reference-shaped pointer (<code>type: "reference"</code>) to the next tutorial/article, with an optional <code>overridingTitle</code>. <a href="../kinds/reference-topic.html">kinds/reference-topic.html</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+    <li><span class="tag chrome">chrome</span> <code>PortalTarget[name="modal-destination"]</code> &mdash; portal-vue teleport target for modals raised from within tutorial content (e.g. the Hero's video modal above).</li>
+  </ul>
+</li>
+</ul>
+<p class="note">
+Not walked above for brevity, but reachable the same way: <code>orderedList</code>/
+<code>unorderedList</code>/<code>aside</code>/<code>table</code>/<code>row</code> blocks and
+<code>emphasis</code>/<code>image</code>/<code>newTerm</code> inline runs anywhere
+<code>ContentNode.vue</code> dispatches over block/inline content (hero intro, step content/
+caption, quiz title/content/choices, callToAction abstract) &mdash; see
+<a href="#content-dispatch">section 4</a> for the full reachable set specific to this page.
+</p>
+</section>
+
+<section id="content-dispatch"><h2>4. RenderNode content dispatch (schema-driven)</h2>
+<p>
+<code>Tutorial.vue</code>'s <code>SectionComponents</code> map (see
+<a href="#route-dispatch">section 1</a>) is a closed set of exactly four section kinds. Two
+other section kinds that share the same top-level <code>RenderSection</code> <code>oneOf</code>
+(<code>volume</code>, <code>resources</code>) exist on the schema but belong to the Tutorial
+<em>Overview</em> page (kind <code>"overview"</code>), not this page &mdash; <code>Tutorial.vue</code>
+has no entry for them and would silently drop a section with either kind.
+</p>
+<table>
+<thead><tr><th>Section kind</th><th>Component</th><th>Kind page</th></tr></thead>
+<tbody>
+<tr><td><code>hero</code></td><td><code>Tutorial/Hero.vue</code></td><td><a href="../kinds/section-hero.html">section-hero.html</a></td></tr>
+<tr><td><code>tasks</code></td><td><code>Tutorial/SectionList.vue</code></td><td><a href="../kinds/section-tasks.html">section-tasks.html</a></td></tr>
+<tr><td><code>assessments</code></td><td><code>Tutorial/Assessments.vue</code></td><td><a href="../kinds/section-assessments.html">section-assessments.html</a></td></tr>
+<tr><td><code>callToAction</code></td><td><code>Tutorial/CallToAction.vue</code></td><td><a href="../kinds/section-calltoaction.html">section-calltoaction.html</a></td></tr>
+</tbody>
+</table>
+<p>
+Underneath those four sections, block and inline content is dispatched generically by the
+shared <code>ContentNode.vue</code> (its <code>BlockType</code>/<code>InlineType</code> maps),
+except for <code>step</code>, which <code>SectionSteps.vue</code> intercepts and routes to its
+own dedicated <code>Step.vue</code> instead of letting <code>ContentNode.vue</code> render it
+generically (see <a href="../kinds/block-step.html">block-step.html</a>).
+</p>
+<table>
+<thead><tr><th>Reachable via</th><th>Block/inline/reference kinds</th></tr></thead>
+<tbody>
+<tr><td>Hero <code>content</code></td><td><a href="../kinds/block-paragraph.html">paragraph</a>, and (generically, via ContentNode.vue) any other block/inline kind an author's Markdown produces inside an <code>@Intro</code> directive</td></tr>
+<tr><td>Tasks <code>contentSection</code> intro</td><td>any block/inline kind, via <code>SectionIntro.vue</code>'s own ContentNode.vue usage</td></tr>
+<tr><td>Tasks <code>stepsSection</code></td><td><a href="../kinds/block-step.html">step</a> (dedicated component); interstitial non-step nodes between steps render generically</td></tr>
+<tr><td>Step <code>content</code>/<code>caption</code></td><td>any block/inline kind, most commonly <a href="../kinds/block-paragraph.html">paragraph</a>, <a href="../kinds/inline-codevoice.html">codeVoice</a>, <a href="../kinds/inline-reference.html">reference</a></td></tr>
+<tr><td>Step <code>code</code>/step media</td><td><a href="../kinds/reference-file.html">file</a> reference (code), <a href="../kinds/reference-image.html">image</a>/<a href="../kinds/reference-video.html">video</a> reference (media)</td></tr>
+<tr><td>Assessments question/choice content</td><td>any block/inline kind, via Quiz.vue's ContentNode.vue usage</td></tr>
+<tr><td>CallToAction <code>abstract</code>/<code>action</code></td><td>block/inline content plus a <a href="../kinds/reference-topic.html">topic</a>-shaped action reference</td></tr>
+<tr><td>Hero <code>xcodeRequirement</code>/<code>projectFiles</code></td><td><a href="../kinds/reference-xcoderequirement.html">xcodeRequirement</a>, <a href="../kinds/reference-download.html">download</a></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="cross-reference"><h2>5. Kind cross-reference table</h2>
+<table>
+<thead><tr><th>Kind</th><th>Tier</th><th>Kind file</th></tr></thead>
+<tbody>
+<tr><td><code>project</code> (<code>tutorial</code>)</td><td>node</td><td><a href="../kinds/node-tutorial.html">node-tutorial.html</a></td></tr>
+<tr><td><code>hero</code></td><td>section</td><td><a href="../kinds/section-hero.html">section-hero.html</a></td></tr>
+<tr><td><code>tasks</code></td><td>section</td><td><a href="../kinds/section-tasks.html">section-tasks.html</a></td></tr>
+<tr><td><code>assessments</code></td><td>section</td><td><a href="../kinds/section-assessments.html">section-assessments.html</a></td></tr>
+<tr><td><code>callToAction</code></td><td>section</td><td><a href="../kinds/section-calltoaction.html">section-calltoaction.html</a></td></tr>
+<tr><td><code>step</code></td><td>block</td><td><a href="../kinds/block-step.html">block-step.html</a></td></tr>
+<tr><td><code>paragraph</code></td><td>block</td><td><a href="../kinds/block-paragraph.html">block-paragraph.html</a></td></tr>
+<tr><td><code>codeListing</code></td><td>block</td><td><a href="../kinds/block-codelisting.html">block-codelisting.html</a></td></tr>
+<tr><td><code>aside</code></td><td>block</td><td><a href="../kinds/block-aside.html">block-aside.html</a></td></tr>
+<tr><td><code>heading</code></td><td>block</td><td><a href="../kinds/block-heading.html">block-heading.html</a></td></tr>
+<tr><td><code>orderedList</code></td><td>block</td><td><a href="../kinds/block-orderedlist.html">block-orderedlist.html</a></td></tr>
+<tr><td><code>unorderedList</code></td><td>block</td><td><a href="../kinds/block-unorderedlist.html">block-unorderedlist.html</a></td></tr>
+<tr><td><code>table</code></td><td>block</td><td><a href="../kinds/block-table.html">block-table.html</a></td></tr>
+<tr><td><code>row</code></td><td>block</td><td><a href="../kinds/block-row.html">block-row.html</a></td></tr>
+<tr><td><code>small</code></td><td>block</td><td><a href="../kinds/block-small.html">block-small.html</a></td></tr>
+<tr><td><code>termList</code></td><td>block</td><td><a href="../kinds/block-termlist.html">block-termlist.html</a></td></tr>
+<tr><td><code>tabNavigator</code></td><td>block</td><td><a href="../kinds/block-tabnavigator.html">block-tabnavigator.html</a></td></tr>
+<tr><td><code>links</code></td><td>block</td><td><a href="../kinds/block-links.html">block-links.html</a></td></tr>
+<tr><td><code>video</code></td><td>block</td><td><a href="../kinds/block-video.html">block-video.html</a></td></tr>
+<tr><td><code>thematicBreak</code></td><td>block</td><td><a href="../kinds/block-thematicbreak.html">block-thematicbreak.html</a></td></tr>
+<tr><td><code>text</code></td><td>inline</td><td><a href="../kinds/inline-text.html">inline-text.html</a></td></tr>
+<tr><td><code>codeVoice</code></td><td>inline</td><td><a href="../kinds/inline-codevoice.html">inline-codevoice.html</a></td></tr>
+<tr><td><code>emphasis</code></td><td>inline</td><td><a href="../kinds/inline-emphasis.html">inline-emphasis.html</a></td></tr>
+<tr><td><code>strong</code></td><td>inline</td><td><a href="../kinds/inline-strong.html">inline-strong.html</a></td></tr>
+<tr><td><code>reference</code></td><td>inline</td><td><a href="../kinds/inline-reference.html">inline-reference.html</a></td></tr>
+<tr><td><code>image</code> (inline)</td><td>inline</td><td><a href="../kinds/inline-image.html">inline-image.html</a></td></tr>
+<tr><td><code>newTerm</code></td><td>inline</td><td><a href="../kinds/inline-newterm.html">inline-newterm.html</a></td></tr>
+<tr><td><code>strikethrough</code></td><td>inline</td><td><a href="../kinds/inline-strikethrough.html">inline-strikethrough.html</a></td></tr>
+<tr><td><code>subscript</code></td><td>inline</td><td><a href="../kinds/inline-subscript.html">inline-subscript.html</a></td></tr>
+<tr><td><code>superscript</code></td><td>inline</td><td><a href="../kinds/inline-superscript.html">inline-superscript.html</a></td></tr>
+<tr><td><code>topic</code></td><td>reference</td><td><a href="../kinds/reference-topic.html">reference-topic.html</a></td></tr>
+<tr><td><code>section</code> (reference)</td><td>reference</td><td><a href="../kinds/reference-section.html">reference-section.html</a></td></tr>
+<tr><td><code>image</code> (reference)</td><td>reference</td><td><a href="../kinds/reference-image.html">reference-image.html</a></td></tr>
+<tr><td><code>video</code> (reference)</td><td>reference</td><td><a href="../kinds/reference-video.html">reference-video.html</a></td></tr>
+<tr><td><code>file</code></td><td>reference</td><td><a href="../kinds/reference-file.html">reference-file.html</a></td></tr>
+<tr><td><code>download</code></td><td>reference</td><td><a href="../kinds/reference-download.html">reference-download.html</a></td></tr>
+<tr><td><code>xcodeRequirement</code></td><td>reference</td><td><a href="../kinds/reference-xcoderequirement.html">reference-xcoderequirement.html</a></td></tr>
+<tr><td><code>link</code></td><td>reference</td><td><a href="../kinds/reference-link.html">reference-link.html</a></td></tr>
+<tr><td><code>unresolvable</code></td><td>reference</td><td><a href="../kinds/reference-unresolvable.html">reference-unresolvable.html</a></td></tr>
+</tbody>
+</table>
+</section>
+
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

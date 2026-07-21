@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: tasks — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>tasks</code></h1>
+<p class="wire-value">Wire value: <code>"tasks"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>tasks</code> is a top-level, article/tutorial-tier <code>RenderSection.kind</code> (see
+<code>RenderSectionKind</code> at swift-docc's
+<code>Sources/SwiftDocC/Model/Rendering/RenderSection.swift:17</code>). It appears in the
+<code>sections</code> array of a <code>RenderNode</code> whose top-level <code>kind</code> is
+<code>"tutorial"</code>, alongside sibling sections such as <code>hero</code>, <code>assessments</code>,
+and <code>callToAction</code>. In swift-docc it is produced by
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Tutorial/Sections/TutorialSectionsRenderSection.swift#L14-L58"><code>TutorialSectionsRenderSection</code></a>,
+whose <code>kind</code> defaults to <code>.tasks</code> and which wraps an array of <code>Section</code>
+values (each carrying <code>title</code>, <code>contentSection</code>, <code>stepsSection</code>, and
+<code>anchor</code>).
+</p>
+<p>
+On the render side, the dispatch table lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial.vue#L46-L74"><code>src/components/Tutorial.vue</code></a>,
+which is the top-level page component for tutorial <code>RenderNode</code>s (analogous to
+<code>ContentNode.vue</code>'s dispatch for block/inline content, but for whole sections). It builds a
+literal <code>SectionComponents</code> map keyed by each section's <code>kind</code> string and iterates
+<code>sections</code>, instantiating whichever component matches:
+</p>
+<pre><code>const SectionComponents = {
+  assessments: Assessments,
+  hero: Hero,
+  tasks: SectionList,
+  callToAction: CallToAction,
+};
+const ValidSectionTypes = new Set(Object.keys(SectionComponents));
+
+const TutorialSection = {
+  name: 'TutorialSection',
+  render: function render(createElement) {
+    const { kind, ...props } = this.section;
+    const component = SectionComponents[kind];
+    return component ? createElement(component, { props }) : null;
+  },
+  ...
+};</code></pre>
+<p>
+So <code>kind: "tasks"</code> is routed to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionList.vue#L1-L61"><code>src/components/Tutorial/SectionList.vue</code></a>,
+which receives the section's <code>tasks</code> array as a prop of the same name and renders a
+<code>&lt;Section&gt;</code> (from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Section.vue#L1-L101"><code>Tutorial/Section.vue</code></a>)
+for every entry, spreading each <code>Task</code>/<code>Section</code> object's fields as props and using
+<code>section.anchor</code> as the DOM id and <code>index + 1</code> as the displayed
+<code>sectionNumber</code>:
+</p>
+<pre><code>&lt;div class="sections"&gt;
+  &lt;Section
+     v-for="(section, index) in tasks"
+     v-bind="section"
+     :key="index"
+     :id="section.anchor"
+     :sectionNumber="index + 1"
+     :isRuntimePreviewVisible="isRuntimePreviewVisible"
+     @runtime-preview-toggle="onRuntimePreviewToggle"
+  /&gt;
+&lt;/div&gt;</code></pre>
+<p>
+Each individual <code>Tutorial/Section.vue</code> wraps its content in a
+<code>LinkableElement</code> (aliased <code>LinkableSection</code>) keyed by the task's <code>anchor</code>
+— this is what lets the tutorial navigation bar and in-page links jump directly to a given task — and
+delegates <code>contentSection</code> to <code>SectionIntro.vue</code> (splitting the first entry out as
+the "intro" content/media block and any remaining entries as <code>expandedSections</code>) and
+<code>stepsSection</code> to <code>SectionSteps.vue</code> when non-empty.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture archive in <code>Tests/DocCArchiveTests/Fixtures/</code> (<code>ExampleDocs.doccarchive</code>,
+<code>SampleLibrary.doccarchive</code>) contains tutorial <code>RenderNode</code> JSON with a
+<code>tasks</code> section — both only ship the compiled tutorials-overview CSS/JS bundle, not
+symbol/tutorial JSON with this section. A grep of swift-docc's
+<code>Tests/SwiftDocCTests/</code> for a raw JSON literal containing <code>"tasks"</code> also found
+nothing; the closest authoritative fixture is a Swift struct-literal test in
+<code>Tests/SwiftDocCTests/Model/RenderNodeSerializationTests.swift</code> (<code>testRoundTrip</code>),
+which builds a <code>TutorialSectionsRenderSection</code> from two
+<code>TutorialSectionsRenderSection.Section</code> values with real field shapes (a
+<code>contentAndMedia</code> content-layout entry plus a mix of <code>paragraph</code>, <code>step</code>,
+and <code>aside</code> block content in <code>stepsSection</code>). The example below is a synthesized
+JSON encoding built directly from that Swift fixture's field values and from the
+<code>TasksSection</code>/<code>Task</code>/<code>ContentAndMedia</code>/<code>Step</code> schema
+objects in <code>RenderNode.spec.json</code>.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "tasks",
+  "tasks": [
+    {
+      "anchor": "create-a-new-ar-project",
+      "title": "Create a new AR project",
+      "contentSection": [
+        {
+          "kind": "contentAndMedia",
+          "mediaPosition": "leading",
+          "media": "screenshot1.png",
+          "content": [
+            {
+              "type": "paragraph",
+              "inlineContent": [
+                { "type": "text", "text": "Let's get started building the Augmented Reality app." }
+              ]
+            }
+          ]
+        }
+      ],
+      "stepsSection": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "After you download Xcode, create a project." }
+          ]
+        },
+        {
+          "type": "step",
+          "content": [
+            { "type": "paragraph", "inlineContent": [{ "type": "text", "text": "Lorem ipsum" }] }
+          ],
+          "caption": [
+            { "type": "paragraph", "inlineContent": [{ "type": "text", "text": "Caption" }] }
+          ],
+          "media": "screenshot2.png"
+        },
+        {
+          "type": "aside",
+          "style": "Note",
+          "content": [
+            { "type": "paragraph", "inlineContent": [{ "type": "text", "text": "Lorem ipsum dolor emit." }] }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <p><strong>1&nbsp;&nbsp;Create a new AR project</strong></p>
+  <p style="font-size:0.85em;color:var(--color-text-secondary);">
+    [leading media: screenshot1.png]&nbsp;&nbsp;Let's get started building the Augmented Reality app.
+  </p>
+  <ol>
+    <li>After you download Xcode, create a project.</li>
+    <li>Lorem ipsum <em>(caption: "Caption", with screenshot2.png)</em></li>
+  </ol>
+  <blockquote style="border-left:3px solid var(--color-border); margin:0; padding-left:8px;">
+    Note: Lorem ipsum dolor emit.
+  </blockquote>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (schema objects
+<code>TasksSection</code> and <code>Task</code>), cross-checked against the generated
+<code>Components.Schemas.TasksSection</code> / <code>Components.Schemas.Task</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code>.
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note / source</th></tr>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>enum: ["tasks"]</code></td><td>Discriminator; generated as <code>TasksSection.KindPayload</code>, a single-case enum.</td></tr>
+<tr><td><code>tasks</code></td><td>array of <code>Task</code></td><td>yes</td><td>—</td><td>The ordered list of tutorial task sections rendered on the page; generated as <code>[Components.Schemas.Task]</code>.</td></tr>
+<tr><td><code>Task.anchor</code></td><td>string</td><td>yes</td><td>—</td><td>Deep-link identifier used as the section's DOM id (<code>:id="section.anchor"</code> in <code>SectionList.vue</code>).</td></tr>
+<tr><td><code>Task.title</code></td><td>string</td><td>yes</td><td>—</td><td>Displayed as the task's heading text in <code>SectionIntro.vue</code>.</td></tr>
+<tr><td><code>Task.contentSection</code></td><td>array of <code>ContentLayout</code></td><td>yes</td><td><code>ContentLayout</code> is a <code>oneOf</code>: <code>FullWidth</code>, <code>ContentAndMedia</code>, <code>Columns</code></td><td>Intro/body content for the task; first entry is split out as the "intro" media block by <code>Section.vue</code>'s <code>introProps</code> computed property.</td></tr>
+<tr><td><code>Task.stepsSection</code></td><td>array of <code>RenderBlockContent</code></td><td>yes</td><td>large <code>oneOf</code> (paragraph, step, aside, codeListing, etc.)</td><td>The ordered walkthrough steps; rendered by <code>SectionSteps.vue</code> only when non-empty (<code>v-if="stepsSection.length > 0"</code>).</td></tr>
+</table>
+<p>
+Note on naming: swift-docc's Swift API names the section type <code>TutorialSectionsRenderSection</code> and its
+element type <code>TutorialSectionsRenderSection.Section</code>, but the OpenAPI/JSON schema (and therefore the
+generated DocCArchive types) names them <code>TasksSection</code> and <code>Task</code> respectively — the
+wire-level field names (<code>anchor</code>, <code>title</code>, <code>contentSection</code>,
+<code>stepsSection</code>) are identical between the two, this is purely a type/schema naming difference between
+the Swift authoring API and the JSON wire format.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+<code>SectionList.vue</code> renders a single wrapper <code>&lt;div class="sections"&gt;</code>, styled by a
+scoped SCSS block in the same file (<code>src/components/Tutorial/SectionList.vue</code>) using the
+<code>breakpoint-content</code> mixin from <code>docc-render/styles/_core.scss</code> and a
+<code>breakpoint(small)</code> override that zeroes the margin and sets <code>width: 100%</code>.
+</p>
+<p>
+Each task is then an instance of <code>Tutorial/Section.vue</code>, whose template root is
+<code>&lt;LinkableSection class="section" :anchor="anchor" :title="introProps.title"&gt;</code> —
+<code>LinkableElement.vue</code> renders that as a plain <code>&lt;div :id="anchor"&gt;</code> (the tag is
+configurable via a <code>tag</code> prop, default <code>div</code>), so the DOM id for deep-linking into a
+task comes directly from <code>Task.anchor</code>. The section's own scoped style
+(<code>.section { padding-top: $tutorial-section-spacing-single-side; }</code>) only adds top spacing.
+</p>
+<p>
+Inside each section, <code>SectionIntro.vue</code> renders <code>&lt;div class="intro-container"&gt;</code>
+containing a responsive <code>Row</code>/<code>Column</code> grid (classes <code>intro</code>,
+<code>intro-{n}</code>, <code>left</code>, <code>right</code>, <code>media</code>,
+<code>expanded-intro</code>) for the task's <code>contentSection</code>, and — only when
+<code>stepsSection</code> is non-empty — <code>SectionSteps.vue</code> renders
+<code>&lt;div class="steps"&gt;</code> with nested <code>content-container</code>,
+<code>asset-container</code>, <code>asset-wrapper</code>, and <code>step-asset</code> elements for the
+numbered walkthrough and its accompanying media/code.
+</p>
+<p>
+<code>LinkableElement.vue</code> additionally registers each anchor with the page's navigation store
+(<code>store.addLinkableSection</code>) and uses an <code>IntersectionObserver</code>
+(<code>onIntersect</code> mixin) to report scroll-visibility back to that store, which drives the
+tutorial's "on this page" navigation highlighting — this is state/behavior, not styling, but it is keyed
+off the same <code>anchor</code> value that produces the section's CSS id.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+The actual JS/Vue behavior here is twofold and neither part is a simple visual toggle that a pure-CSS
+mechanism would replace: (1) <code>Tutorial.vue</code>'s <code>SectionComponents</code> lookup is a
+one-time, build/render-time dispatch from a JSON discriminator string to a Vue component — it happens once
+when the page is constructed, not in response to user interaction, so there is no "state" for a
+<code>:checked</code> sibling selector, <code>&lt;details&gt;</code>, or <code>:target</code> to hold; and
+(2) the runtime-interactive piece that <em>does</em> exist —
+<code>LinkableElement.vue</code>'s <code>IntersectionObserver</code>-driven scroll tracking that updates
+navigation-highlight state in <code>store.updateLinkableSection</code> — requires observing scroll
+intersection ratios continuously and pushing that into a separate, cross-component navigation-bar view;
+there is no scroll-linked native primitive available at this pin (this predates broad support for
+<code>animation-timeline: view()</code>/scroll-driven animations, and even that mechanism animates CSS
+properties rather than driving arbitrary cross-component JS state, e.g. which nav item shows as "active"
+in <code>NavigationBar.vue</code>). The <code>tasks</code> section itself is otherwise a static list
+container (<code>SectionList.vue</code>) with no visibility toggle, tab, or disclosure state of its own —
+each child <code>Task</code> is always fully rendered — so there is no interactive behavior at this
+kind's own level to replace with <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio-driven
+<code>:checked</code>, <code>:target</code>, the Popover API, or <code>&lt;dialog&gt;</code>.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

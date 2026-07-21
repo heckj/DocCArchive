@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: topic — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>topic</code></h1>
+<p class="wire-value">Wire value: <code>"topic"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a>, <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>"topic"</code> is the <code>type</code> discriminator used on entries in a
+<code>RenderNode</code>'s top-level <code>references</code> dictionary that point at
+<em>another page</em> of documentation (as opposed to an image, a download file, an external
+link, etc.). Swift-docc's <code>TopicRenderReference</code> is the Swift model for this shape;
+on the wire it is keyed by its <code>identifier</code> (a <code>doc://</code> URL) inside
+<code>RenderNode.references</code>, and other parts of the render node — most commonly a
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsTable.vue#L1-L135">"Topics" section's <code>identifiers</code> list</a> —
+reference it by that identifier instead of inlining the full object repeatedly.
+</p>
+<p>
+The resolution and rendering chain in swift-docc-render is:
+</p>
+<ol>
+<li>
+<code>referencesProvider</code> (a Vue mixin) exposes the render node's whole
+<code>references</code> map as a computed property, backed by the app's Vuex-like
+<code>store.state.references</code>:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/referencesProvider.js#L11-L27">src/mixins/referencesProvider.js#L11-L27</a>.
+</li>
+<li>
+<code>TopicsTable.vue</code> (the component behind a page's rendered "Topics" section) takes
+each <code>section.identifiers</code> entry and looks it up in that map
+(<code>this.references[id]</code>), building a <code>section.topics</code> array of resolved
+<code>TopicRenderReference</code> objects:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsTable.vue#L108-L118">TopicsTable.vue#L108-L118</a>.
+It then either hands each resolved topic to <code>TopicsLinkBlock</code> (list style, the
+default) or the whole array to <code>TopicsLinkCardGrid</code> (grid/card style), switching on
+a <code>topicStyle</code> prop:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsTable.vue#L35-L50">TopicsTable.vue#L35-L50</a>.
+</li>
+<li>
+<code>TopicsLinkBlock.vue</code> is the component that actually renders one topic reference as a
+link row. Its root element is <code>&lt;div class="link-block"&gt;</code>, containing a
+<code>&lt;router-link&gt;</code> (internal) or <code>&lt;a&gt;</code> (when <code>topic.type ===
+'link'</code>) wrapping a <code>TopicLinkBlockIcon</code> (role glyph), the title (as
+<code>DecoratedTopicTitle</code> if the reference carries symbol <code>fragments</code>, else
+plain text), and a following <code>.abstract</code> block with the topic's <code>abstract</code>
+content, badges for beta/deprecated status, and any <code>tags</code>:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkBlock.vue#L11-L57">TopicsLinkBlock.vue#L11-L57</a>.
+The component's own prop validator (not just documentation) enumerates the exact shape it
+expects a resolved topic reference to satisfy:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkBlock.vue#L104-L119">TopicsLinkBlock.vue#L104-L119</a>.
+</li>
+<li>
+Separately, the generic <code>Reference.vue</code> component (used for inline cross-references
+inside prose, not just the "Topics" section) accepts a <code>kind</code> prop whose valid values
+are documented in its header comment as "See
+<code>DocumentationRenderNode.kind</code>"/<code>TopicRenderReference.type</code> in the JSON
+schema, and uses it (together with <code>role</code>) to decide whether to render a symbol-styled
+link (<code>ReferenceInternalSymbol</code>/<code>ReferenceExternalSymbol</code>) or a plain
+link (<code>ReferenceInternal</code>/<code>ReferenceExternal</code>):
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L40-L96">Reference.vue#L40-L96</a>.
+</li>
+</ol>
+<p>
+The role-to-icon mapping used by <code>TopicLinkBlockIcon</code> (shown next to each topic link,
+driven by the reference's <code>role</code> field, e.g. <code>symbol</code>, <code>article</code>,
+<code>collection</code>) lives at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicLinkBlockIcon.vue#L17-L47">TopicLinkBlockIcon.vue#L17-L47</a>.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture example, taken from this repository's own test fixture at
+<code>Tests/DocCArchiveTests/Fixtures/SampleLibrary.doccarchive/data/documentation/samplelibrary.json</code>,
+the entry for <code>doc://SampleLibrary/documentation/SampleLibrary/SampleClass</code> inside that
+render node's <code>references</code> dictionary:
+</p>
+<pre><code>{
+  "abstract": [],
+  "fragments": [
+    { "kind": "keyword", "text": "class" },
+    { "kind": "text", "text": " " },
+    { "kind": "identifier", "text": "SampleClass" }
+  ],
+  "identifier": "doc://SampleLibrary/documentation/SampleLibrary/SampleClass",
+  "kind": "symbol",
+  "navigatorTitle": [
+    { "kind": "identifier", "text": "SampleClass" }
+  ],
+  "role": "symbol",
+  "title": "SampleClass",
+  "type": "topic",
+  "url": "/documentation/samplelibrary/sampleclass"
+}</code></pre>
+<p>
+This particular reference has an empty <code>abstract</code> array and no <code>tags</code>,
+<code>images</code>, <code>beta</code>, or <code>deprecated</code> flags in the fixture, so the
+mockup below adds a short abstract and a beta badge (clearly labeled) purely to illustrate what
+<code>TopicsLinkBlock.vue</code> shows when those optional fields are present.
+</p>
+<div class="mockup">
+<div style="border:1px solid #ccc; padding:0.5em 0.75em; border-radius:4px; max-width:32em; font-family:-apple-system,sans-serif;">
+  <div style="display:flex; align-items:flex-start; gap:0.5em;">
+    <span title="symbol role icon" style="opacity:0.6;">&#123;&#125;</span>
+    <div>
+      <code style="font-weight:600;">SampleClass</code>
+      <span style="display:inline-block; margin-left:0.75em; font-size:0.7em; padding:0.1em 0.5em; border-radius:3px; background:#e0d4ff; color:#4b2e91;">BETA (illustrative, not in fixture)</span>
+      <div style="color:#555; font-size:0.9em; margin-top:0.15em;">A sample class used to demonstrate documentation. <em>(illustrative abstract, not in fixture)</em></div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Field table for the <code>TopicRenderReference</code> schema object, from
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (schema
+<code>#/components/schemas/TopicRenderReference</code>, lines 1742-1840) cross-checked against the
+generated <code>Components.Schemas.TopicRenderReference</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 2473-2600).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"topic"</code>, <code>"section"</code></td><td>Discriminator; generated as <code>_TypePayload</code> (renamed from <code>type</code> because <code>type</code> collides with Swift keyword handling).</td></tr>
+<tr><td><code>identifier</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>The <code>doc://</code>-scheme key this object is stored under in <code>RenderNode.references</code>.</td></tr>
+<tr><td><code>title</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Display title of the destination page (variant-aware in the Swift model via <code>titleVariants</code>, but the wire field is a plain string).</td></tr>
+<tr><td><code>url</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Root-relative path to the destination page.</td></tr>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>article</code>, <code>project</code>, <code>section</code>, <code>overview</code>, <code>symbol</code>, <code>root</code></td><td>The kind of the <em>referenced page</em>, not of this reference object itself. Generated as <code>KindPayload</code>. Note this enum is narrower than the full <code>RenderNode.Kind</code> enum on the Swift-docc authoring side (which also has <code>tutorial</code>, <code>tutorialTableOfContents</code>, <code>volume</code>, <code>video</code>, etc.); swift-docc's decoder falls back to <code>.tutorial</code> if <code>kind</code> is missing entirely, for backwards compatibility with older archives.</td></tr>
+<tr><td><code>abstract</code></td><td>array of <code>RenderInlineContent</code></td><td>no</td><td>default <code>[]</code></td><td>Short inline-content summary of the destination page.</td></tr>
+<tr><td><code>required</code></td><td>boolean</td><td>no</td><td>default <code>false</code></td><td>Whether the referenced symbol is a required protocol member.</td></tr>
+<tr><td><code>defaultImplementations</code></td><td>number</td><td>no</td><td>&mdash;</td><td>Count of default implementations for the referenced symbol; generated as <code>Swift.Double?</code> even though it is conceptually an integer count.</td></tr>
+<tr><td><code>fragments</code></td><td>array of <code>DeclarationToken</code></td><td>no</td><td>&mdash;</td><td>Abbreviated declaration tokens shown inline in the link (e.g. <code>class SampleClass</code>).</td></tr>
+<tr><td><code>navigatorTitle</code></td><td>array of <code>DeclarationToken</code></td><td>no</td><td>&mdash;</td><td>Abbreviated declaration tokens for the navigator sidebar.</td></tr>
+<tr><td><code>role</code></td><td><code>DocumentationRole</code> (string enum)</td><td>no</td><td>e.g. <code>symbol</code>, <code>article</code>, <code>collection</code>, <code>collectionGroup</code>, ...</td><td>Drives the icon shown in <code>TopicLinkBlockIcon.vue</code>.</td></tr>
+<tr><td><code>images</code></td><td>array of <code>TopicImage</code></td><td>no</td><td>&mdash;</td><td>Author-provided icon/card images for this page.</td></tr>
+<tr><td><code>conformance</code></td><td><code>ConformanceSection</code></td><td>no</td><td>&mdash;</td><td>Conditional-conformance info, symbols only.</td></tr>
+<tr><td><code>estimatedTime</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Estimated time to complete (tutorials).</td></tr>
+<tr><td><code>beta</code></td><td>boolean</td><td>no</td><td>default <code>false</code>; JSON schema oddly lists <code>"format": "true"</code></td><td>Whether the symbol is beta; only emitted when <code>true</code> (swift-docc's encoder omits it when <code>false</code>).</td></tr>
+<tr><td><code>deprecated</code></td><td>boolean</td><td>no</td><td>default <code>false</code>; same <code>"format": "true"</code> quirk</td><td>Whether the symbol is deprecated; only emitted when <code>true</code>.</td></tr>
+<tr><td><code>titleStyle</code></td><td>string</td><td>no</td><td><code>title</code>, <code>symbol</code></td><td>Only meaningful for property-list-key/entitlement-key references.</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Raw plist/entitlement key name (wire key <code>name</code> maps to Swift's <code>propertyListKeyNames.rawKey</code>).</td></tr>
+<tr><td><code>ideTitle</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Wire key <code>ideTitle</code> maps to Swift's <code>propertyListKeyNames.displayName</code>.</td></tr>
+<tr><td><code>tags</code></td><td>array of <code>SymbolTag</code></td><td>no</td><td>&mdash;</td><td>Free-text tags; <code>TopicsLinkBlock.vue</code> renders only the first one as a badge.</td></tr>
+</tbody>
+</table>
+<p>
+Note: the JSON schema's <code>type</code> enum (<code>"topic"</code>, <code>"section"</code>) is
+slightly broader than what its own name suggests — the same <code>TopicRenderReference</code>
+struct is reused with <code>type: "section"</code> for references to task-group / volume
+"section" pages inside tutorials, per swift-docc's own doc comment on
+<code>RenderReferenceType</code>
+(<code>Sources/SwiftDocC/Model/Rendering/References/RenderReference.swift:29</code>).
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li><code>div.link-block</code> — root element rendered by <code>TopicsLinkBlock.vue</code> for each resolved topic; modifier classes include <code>has-inline-element</code> (no abstract/badges to show below the title) and a "changes" class when API-diff highlighting is active.</li>
+<li><code>a.link</code> / <code>router-link.link</code> — the actual clickable link wrapping the icon + title; gets <code>.deprecated</code> (strikethrough) and <code>.has-adjacent-elements</code> when an abstract/badges follow.</li>
+<li><code>div.topic-icon-wrapper</code> &gt; role-specific SVG icon component (from <code>TopicLinkBlockIcon.vue</code>).</li>
+<li><code>div.abstract</code> — wraps the rendered abstract <code>ContentNode</code>, plus <code>div.topic-keyinfo</code> for plist "Key/Name" lines and <code>RequirementMetadata</code> ("Required." / default-implementation count) for protocol requirements.</li>
+<li><code>span.badge</code> (component <code>Badge.vue</code>) — used for the beta badge, deprecated badge, and the first entry of <code>tags</code>.</li>
+<li>Enclosing structure from <code>TopicsTable.vue</code>: <code>ContentTable</code> &gt; <code>ContentTableSection</code> &gt; (<code>div.topic</code> wrapper around each <code>TopicsLinkBlock</code>, or a <code>TopicsLinkCardGrid</code> when the page uses card/grid style instead of the list style).</li>
+</ul>
+<p>
+SCSS: the scoped <code>&lt;style&gt;</code> block inside <code>TopicsLinkBlock.vue</code> defines
+<code>.link-block</code>, <code>.link</code>, <code>.abstract</code>, <code>.topic-required</code>,
+and <code>.deprecated</code> rules and imports the shared
+<code>docc-render/styles/_core.scss</code>. It consumes two SCSS variables defined centrally in
+<code>src/styles/core/_vars.scss</code>: <code>$topic-link-icon-width</code>
+(<code>1.294rem</code>) and <code>$topic-link-icon-spacing</code> (<code>1rem</code>), used to
+indent the abstract/badges so they line up with the title text after the icon. The scoped style
+block inside <code>TopicsTable.vue</code> separately sets the vertical spacing (<code>margin-top:
+15px</code>) between successive <code>.topic</code> entries.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+A resolved <code>topic</code> reference, as rendered by <code>TopicsLinkBlock.vue</code>, is not
+an interactive/stateful widget: there is no client-side toggle, tab, disclosure, or modal state
+being held in Vue component data for a single topic link row. It is a link (an <code>&lt;a&gt;</code>
+or Vue-Router <code>&lt;router-link&gt;</code>) with a decorated label, an optional abstract, and
+optional status badges — all computed once from static props (<code>topic.title</code>,
+<code>topic.abstract</code>, <code>topic.beta</code>, <code>topic.deprecated</code>, etc.) and
+rendered declaratively; nothing in <code>TopicsLinkBlock.vue</code>'s <code>computed</code> block
+reacts to user interaction (clicking simply navigates, which is native browser/router behavior,
+not a piece of UI state a CSS mechanism like <code>:checked</code> or <code>:target</code> would
+need to replace). The one piece of "dynamism" — API-diff highlighting via <code>changesClasses</code>
+— is itself just a class computed from external route/query state (which diff view is selected),
+not something toggled by user interaction with this component. There is therefore no equivalent
+click-driven show/hide, tab-switch, or expand/collapse behavior for a native HTML mechanism
+(<code>&lt;details&gt;</code>, radio+<code>:checked</code>, <code>:target</code>, Popover API,
+<code>&lt;dialog&gt;</code>) to take over; this kind is a static, link-based rendering.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

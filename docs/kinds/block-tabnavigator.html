@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: tabNavigator — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>tabNavigator</code></h1>
+<p class="wire-value">Wire value: <code>"tabNavigator"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'tabNavigator'</code> lands on
+<code>src/components/ContentNode.vue</code>'s wire-constant table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>),
+whose <code>tabNavigator</code> key holds <code>BlockType.tabNavigator = 'tabNavigator'</code>. That
+constant is matched in the <code>renderNode()</code> factory function's <code>switch (node.type)</code>
+dispatch table:
+</p>
+<pre><code>case BlockType.tabNavigator: {
+  // If the tabs count is more than the threshold, use vertical tabs instead.
+  const vertical = node.tabs.length > TabNavigatorVerticalThreshold;
+  const titles = node.tabs.map(tab => tab.title);
+  const scopedSlots = node.tabs.reduce((slots, tab) => ({
+    ...slots,
+    [tab.title]: () => renderChildren(tab.content),
+  }), {});
+  return createElement(TabNavigator, {
+    props: {
+      titles,
+      vertical,
+    },
+    scopedSlots,
+  });
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L405-L420"><code>ContentNode.vue#L405-L420</code></a>.)
+<code>TabNavigatorVerticalThreshold</code> is a module-level constant, <code>7</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L114-L115"><code>ContentNode.vue#L114-L115</code></a>):
+tab navigators with more than 7 tabs are automatically switched to a vertical layout, a purely
+presentational decision made in the JS dispatch layer and never present on the wire. Note also that the
+component only ever forwards <code>tab.title</code> as a prop array (<code>titles</code>) — each tab's
+<code>content</code> array is instead converted into a Vue <em>scoped slot</em> keyed by that same title
+string, via <code>renderChildren(tab.content)</code>. This is a delegation to a dedicated child component,
+<code>TabNavigator</code>, imported from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TabNavigator.vue"><code>src/components/ContentNode/TabNavigator.vue</code></a>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L29"><code>ContentNode.vue#L29</code></a>).
+</p>
+<p>
+<code>TabNavigator.vue</code>'s template renders a navigation strip plus a content stack:
+</p>
+<pre><code>&lt;div class="TabNavigator" :class="[{ 'tabs--vertical': vertical }]"&gt;
+  &lt;Tabnav v-model="currentTitle" v-bind="{ position, vertical }"&gt;
+    &lt;TabnavItem v-for="title in titles" :key="title" :value="title"&gt;
+      {{ title }}
+    &lt;/TabnavItem&gt;
+  &lt;/Tabnav&gt;
+  &lt;div class="tabs-content"&gt;
+    &lt;div class="tabs-content-container"&gt;
+      &lt;transition-group name="fade"&gt;
+        &lt;template v-for="title in titles"&gt;
+          &lt;div v-show="title === currentTitle" :key="title"
+               :class="{ active: title === currentTitle }" class="tab-container"&gt;
+            &lt;slot :name="title" /&gt;
+          &lt;/div&gt;
+        &lt;/template&gt;
+      &lt;/transition-group&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TabNavigator.vue#L11-L38"><code>TabNavigator.vue#L11-L38</code></a>.)
+The currently selected tab lives entirely in component-local state: <code>data() { return { currentTitle:
+this.titles[0] }; }</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TabNavigator.vue#L72-L76"><code>TabNavigator.vue#L72-L76</code></a>),
+defaulting to the first tab. <code>Tabnav</code> is a thin <code>v-model</code> wrapper
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tabnav.vue"><code>src/components/Tabnav.vue</code></a>)
+that renders a <code>&lt;nav class="tabnav"&gt;&lt;ul class="tabnav-items"&gt;</code> and provides a
+<code>selectTab</code> callback plus the reactive <code>activeTab</code> getter down to each
+<code>TabnavItem</code> via Vue's <code>provide</code>/<code>inject</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tabnav.vue#L23-L39"><code>Tabnav.vue#L23-L39</code></a>).
+Each <code>TabnavItem</code> renders an <code>&lt;a href="#" class="tabnav-link" @click.prevent="tabnavData.selectTab(value)"&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TabnavItem.vue#L11-L23"><code>TabnavItem.vue#L11-L23</code></a>):
+clicking it calls <code>selectTab</code>, which is really <code>this.$emit('input', value)</code> on
+<code>Tabnav</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tabnav.vue#L55-L58"><code>Tabnav.vue#L55-L58</code></a>),
+which Vue's <code>v-model</code> binding on <code>&lt;Tabnav v-model="currentTitle"&gt;</code> turns back
+into an assignment to <code>TabNavigator</code>'s own <code>currentTitle</code> data property. Every tab's
+content <code>&lt;div&gt;</code> is always present in the DOM — visibility is toggled with
+<code>v-show="title === currentTitle"</code> rather than <code>v-if</code>, so inactive tabs are
+<code>display: none</code>, not unmounted, and a <code>&lt;transition-group name="fade"&gt;</code> cross-fades
+the switch. A <code>watch</code> handler additionally keeps <code>currentTitle</code> valid if the
+<code>titles</code> array itself changes at runtime (falling back to the first remaining title, or jumping to
+a newly-added one)
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TabNavigator.vue#L77-L91"><code>TabNavigator.vue#L77-L91</code></a>).
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No literal JSON fixture containing <code>"tabNavigator"</code> was found in either
+<code>Tests/DocCArchiveTests/Fixtures/</code> (the only hits there are inside bundled, minified
+<code>*.js</code> app assets, not RenderNode data) or as a JSON file in
+<code>Tests/SwiftDocCTests/</code>. swift-docc's own test suite exercises this kind only via Swift-literal
+assertions in
+<code>Tests/SwiftDocCTests/Rendering/RenderNodeTranslatorTests.swift</code> (<code>testTabNavigator</code>,
+around lines 1111&ndash;1146) and
+<code>Tests/SwiftDocCTests/Semantics/Reference/TabNavigatorTests.swift</code>, which confirm a 3-tab
+navigator titled "Powers", "Exercise routines", "Hats" — the same titles used in the authoring-side doc
+comment example at <code>Sources/SwiftDocC/Semantics/Reference/TabNavigator.swift</code>, lines 19&ndash;32.
+The example below is hand-written to match that documented shape and the schema in Section 3.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "tabNavigator",
+  "tabs": [
+    {
+      "title": "Powers",
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "Sloths can climb, hang, and nap." }
+        ] }
+      ]
+    },
+    {
+      "title": "Exercise routines",
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "A brisk stretch, then a long rest." }
+        ] }
+      ]
+    },
+    {
+      "title": "Hats",
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "Newfound confidence, one fedora at a time." }
+        ] }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <div style="display:flex; gap:24px; border-bottom:1px solid #d8d8d8; margin-bottom:14px; font-size:0.95em;">
+      <span style="padding-bottom:8px; border-bottom:2px solid #1d1d1f; font-weight:600;">Powers</span>
+      <span style="padding-bottom:8px; color:#6e6e73;">Exercise routines</span>
+      <span style="padding-bottom:8px; color:#6e6e73;">Hats</span>
+    </div>
+    <p style="margin:0;">Sloths can climb, hang, and nap.</p>
+  </div>
+  <p><em>mockup: only the tab matching the current selection (<code>currentTitle</code>, defaulting to the
+  first tab, "Powers") is visible; the others exist in the DOM under <code>v-show="false"</code> and would
+  fade/slide in via the <code>fade</code> transition-group on click. The active tab's link gets an
+  underline via the <code>.tabnav-link.active</code> rule (see Section 4); the count of 3 tabs here is well
+  under the vertical threshold of 7, so this renders horizontally.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/TabNavigator</code> (lines 612&ndash;630), which is one arm of the
+<code>RenderBlockContent</code> discriminated union (referenced at spec line 435), plus the separate,
+recursive <code>#/components/schemas/Tab</code> object (lines 631&ndash;648) that each tab entry references.
+Cross-checked against <code>Components.Schemas.TabNavigator</code> and <code>Components.Schemas.Tab</code>
+in <code>Sources/DocCArchive/generated/Types.swift</code> (lines 3961&ndash;3987 and 3988&ndash;4010
+respectively).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"tabNavigator"</code> (single-value enum)</td>
+<td>Generated as <code>KindPayload: String, Codable, Hashable, Sendable, CaseIterable { case tabNavigator =
+"tabNavigator" }</code>, decoded/encoded under the Swift property name <code>kind</code> (no renaming needed
+here, unlike some other block kinds that discriminate on a property literally named <code>type</code>).</td>
+</tr>
+<tr>
+<td><code>tabs</code></td>
+<td>array of <code>Tab</code></td>
+<td>yes</td>
+<td>&mdash; (no minimum-count constraint in the wire schema)</td>
+<td>Generated as <code>[Components.Schemas.Tab]</code>. Each <code>Tab</code> is its own object with two
+required fields, <code>title: string</code> and <code>content: [RenderBlockContent]</code> (spec lines
+631&ndash;648; generated as <code>Components.Schemas.Tab.title: Swift.String</code> and
+<code>.content: [Components.Schemas.RenderBlockContent]</code>). The wire schema places no lower bound on
+the array length, though swift-docc's authoring-side directive requires at least one <code>@Tab</code>
+child (see below) and DocC-render's UI implicitly assumes at least one entry since it seeds
+<code>currentTitle</code> from <code>titles[0]</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the enclosing
+enum case is <code>case tabNavigator(TabNavigator)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift</code>, line 72), and the nested
+struct is declared at the same file, lines 825&ndash;837:
+</p>
+<pre><code>public struct TabNavigator: Codable, Equatable {
+    public var tabs: [Tab]
+
+    public struct Tab: Codable, Equatable {
+        public var title: String
+        public var content: [RenderBlockContent]
+    }
+}</code></pre>
+<p>
+This matches the wire schema field-for-field. The authoring-side semantic model,
+<code>Sources/SwiftDocC/Semantics/Reference/TabNavigator.swift</code>, is a separate type (a
+<code>Semantic</code>/<code>AutomaticDirectiveConvertible</code> directive, not the render type above) whose
+<code>tabs</code> property uses <code>@ChildDirective(requirements: .oneOrMore)</code> (lines 42&ndash;44),
+i.e. authoring requires at least one <code>@Tab</code> child even though the render-side JSON schema does
+not enforce a minimum. Its <code>render(with:)</code> method (lines 97&ndash;110) is what actually produces
+the wire object shown above, mapping each authored <code>Tab</code> (title string plus markup content) onto
+<code>RenderBlockContent.TabNavigator.Tab</code>. An author produces this kind by writing:
+</p>
+<pre><code>@TabNavigator {
+   @Tab("Powers") {
+      ![A diagram with the five sloth power types.](sloth-powers)
+   }
+
+   @Tab("Exercise routines") {
+      ![A sloth relaxing and enjoying a good book.](sloth-exercise)
+   }
+
+   @Tab("Hats") {
+      ![A sloth discovering newfound confidence after donning a fedora.](sloth-hats)
+   }
+}</code></pre>
+<p>
+(directive doc comment, <code>TabNavigator.swift</code> lines 16&ndash;32; introduced in DocC version
+"5.8" per <code>introducedVersion</code>, line 39). Each <code>@Tab</code> directive's unnamed argument
+becomes <code>title</code>, and its body content becomes the <code>content</code> block array.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>, lines
+242&ndash;254) are still stub placeholders that return a hardcoded HTML comment and an empty string
+respectively for an entire <code>RenderNode</code>, with no per-block-kind switch reached yet — so a
+<code>tabNavigator</code> node parsed via <code>Components.Schemas.TabNavigator</code> is available on the
+decoded model today, but nothing in this repository currently converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>tabNavigator</code> node, in context:
+</p>
+<ul>
+<li><code>div.TabNavigator</code> (with modifier class <code>tabs--vertical</code> when the tab count
+exceeds 7) — the component root, from <code>TabNavigator.vue</code>.</li>
+<li><code>nav.tabnav</code> (with modifier classes <code>tabnav--{position}</code> and
+<code>tabnav--vertical</code>) &gt; <code>ul.tabnav-items</code> &gt; one <code>li.tabnav-item</code> per
+tab &gt; <code>a.tabnav-link</code> (with an <code>active</code> class and
+<code>aria-current="true"</code> on the selected tab) — the clickable tab strip, from
+<code>Tabnav.vue</code>/<code>TabnavItem.vue</code>.</li>
+<li><code>div.tabs-content</code> &gt; <code>div.tabs-content-container</code> &gt; one
+<code>div.tab-container</code> per tab (with an <code>active</code> class on the selected one, all others
+present but <code>display: none</code> via <code>v-show</code>) — the panel stack, wrapped in a Vue
+<code>&lt;transition-group name="fade"&gt;</code> that adds/removes <code>fade-enter</code>,
+<code>fade-enter-active</code>, <code>fade-leave-active</code>, <code>fade-leave-to</code> classes during
+the switch animation.</li>
+</ul>
+<p>
+SCSS: <code>TabNavigator.vue</code> carries its own scoped <code>&lt;style&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TabNavigator.vue#L95-L156"><code>TabNavigator.vue#L95-L156</code></a>):
+</p>
+<ul>
+<li><code>.TabNavigator { @include space-out-between-siblings(var(--spacing-stacked-margin-xlarge)); }</code>
+— vertical spacing between the tab strip and content stack via a shared mixin.</li>
+<li><code>.tabs--vertical { display: flex; flex-flow: row-reverse; }</code> (collapsing to
+<code>column-reverse</code> at the <code>small</code> breakpoint) with <code>.tabnav { width: 30%; }</code>
+— the vertical-layout variant puts the nav rail to the right of (or, on narrow screens, above) the content.</li>
+<li><code>.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease-in-out; }</code> plus
+<code>.fade-enter, .fade-leave-to { opacity: 0; }</code> and a <code>.fade-leave-active { position:
+absolute; }</code> override so the outgoing panel doesn't reserve layout space during the cross-fade — this
+is the entire visual transition, driven by Vue's <code>&lt;transition-group&gt;</code> class toggling, not
+by any JS-computed style.</li>
+</ul>
+<p>
+The tab strip itself is styled in <code>Tabnav.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tabnav.vue#L63-L104"><code>Tabnav.vue#L63-L104</code></a>,
+e.g. <code>.tabnav--center { justify-content: center; }</code>, <code>.tabnav--vertical { flex-flow: column
+wrap; }</code>) and in <code>TabnavItem.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TabnavItem.vue#L48-L115"><code>TabnavItem.vue#L48-L115</code></a>),
+where the active-tab underline indicator is pure CSS:
+</p>
+<pre><code>.tabnav-item {
+  border-bottom: 1px solid;
+  border-color: var(--colors-tabnav-item-border-color, var(--color-tabnav-item-border-color));
+}
+.tabnav-link.active {
+  color: var(--colors-text, var(--color-text));
+  cursor: default;
+  &amp;:after { border-bottom-color: var(--colors-text, var(--color-text)); }
+}</code></pre>
+<p>
+CSS custom properties consumed: <code>--colors-tabnav-item-border-color</code> (falling back to
+<code>--color-tabnav-item-border-color</code>, itself defined as <code>var(--color-fill-gray)</code> in
+<code>src/styles/core/colors/_light.scss</code>, line 179) for the resting tab-strip underline, and
+<code>--colors-text</code>/<code>--color-text</code> for the active tab's label color and its bolder
+underline; plus the shared <code>--spacing-stacked-margin-xlarge</code> and
+<code>--spacing-stacked-margin-large</code> spacing tokens and the generic <code>font-styles(tabnav-link)</code>
+mixin output for typography.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">Partial</span></p>
+<p>
+Current behavior in play: <code>TabNavigator.vue</code> holds the selected tab as <code>currentTitle</code>
+in component <code>data()</code>, seeded from <code>titles[0]</code>, and updated only through
+<code>Tabnav</code>'s <code>v-model</code>/<code>$emit('input', value)</code> chain triggered by
+<code>TabnavItem</code>'s <code>@click.prevent="tabnavData.selectTab(value)"</code> handler. Panel
+visibility is driven by <code>v-show="title === currentTitle"</code> (a JS-computed boolean toggling inline
+<code>display: none</code>), and the active-tab label styling is driven by a class binding,
+<code>:class="{ active: title === currentTitle }"</code>, whose CSS effect (<code>color</code> and
+underline via <code>.tabnav-link.active</code>) is itself already plain CSS once the class is present — it
+is only the <em>decision</em> of which panel/tab is active that lives in JavaScript state, not the styling
+of that state.
+</p>
+<p>
+The named native mechanism that mechanically replaces this is a radio-input group with the general sibling
+selector: one hidden <code>&lt;input type="radio" name="tabNavigator-N" id="tab-N-i"&gt;</code> per tab
+(the checked one holding the "current" state natively, exactly analogous to <code>currentTitle</code>),
+paired with a <code>&lt;label for="tab-N-i"&gt;</code> standing in for each <code>TabnavItem</code>, and
+each tab's content panel given a matching id so a selector chain like
+<code>#tab-N-i:checked ~ .tabs-content .tab-container:nth-of-type(N)</code> (or, more simply, one radio per
+panel wrapped so a sibling-combinator rule such as <code>#tab-N-i:checked ~ #panel-N { display: block; }</code>
+applies) shows only the panel whose radio is checked. Clicking a <code>&lt;label&gt;</code> natively toggles
+its associated radio's <code>:checked</code> state with no JS, which is exactly the "swap the active tab"
+behavior <code>selectTab</code>/<code>v-model</code> currently performs, and <code>:checked</code> styling
+on the associated <code>&lt;label&gt;</code> (via an adjacent-sibling selector,
+<code>input:checked + label</code>) can reproduce the <code>.tabnav-link.active</code> underline/color
+treatment without any class-binding JS. The verdict is "partial" rather than "applicable" because two
+pieces of behavior would not transfer: the cross-fade opacity transition on switch
+(<code>&lt;transition-group name="fade"&gt;</code>) has no direct radio-input equivalent — CSS transitions
+on <code>display</code>-toggled content don't animate the way the current <code>opacity</code>-based
+enter/leave classes do, though a <code>@starting-style</code>/<code>transition-behavior: allow-discrete</code>
+approach could approximate it in browsers that support it — and the runtime vertical/horizontal layout
+switch keyed on <code>node.tabs.length > 7</code> is a value computed from wire data at render time, which
+CSS alone cannot inspect (a container query or <code>:has()</code> selector could react to the rendered
+DOM shape, e.g. <code>:has(> .tabnav > .tabnav-items > :nth-child(8))</code>, but that is a materially
+different mechanism than the current JS array-length check, not a drop-in replacement).
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

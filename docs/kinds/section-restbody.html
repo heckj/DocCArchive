@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: restBody — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>restBody</code></h1>
+<p class="wire-value">Wire value: <code>"restBody"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>restBody</code> is one of the section kinds a REST-symbol page's
+<code>primaryContentSections</code> array can contain (alongside <code>restParameters</code>,
+<code>restHeaders</code>, <code>restCookies</code>, <code>restEndpoint</code>,
+<code>restResponses</code>, and the ordinary symbol sections). The dispatch table lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L127"><code>PrimaryContent.vue</code></a>,
+which keys a <code>componentFor(section)</code> lookup and a parallel <code>propsFor(section)</code>
+lookup off <code>section.kind</code>, using the <code>SectionKind</code> constant map defined in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L11-L27"><code>constants/PrimaryContentSection.js</code></a>:
+</p>
+<pre><code>componentFor(section) {
+  return {
+    ...
+    [SectionKind.restBody]: RestBody,
+    ...
+  }[section.kind];
+},
+propsFor(section) {
+  const { bodyContentType, content, mimeType, parameters, title, ... } = section;
+  return {
+    ...
+    [SectionKind.restBody]: {
+      bodyContentType,
+      content,
+      mimeType,
+      parts: parameters,
+      title,
+    },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+Note the rename on the way in: the wire's <code>parameters</code> array becomes the
+<code>parts</code> prop on the component. The target component is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/RestBody.vue#L11-L80"><code>RestBody.vue</code></a>,
+whose template renders two stacked pieces: a single-row "parameters table" describing the body
+itself (its declared type and free-form <code>content</code> description), followed
+&mdash; only <code>v-if="parts.length"</code> &mdash; by a second, multi-row table headed
+"Parts" that lists the individual <code>multipart/form-data</code> parameters when the body is
+multipart-encoded:
+</p>
+<pre><code>&lt;section&gt;
+  &lt;LinkableHeading :anchor="anchor"&gt;{{ title }}&lt;/LinkableHeading&gt;
+  &lt;ParametersTable :parameters="[bodyParam]" :changes="bodyChanges" keyBy="key"&gt;
+    ...
+  &lt;/ParametersTable&gt;
+  &lt;template v-if="parts.length"&gt;
+    &lt;h3&gt;{{ $t('sections.parts') }}&lt;/h3&gt;
+    &lt;ParametersTable :parameters="parts" class="parts" :changes="partsChanges"&gt;
+      ...
+    &lt;/ParametersTable&gt;
+  &lt;/template&gt;
+&lt;/section&gt;</code></pre>
+<p>
+The first table is fed a synthetic single-element array, <code>bodyParam</code>, built in a
+computed property from the section's own <code>bodyContentType</code>/<code>content</code>/<code>mimeType</code>
+props (keyed by a constant string <code>ChangesKey = 'restRequestBody'</code>, used only to look
+up API-diff highlighting) &mdash; the body itself is presented through the exact same
+<code>ParametersTable</code>/row-slot machinery used for the real <code>parts</code> list, just
+with one synthetic row standing in for "the body as a whole." Each part row shows the part's
+<code>name</code> and declaration tokens in the "symbol" column, and in the "description" column:
+an optional "(Required)" / "(Read only)" text prefix, the free-form <code>content</code>
+markup (via <code>ContentNode</code>), the part's own <code>mimeType</code>, and any
+<code>attributes</code> (rendered by <code>ParameterAttributes.vue</code>).
+</p>
+<p>
+The section also participates in the on-this-page navigation: in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/onThisPageRegistrator.js#L74-L88"><code>onThisPageRegistrator.js</code></a>,
+<code>restBody</code> is grouped with the other primary-content-anchor kinds
+(<code>properties</code>, <code>restCookies</code>, <code>restEndpoint</code>, <code>restHeaders</code>,
+<code>restParameters</code>, <code>restResponses</code>) to register a level-2 on-this-page
+entry titled from the section's own <code>title</code> field, anchored via
+<code>anchorize(section.title)</code> &mdash; the same anchor computed inside
+<code>RestBody.vue</code> itself for its <code>LinkableHeading</code>.
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture, from swift-docc's test suite:
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/rest-symbol.json</code> (lines
+251&ndash;295), a <code>multipart/form-data</code> request body with one part. A second, minimal
+fixture (title/mimeType/bodyContentType only, no content or parameters) appears inline in
+<code>Tests/SwiftDocCTests/Rendering/RESTBodyRenderSectionTests.swift</code> lines 17&ndash;24.
+</p>
+<pre><code>{
+  "kind": "restBody",
+  "title": "Parts",
+  "mimeType": "multipart/form-data",
+  "bodyContentType": [
+    {
+      "kind": "identifier",
+      "text": "form-data"
+    }
+  ],
+  "content": [
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "The article’s Apple News Format JSON document and other assets."
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "Any Key",
+      "type": [
+        {
+          "kind": "text",
+          "text": "binary"
+        }
+      ],
+      "required": true,
+      "mimeType": "application/octet-stream",
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            {
+              "type": "text",
+              "text": "Assets, such as images."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <p style="font-weight:600; border-bottom:1px solid var(--color-border); padding-bottom:4px;">Parts</p>
+  <div style="display:flex; gap:1rem; margin-bottom:0.75rem;">
+    <div style="flex:0 0 25%; text-align:right; font-family:monospace;">form-data</div>
+    <div style="flex:1;">The article&rsquo;s Apple News Format JSON document and other assets.</div>
+  </div>
+  <p style="font-weight:600; margin-top:1rem;">Parts</p>
+  <div style="display:flex; gap:1rem;">
+    <div style="flex:0 0 25%; text-align:right;"><code>Any Key</code></div>
+    <div style="flex:1;">
+      <em>(Required)</em> Assets, such as images.
+      <div style="color:var(--color-text-secondary); font-size:0.85em;">Content-Type: application/octet-stream</div>
+    </div>
+  </div>
+  <p><em>mockup: body-level row (declaration tokens + description) followed by an optional
+  "Parts" sub-table, one row per multipart parameter &mdash; both rendered with the same
+  parameter-table layout</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/RESTBodyRenderSection</code> (lines 2917&ndash;2955), one branch of the
+<code>DocumentationPrimaryRenderSection</code> discriminated union (lines 2507&ndash;2546);
+cross-checked against the generated <code>Components.Schemas.RESTBodyRenderSection</code> struct
+in <code>Sources/DocCArchive/generated/Types.swift</code> (lines 6577&ndash;6627).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"restBody"</code> (sole enum value)</td>
+<td>Discriminator. Generated as a dedicated <code>KindPayload</code> frozen enum with the single
+case <code>restBody</code>. Unlike <code>mentions</code>, this section <em>does</em> carry an
+explicit discriminator on the wire, so <code>CodableContentSection</code>
+(swift-docc, <code>Model/Rendering/RenderNode/CodableContentSection.swift</code> line 62) and the
+generated <code>oneOf</code> decoder both dispatch on it directly rather than trying candidates in
+sequence.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Always the literal string <code>"HTTP Body"</code> in practice &mdash; swift-docc's
+<code>HTTPBodySectionTranslator</code> hard-codes this value when building the section (see
+&sect;1/&sect;3 authoring note); the fixture above uses <code>"Parts"</code>, showing the schema
+itself places no constraint on the string.</td>
+</tr>
+<tr>
+<td><code>mimeType</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Free-form MIME type string for the body's content encoding (e.g.
+<code>multipart/form-data</code>, <code>application/json</code>). No enum constraint in the
+schema.</td>
+</tr>
+<tr>
+<td><code>bodyContentType</code></td>
+<td>array of <code>DeclarationToken</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>A tokenized type declaration (same token shape used throughout <code>declarations</code>
+sections: <code>kind</code> one of <code>keyword</code>/<code>attribute</code>/<code>number</code>/<code>string</code>/<code>identifier</code>/<code>typeIdentifier</code>/<code>genericParameter</code>/<code>text</code>/<code>internalParam</code>/<code>externalParam</code>/<code>label</code>, plus optional
+<code>identifier</code>, <code>preciseIdentifier</code>, <code>highlight</code>). Generated as
+<code>[Components.Schemas.DeclarationToken1]</code> (a duplicate-suffixed name from OpenAPI
+merging, structurally identical to <code>DeclarationToken</code>).</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Free-form Markdown-derived block content describing the body as a whole (e.g. the
+paragraph in the example above). Optional in both the JSON Schema and the generated struct
+(<code>[RenderBlockContent]?</code>).</td>
+</tr>
+<tr>
+<td><code>parameters</code></td>
+<td>array of <code>TypedProperty</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Present only when the body is a multipart encoding with named parts. Each
+<code>TypedProperty</code> carries <code>name</code>, <code>type</code> (declaration tokens),
+optional <code>typeDetails</code>, <code>content</code>, <code>attributes</code>,
+<code>mimeType</code>, <code>readOnly</code>, <code>required</code>, <code>deprecated</code>,
+<code>introducedVersion</code>. On the render-render side this array is passed to
+<code>RestBody.vue</code> as the <code>parts</code> prop (renamed, see &sect;1). swift-docc's
+Swift-side model (<code>RESTBodyRenderSection.swift</code> line 33) types this field as
+<code>[RenderProperty]?</code>, its own name for the same wire shape.</td>
+</tr>
+</tbody>
+</table>
+<p>
+Authoring-side note: unlike most section kinds, there is no Markdown/directive syntax an author
+writes directly to produce a <code>restBody</code> section. swift-docc's
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderSectionTranslator/HTTPBodySectionTranslator.swift#L15-L61"><code>HTTPBodySectionTranslator</code></a>
+builds the section by reading a symbol's <code>httpBodySection</code> (populated from a
+SymbolGraph symbol mixin, typically produced by converting an OpenAPI specification into a
+symbol graph upstream of DocC), filtering its parameters to those with a <code>"body"</code>
+source and a backing symbol, and hard-coding <code>title: "HTTP Body"</code> &mdash; there is no
+corresponding case in <code>Sources/SwiftDocC/Model/Rendering/Symbol/RESTBodyRenderSection.swift</code>
+(the plain data struct, lines 14&ndash;49) for an author-facing directive, and no matching
+<code>.docc</code> catalog article was found describing one.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML
+transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment and the Markdown
+transformer returns an empty string) &mdash; neither has any kind-specific handling for
+<code>restBody</code> (or any other render section) today. A future implementation would need to
+render the body's own declaration/content row plus, conditionally, the <code>parameters</code>
+list as a sub-table, mirroring <code>RestBody.vue</code>'s two-table structure.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, from <code>RestBody.vue</code>'s template and the shared
+<code>ParametersTable.vue</code> it delegates to:</p>
+<ul>
+<li><code>section</code> &mdash; root element (unguarded; always rendered when this section kind
+is present).</li>
+<li>Child: whatever root element <code>LinkableHeading</code> renders for the anchor
+<code>anchorize(title)</code>, containing the section's <code>title</code> text (e.g. "HTTP
+Body").</li>
+<li>Child: <code>div.parameters-table</code> (from <code>ParametersTable.vue</code>) containing
+one <code>GridRow</code> (rendered class <code>.param</code>) for the synthetic
+<code>bodyParam</code> row, itself split into <code>div.param-symbol</code> (declaration tokens)
+and <code>div.param-content</code> (description/mime type) <code>GridColumn</code>s.</li>
+<li>Conditional child (only when <code>parts.length</code>): an <code>h3</code> reading
+<code>$t('sections.parts')</code> (<code>"Parts"</code> in <code>en-US</code>, from
+<code>src/lang/locales/en-US.json</code> line 109), followed by a second
+<code>div.parameters-table.parts</code> with one <code>.param</code> row per part. Each part row's
+symbol column additionally wraps the part's name in <code>div.part-name &gt; WordBreak(code)</code>.</li>
+</ul>
+<p>
+SCSS: <code>RestBody.vue</code> carries its own <code>&lt;style lang="scss" scoped&gt;</code>
+block (importing <code>docc-render/styles/_core.scss</code>) with two rules: <code>.part-name {
+font-weight: $font-weight-bold; }</code>, and a <code>.content { display: inline; :deep(p:first-child)
+{ display: inline; } }</code> rule that keeps an inline "(Required)"/"(Read only)" text prefix on
+the same line as the first paragraph of part description text. The shared
+<code>ParametersTable.vue</code> supplies the actual grid layout &mdash; <code>.param-symbol</code>
+(<code>text-align: right</code>, collapsing to left-aligned under the <code>small</code>
+breakpoint), <code>.param-content</code> (<code>padding-left: 1rem</code>), and
+<code>.param + .param { margin-top: var(--spacing-param); }</code> for inter-row spacing. It also
+defines the diff-highlight styling applied when API-change tracking flags a row via
+<code>.changed</code>/<code>.changed-{added|removed|changed}</code> classes (using the
+<code>change-highlight-target()</code>/<code>change-highlight-end-spacing()</code> mixins), driven
+by the <code>bodyChanges</code>/<code>partsChanges</code> computed properties keyed off the
+constant string <code>'restRequestBody'</code>.
+</p>
+<p>
+CSS custom properties consumed: <code>--spacing-param</code> (defined as <code>rem(28px)</code>
+in <code>src/styles/base/_typography.scss</code> line 48) for vertical spacing between parameter
+rows, and <code>--colors-grid</code> (falling back to <code>--color-grid</code>), consumed one
+level up by the parent <code>PrimaryContent.vue</code> for the shared top border above the whole
+primary-content column &mdash; not specific to <code>restBody</code> itself.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: <code>RestBody.vue</code> has exactly one piece of conditional rendering
+&mdash; a <code>v-if="parts.length"</code> template guard that omits the "Parts" heading and
+sub-table entirely when the wire's <code>parameters</code> array is empty or absent &mdash; plus
+two small computed-property data transforms (building the synthetic <code>bodyParam</code> row,
+and looking up any API-diff highlight data keyed by <code>'restRequestBody'</code>). None of this
+is interactive: there is no click handler, no toggle, no post-mount state change, and no
+show/hide behavior triggered by user action. The <code>v-if</code> is equivalent to a
+server/build-time conditional include (present the "Parts" table only if there are parts to
+show), and the row/column layout is static grid markup with no runtime state at all.
+</p>
+<p>
+Because there is no client-side state transition to reproduce, none of the stateful-CSS
+mechanisms (<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, checked radio + sibling
+selector, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>)
+apply here &mdash; they all exist to hold or toggle state in the DOM in response to user
+interaction, and this section has no such state to hold. A static site generator (or a future
+DocCArchive HTML transformer) can reproduce the <code>v-if="parts.length"</code> behavior by
+simply omitting the "Parts" heading and sub-table markup at build time when the
+<code>parameters</code> array is empty, and can lay out the body-row and parts-table grid with
+plain CSS grid or flexbox &mdash; none of it depends on CSS or JavaScript running in the browser.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

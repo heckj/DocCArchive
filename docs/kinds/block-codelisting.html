@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: codeListing — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>codeListing</code></h1>
+<p class="wire-value">Wire value: <code>"codeListing"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>codeListing</code> is one of the block-content kinds dispatched by the shared
+<code>render()</code> function inside
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L39"><code>components/ContentNode.vue</code></a>'s
+<code>BlockType</code> map (<code>codeListing: 'codeListing'</code>, line 39). The <code>switch (node.type)</code>
+case for it is:
+</p>
+<pre><code>case BlockType.codeListing: {
+  if (node.metadata &amp;&amp; node.metadata.anchor) {
+    return renderFigure(node);
+  }
+
+  const props = {
+    syntax: node.syntax,
+    fileType: node.fileType,
+    content: node.code,
+    showLineNumbers: node.showLineNumbers,
+    copyToClipboard: node.copyToClipboard ?? false,
+    wrap: node.wrap ?? 0,
+    lineAnnotations: node.lineAnnotations ?? [],
+  };
+  return createElement(CodeListing, { props });
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L267-L281"><code>src/components/ContentNode.vue#L267-L281</code></a>).
+Two things stand out mechanically:
+</p>
+<ul>
+<li>
+When <code>metadata.anchor</code> is present, the node is instead routed through the shared
+<code>renderFigure</code> helper
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L220-L249"><code>src/components/ContentNode.vue#L220-L249</code></a>),
+which wraps the (still <code>CodeListing</code>-rendered) content in a <code>&lt;figure&gt;</code>
+element and optionally prepends/appends a <code>&lt;figcaption&gt;</code> built from
+<code>metadata.title</code>/<code>metadata.abstract</code>. This is the same helper used by
+<code>video</code> and <code>dictionaryExample</code> nodes that carry an anchor — it is not
+specific to code listings, it is a generic "give this block a linkable, captioned figure" wrapper.
+</li>
+<li>
+<code>node.fileType</code> is read out of the render node and passed to <code>CodeListing</code>
+even though the vendored JSON Schema and generated Swift type (see section 3) do not declare a
+<code>fileType</code> property on <code>CodeListing</code> — it is accessed defensively
+(<code>undefined</code> when absent) and only affects the file-icon glyph if a filename is also
+present.
+</li>
+</ul>
+<p>
+The actual leaf component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L11-L62"><code>components/ContentNode/CodeListing.vue</code></a>,
+renders a <code>&lt;div class="code-listing"&gt;</code> containing an optional filename header, a
+copy-to-clipboard button, and a <code>&lt;pre&gt;&lt;code&gt;&hellip;&lt;/code&gt;&lt;/pre&gt;</code>
+block built line-by-line from the <code>content</code> prop (bound from <code>node.code</code>).
+Each source line becomes its own <code>&lt;span class="code-line-container"&gt;</code>, with an
+optional <code>&lt;span class="code-number"&gt;</code> (shown when <code>showLineNumbers</code> is
+true) and a <code>&lt;span class="code-line" v-html="line"&gt;</code> holding the
+syntax-highlighted markup for that line
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L40-L59"><code>CodeListing.vue#L40-L59</code></a>).
+Syntax highlighting itself happens client-side and asynchronously: a <code>content</code> watcher
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L177-L215"><code>CodeListing.vue#L177-L215</code></a>)
+calls <code>registerHighlightLanguage(this.syntaxNameNormalized)</code> then
+<code>highlightContent(...)</code>, falling back to plain HTML-escaped text if the language isn't
+supported — so <code>syntax</code> (normalized via a small <code>occ</code>&rarr;<code>objective-c</code>
+legacy-name map, line 144-148) drives which highlighter grammar loads, not which HTML is emitted.
+</p>
+<p>
+Per-line decoration (highlight/strikeout) comes from the <code>lineAnnotations</code> prop, converted
+into per-style <code>Set</code>s of line numbers in the <code>styleLineSets</code> computed property
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L152-L175"><code>CodeListing.vue#L152-L175</code></a>)
+and applied as the <code>highlighted</code>/<code>strikethrough</code> classes on each line's
+container span. <code>copyToClipboard</code> gates a small copy button that calls
+<code>navigator.clipboard.writeText</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L216-L230"><code>CodeListing.vue#L216-L230</code></a>),
+and <code>wrap</code> (a positive integer) sets a <code>--wrap-ch</code> CSS custom property used by
+the scoped SCSS to cap line width at N monospace characters instead of allowing horizontal scroll.
+</p>
+<p>
+Note that <code>CollapsibleCodeListing.vue</code> and <code>MobileCodeListing.vue</code> (also under
+<code>components/ContentNode/</code>) exist in this repo but are <em>not</em> in this dispatch path —
+grepping their usages shows they are consumed by <code>EndpointExample.vue</code> and
+<code>DictionaryExample.vue</code> (and, for the mobile variant, the tutorial-only
+<code>MobileCodePreview.vue</code>), not by the plain block-level <code>codeListing</code> case above.
+A bare <code>codeListing</code> node always renders through the single, non-collapsible
+<code>CodeListing.vue</code>.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture:
+<code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive/data/documentation/exampledocs/examplearticle.json</code>
+in this repository, found inside <code>primaryContentSections[0].content[2]</code>.
+</p>
+<pre><code>{
+  "type": "codeListing",
+  "syntax": "swift",
+  "code": [
+    "func main() {",
+    "    print(\"hello world\")",
+    "}"
+  ]
+}</code></pre>
+<p class="synthesized-note">
+This minimal fixture omits every optional field (<code>metadata</code>, <code>copyToClipboard</code>,
+<code>showLineNumbers</code>, <code>wrap</code>, <code>lineAnnotations</code>). To also illustrate
+those fields (line numbers, a highlighted line, and a caption via <code>metadata.anchor</code>),
+here is a hand-extended variant built strictly from the fields documented in section 3:
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 exercising metadata/showLineNumbers/lineAnnotations together; extended from the real fixture above -->
+<pre><code>{
+  "type": "codeListing",
+  "syntax": "swift",
+  "code": [
+    "func main() {",
+    "    print(\"hello world\")",
+    "}"
+  ],
+  "showLineNumbers": true,
+  "copyToClipboard": true,
+  "lineAnnotations": [
+    { "style": "highlight", "range": [ { "line": 2 }, { "line": 2 } ] }
+  ],
+  "metadata": {
+    "anchor": "main-function",
+    "abstract": [ { "type": "text", "text": "The program's entry point." } ]
+  }
+}</code></pre>
+<div class="mockup">
+  <figure style="border:1px solid #ddd; border-radius:6px; overflow:hidden; margin:0;">
+    <figcaption style="padding:6px 12px; font-size:0.85em; color:#555; border-bottom:1px solid #eee;">The program's entry point.</figcaption>
+    <div style="position:relative; background:#1e1e24; color:#ddd; font-family:monospace; font-size:0.9em;">
+      <button style="position:absolute; top:6px; right:6px; background:#333; color:#ccc; border:none; border-radius:4px; padding:2px 6px; font-size:0.75em;">copy</button>
+      <div style="display:flex; padding:10px 0;">
+        <span style="width:2em; text-align:right; padding-right:1em; color:#888; user-select:none;">1<br>2<br>3</span>
+        <span>
+          func main() {<br>
+          <span style="background:rgba(10,132,255,0.15); border-left:4px solid #0a84ff; display:block; padding-left:8px; margin-left:-8px;">&nbsp;&nbsp;&nbsp;&nbsp;print("hello world")</span>
+          }
+        </span>
+      </div>
+    </div>
+  </figure>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema object: <code>#/components/schemas/CodeListing</code> in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (line 816), one of the variants under
+the <code>RenderBlockContent</code> discriminated union (its <code>type</code> enum member is listed
+at line 2462 of the same file). Generated Swift:
+<code>Components.Schemas.CodeListing</code>, a plain <code>Codable, Hashable, Sendable</code> struct
+at <code>Sources/DocCArchive/generated/Types.swift:4267-4328</code>, reachable as the
+<code>.CodeListing</code> case of the generated <code>RenderBlockContent</code> enum
+(<code>Types.swift:3617</code>).
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"codeListing"</code></td><td>Discriminator; generated as <code>_TypePayload</code> with the single case <code>.codeListing</code>.</td></tr>
+<tr><td><code>code</code></td><td>[string]</td><td>yes</td><td>&mdash;</td><td>The listing's source lines, one array element per line (no embedded newlines). Maps to the <code>content</code> prop on <code>CodeListing.vue</code>.</td></tr>
+<tr><td><code>syntax</code></td><td>string, nullable</td><td>yes (schema-required; may be <code>null</code>)</td><td>&mdash;</td><td>Highlighter language id, e.g. <code>"swift"</code>. Normalized client-side (<code>occ</code> &rarr; <code>objective-c</code>) before being handed to the highlighter.</td></tr>
+<tr><td><code>metadata</code></td><td>RenderContentMetadata</td><td>no</td><td>&mdash;</td><td>Optional <code>anchor</code>/<code>title</code>/<code>abstract</code>/<code>deviceFrame</code> object (spec line 484-503). Presence of <code>anchor</code> is what triggers the <code>renderFigure</code> path in section 1.</td></tr>
+<tr><td><code>copyToClipboard</code></td><td>boolean</td><td>no</td><td>defaults to <code>false</code> at the render call site</td><td>Shows/hides the copy button.</td></tr>
+<tr><td><code>showLineNumbers</code></td><td>boolean</td><td>no</td><td>defaults to <code>false</code> (component prop default) / undefined-falsy at the call site</td><td>Toggles the <code>.code-number</code> gutter spans.</td></tr>
+<tr><td><code>wrap</code></td><td>integer</td><td>no</td><td>defaults to <code>0</code> at the render call site (0 = no wrap/scroll instead)</td><td>Max line width in characters; feeds the <code>--wrap-ch</code> custom property.</td></tr>
+<tr><td><code>lineAnnotations</code></td><td>[LineAnnotation]</td><td>no</td><td>defaults to <code>[]</code> at the render call site</td><td>Each entry has required <code>style</code> (enum <code>"highlight" | "strikeout"</code>, spec line 786-789) and required <code>range</code> (array of two <code>Position</code> objects, each with required <code>line</code> and optional <code>character</code>, spec line 802-815).</td></tr>
+</table>
+<p>
+Note the schema does not declare a <code>fileType</code> property on <code>CodeListing</code>, even
+though <code>ContentNode.vue</code>'s render case reads <code>node.fileType</code> and forwards it as
+a prop (section 1) — the generated Swift struct therefore has no <code>fileType</code> member either,
+and this field, if ever emitted, would simply be dropped by strict decoding against this schema.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Root element: <code>&lt;div class="code-listing" data-syntax="…"&gt;</code>, with modifier classes
+<code>single-line</code> (exactly one highlighted line of code) and <code>is-wrapped</code>
+(<code>wrap &gt; 0</code>), and an inline <code>style="--wrap-ch: N"</code> when wrapping is active
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L12-L17"><code>CodeListing.vue#L12-L17</code></a>).
+Inside it:
+</p>
+<ul>
+<li><code>&lt;span class="filename"&gt;</code> (from
+<code>components/ContentNode/CodeListingFilename.vue</code>) — optional, shown only when a
+<code>fileName</code> prop is supplied; contains a <code>CodeListingFileIcon</code> SVG plus the
+filename text, wrapped in an <code>&lt;a&gt;</code> when <code>isActionable</code>.</li>
+<li><code>&lt;div class="container-general"&gt;</code> — scroll container for the code, and hover
+scope for the copy button (<code>.container-general:hover .copy-button { opacity: 1; }</code>).</li>
+<li><code>&lt;button class="copy-button"&gt;</code> with state classes <code>idle</code>/<code>success</code>/<code>failure</code> driving which of <code>CopyIcon</code>/<code>CheckmarkIcon</code>/<code>CrossIcon</code> is shown.</li>
+<li><code>&lt;pre&gt;&lt;code&gt;</code> (the <code>&lt;code&gt;</code> is the shared
+<code>components/CodeBlock.vue</code>) containing one <code>&lt;span class="code-line-container"&gt;</code>
+per source line, each with an optional <code>&lt;span class="code-number" data-line-number="N"&gt;</code>
+and a <code>&lt;span class="code-line"&gt;</code> holding highlighted markup. Per-line state classes:
+<code>highlighted</code> and <code>strikethrough</code>.</li>
+</ul>
+<p>
+All of the above is scoped SCSS inside
+<code>components/ContentNode/CodeListing.vue</code>'s own <code>&lt;style scoped lang="scss"&gt;</code>
+block (imports <code>docc-render/styles/_core.scss</code>). Notable SCSS variables consumed, all
+defined in <code>src/styles/core/_vars.scss</code>: <code>$code-listing-with-numbers-padding</code>
+(<code>14px 0</code>), <code>$code-number-padding</code> / <code>$code-number-padding-left</code>
+(<code>8px</code>), and <code>$highlighted-border-width</code> (<code>4px</code>). CSS custom
+properties consumed at paint time: <code>--color-code-line-highlight</code> and
+<code>--color-code-line-highlight-border</code> (theme colors, defined per light/dark palette in
+<code>src/styles/core/colors/_light.scss</code> / <code>_dark.scss</code>), <code>--line-highlight</code>
+(an optional per-instance override), <code>--color-fill-gray-tertiary</code>/<code>--color-fill-gray</code>
+(copy-button background), <code>--code-border-radius</code>, <code>--button-border-radius</code>, and
+<code>--code-indentationWidth</code> (drives the CSS <code>tab-size</code> of the <code>&lt;pre&gt;</code>).
+When wrapped in a figure (anchor case), the outer markup instead comes from
+<code>components/ContentNode/Figure.vue</code> — a bare
+<code>&lt;figure :id="anchor"&gt;&lt;slot /&gt;&lt;/figure&gt;</code> — plus an optional
+<code>&lt;figcaption&gt;</code> from <code>components/ContentNode/Caption.vue</code>; the
+<code>CodeListing</code> markup described above still appears unchanged inside that
+<code>&lt;figure&gt;</code>.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">Partial</span></p>
+<p>
+Current behavior, precisely: two independent pieces of client-side JS state exist on
+<code>CodeListing.vue</code>. (1) <code>copyState</code> (component <code>data</code>, one of
+<code>idle</code>/<code>success</code>/<code>failure</code>) is set by a click handler on
+<code>.copy-button</code> that calls <code>navigator.clipboard.writeText</code> and, on success,
+flips <code>copyState</code> to <code>success</code> for one second via <code>setTimeout</code>
+before reverting to <code>idle</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L216-L230"><code>CodeListing.vue#L216-L230</code></a>).
+(2) <code>syntaxHighlightedLines</code> (also component <code>data</code>) is populated
+asynchronously by an <code>await</code>-ing watcher that loads a highlighter grammar and re-renders
+each line's <code>&lt;span class="code-line" v-html="line"&gt;</code> once highlighting resolves.
+</p>
+<p>
+Neither of these is a good match for a purely declarative, state-in-the-DOM native mechanism, for two
+different reasons, so the verdict is split:
+</p>
+<ul>
+<li>
+<strong>Copy-button visual feedback (partial win):</strong> the temporary "copied!" checkmark state
+is exactly the shape of problem the <code>:has()</code> pseudo-class already solves elsewhere in
+this very file — the scoped SCSS already uses
+<code>.code-listing:not(:has(.code-number)):has(.highlighted)</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L257-L264"><code>CodeListing.vue#L257-L264</code></a>)
+to style the container conditionally on a descendant's class, with no JS-computed class on the
+parent. But <code>navigator.clipboard.writeText()</code> itself has no CSS-only equivalent — copying
+text to the OS clipboard is unavoidably an imperative JS API call — so at most the transient
+success/failure <em>display</em> (e.g. auto-reverting after N seconds) could be pushed to CSS
+(a CSS animation on <code>:target</code> or a checked radio driving a sibling icon swap), while the
+copy action and its success/failure signal must still originate in JS. This is a partial, not full,
+replacement.
+</li>
+<li>
+<strong>Syntax highlighting (not replaceable):</strong> tokenizing source text into
+per-token <code>&lt;span&gt;</code>s with language-aware colors is fundamentally a text-processing
+step that has to happen somewhere in the pipeline (client JS today, but it could equally be
+build-time). There is no selector or native browser primitive that can classify "this substring is a
+Swift keyword" — it requires a grammar/lexer, so no CSS-only mechanism applies here regardless of
+where the JS runs.
+</li>
+</ul>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

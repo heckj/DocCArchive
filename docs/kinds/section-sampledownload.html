@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: sampleDownload — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>sampleDownload</code></h1>
+<p class="wire-value">Wire value: <code>"sampleDownload"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>sampleDownload</code> is one of the cases in swift-docc's Swift-side
+<code>RenderSectionKind</code> enum (see <code>swiftCaseSite</code>,
+<code>Sources/SwiftDocC/Model/Rendering/RenderSection.swift</code> line 20), but on the wire it is
+<strong>not</strong> emitted as a member of a RenderNode's generic <code>sections</code> array the way
+block/inline content kinds are. Instead, swift-docc's <code>RenderNodeTranslator</code> assigns the decoded
+payload directly onto a fixed, named top-level property of a symbol/article page: <code>sampleCodeDownload</code>
+(<code>node.sampleDownload = .init(action: …)</code> at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift#L846-L866">RenderNodeTranslator.swift#L846-L866</a>).
+Correspondingly, a literal string search for <code>"sampleDownload"</code> and for <code>sampleCodeDownload</code>
+across <code>swift-docc-render/src/components/</code> and <code>src/views/</code> turns up nothing in
+<code>ContentNode.vue</code>'s block/inline dispatch table (that table is irrelevant here — this is not a
+block-content kind) and nothing in a section-kind dispatch table either. The only consumer is
+<code>components/DocumentationTopic.vue</code>, which reads the fixed prop <code>sampleCodeDownload</code>
+directly (no <code>kind</code>-keyed lookup at all):
+</p>
+<pre><code>&lt;div v-if="sampleCodeDownload"&gt;
+  &lt;DownloadButton
+    class="sample-download"
+    :action="sampleCodeDownload.action"
+    linksToAsset
+  /&gt;
+&lt;/div&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L64-L70">DocumentationTopic.vue#L64-L70</a>).
+The prop is declared as a plain, optional <code>Object</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L346-L349">DocumentationTopic.vue#L346-L349</a>),
+and it also participates in the hero's "how much header content is there" tally used to decide the
+minimized-hero title style
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L520-L527">DocumentationTopic.vue#L520-L527</a>).
+</p>
+<p>
+<code>DownloadButton</code> is a local alias for <code>CallToActionButton.vue</code>
+(<code>import CallToActionButton from './CallToActionButton.vue'; … DownloadButton: CallToActionButton,</code> at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L205-L251">DocumentationTopic.vue#L205-L251</a>)
+— the same base component used by the unrelated <code>callToAction</code> section kind. It resolves the
+<code>action</code> (a <code>RenderInlineContent.reference</code>) through
+<code>DestinationDataProvider</code> to obtain a concrete <code>url</code>/<code>title</code> pair, then
+renders a <code>ButtonLink</code>:
+</p>
+<pre><code>&lt;DestinationDataProvider v-if="action" :destination="action" v-slot="{ url, title }"&gt;
+  &lt;ButtonLink :url="normalizeUrl(url)" :isDark="isDark" :linksToAsset="linksToAsset"&gt;
+    {{ title }}
+  &lt;/ButtonLink&gt;
+&lt;/DestinationDataProvider&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/CallToActionButton.vue#L11-L20">CallToActionButton.vue#L11-L20</a>).
+Because <code>linksToAsset</code> is passed as <code>true</code> from <code>DocumentationTopic.vue</code>,
+<code>normalizeUrl()</code> runs the resolved URL through <code>normalizePath</code>/<code>normalizeRelativePath</code>
+so that same-bundle asset downloads resolve correctly relative to the archive's base path
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/CallToActionButton.vue#L35-L39">CallToActionButton.vue#L35-L39</a>).
+<code>ButtonLink.vue</code> then either renders an internal <code>Reference</code> component (if a
+<code>url</code> is present) or a plain <code>&lt;button&gt;</code>, with root class <code>button-cta</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ButtonLink.vue#L11-L20">ButtonLink.vue#L11-L20</a>).
+</p>
+<p>
+A sibling property, <code>downloadNotAvailableSummary</code> (an array of <code>RenderBlockContent</code>),
+is rendered as an inline <code>Aside kind="note"</code> just below the description when the sample project
+download isn't available for the current platform variant
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L111-L116">DocumentationTopic.vue#L111-L116</a>).
+It is a separate, independently-optional field from <code>sampleCodeDownload</code>, not part of the
+<code>SampleDownload</code> payload itself.
+</p>
+<p>
+DocCArchive's own transform side: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift</code> lines 242-254) are still stub placeholders — the HTML
+transformer unconditionally returns a hardcoded HTML comment and the Markdown transformer returns an empty
+string, regardless of input. Neither one reads <code>sampleCodeDownload</code> (or any other field) today, so
+this kind does not yet flow through DocCArchive's transform in any functional way.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>swift-docc/Tests/SwiftDocCTests/Rendering/Rendering Fixtures/sample-download-symbol.json</code>,
+exercised by <code>SampleDownloadTests.testDecodeSampleDownloadSymbol()</code>
+(<code>swift-docc/Tests/SwiftDocCTests/Rendering/SampleDownloadTests.swift</code> lines 17-48). The excerpt
+below is the fixture's <code>sampleCodeDownload</code> value together with the matching entry from its
+<code>references</code> dictionary (key <code>"doc://org.swift.docc.example/downloads/sample.zip"</code>).
+</p>
+<pre><code>{
+  "sampleCodeDownload": {
+    "action": {
+      "type": "reference",
+      "identifier": "doc://org.swift.docc.example/downloads/sample.zip",
+      "isActive": true,
+      "overridingTitle": "Download"
+    }
+  },
+  "references": {
+    "doc://org.swift.docc.example/downloads/sample.zip": {
+      "type": "download",
+      "identifier": "project.zip",
+      "url": "/downloads/project.zip",
+      "checksum": "ad4adacc8ad53230b59d"
+    }
+  }
+}</code></pre>
+<div class="mockup">
+  <div style="padding:20px; background:#f5f5f7; border-radius:6px; display:inline-block;">
+    <span style="display:inline-block; padding:8px 20px; border-radius:18px; background:#0070c9; color:#fff; font-size:0.9rem; cursor:pointer;">Download</span>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>action</code></td>
+<td><code>Reference</code> (a <code>RenderInlineContent</code> variant)</td>
+<td>yes</td>
+<td>—</td>
+<td>Only field of the <code>SampleDownload</code> schema object
+(<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> lines 3238-3248; generated
+<code>Components.Schemas.SampleDownload</code> struct, <code>Sources/DocCArchive/generated/Types.swift</code>
+lines 7080-7094). Its own required sub-fields are <code>type</code> (enum <code>"reference"</code>),
+<code>isActive</code> (boolean), and <code>identifier</code> (string, a key into the RenderNode's
+<code>references</code> map); <code>overridingTitle</code> and <code>overridingTitleInlineContent</code> are
+optional (<code>Reference</code> schema, spec.json lines 1302-1330).</td>
+</tr>
+<tr>
+<td><code>sampleCodeDownload</code></td>
+<td><code>SampleDownload</code> (single object, not array)</td>
+<td>no</td>
+<td>—</td>
+<td>This is the actual property name on the wire and in the generated struct — there is no
+<code>kind: "sampleDownload"</code> discriminator anywhere in the JSON. It lives directly on
+<code>DocumentationRenderNode</code> (spec.json lines 2056-2138, property at line 2135; generated
+<code>Components.Schemas.DocumentationRenderNode.sampleCodeDownload: SampleDownload?</code> at
+<code>generated/Types.swift</code> line 5375). The Swift-side <code>RenderSectionKind.sampleDownload</code>
+case and the <code>SampleDownloadSection</code> struct (<code>RenderNode.swift</code>'s
+<code>sampleDownload</code> stored property, decoded/encoded under the same JSON key
+<code>sampleCodeDownload</code>) exist for the diffing/<code>AnyRenderSection</code> machinery, not because
+this is emitted as an array member alongside <code>hero</code>/<code>declarations</code>/etc.</td>
+</tr>
+<tr>
+<td><code>downloadNotAvailableSummary</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>no</td>
+<td>—</td>
+<td>Sibling property on <code>DocumentationRenderNode</code> (spec.json lines 2138-2143); independent of
+<code>sampleCodeDownload</code>, shown when a per-platform sample project isn't available.</td>
+</tr>
+<tr>
+<td><code>references["…"].type</code></td>
+<td>string</td>
+<td>yes</td>
+<td>enum: <code>"download"</code>, <code>"externalLocation"</code></td>
+<td><code>DownloadRenderReference</code> schema (spec.json lines 1882-1904); the reference entry that
+<code>action.identifier</code> points at. Generated as
+<code>Components.Schemas.DownloadRenderReference</code> (<code>generated/Types.swift</code> lines
+619-651).</td>
+</tr>
+<tr>
+<td><code>references["…"].checksum</code></td>
+<td>string</td>
+<td>no (absent from schema's <code>required</code> list)</td>
+<td>—</td>
+<td>Quirk: the generated Swift struct declares <code>checksum: Swift.String</code> as
+<strong>non-optional</strong> (<code>generated/Types.swift</code> line 631), even though the JSON Schema
+marks it optional and swift-docc's own <code>SampleDownloadTests.testExplicitNullChecksum()</code> asserts
+that swift-docc can produce <code>"checksum":null</code> on the wire. A DocCArchive consumer decoding a
+real archive whose download reference omits or nulls <code>checksum</code> would fail to decode with the
+currently generated types.</td>
+</tr>
+</tbody>
+</table>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+<p>
+Sources: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (schema objects <code>SampleDownload</code>,
+lines 3238-3248, and <code>DownloadRenderReference</code>, lines 1882-1904);
+<code>Sources/DocCArchive/generated/Types.swift</code> (structs at lines 5375, 7080-7094, and 619-651); swift-docc
+struct <code>SampleDownloadSection</code> at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Symbol/SampleDownloadSection.swift#L16-L44">SampleDownloadSection.swift#L16-L44</a>.
+Note: this repo's vendored spec is pinned to a different upstream commit
+(<code>5915e66d…</code>, "6.3-nightly" per <code>Sources/DocCArchive/VendorVersion.swift</code>) than the
+swift-docc checkout used for steps 1 and 3 of this page's sourcing, which is the likely source of the
+optionality mismatch noted above.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered markup, from outermost to innermost:
+</p>
+<ul>
+<li><code>div</code> (unclassed wrapper, only present <code>v-if="sampleCodeDownload"</code>) — direct child
+of <code>DocumentationHero</code>'s slot content in <code>DocumentationTopic.vue</code>.</li>
+<li><code>CallToActionButton</code> root: <code>&lt;DestinationDataProvider&gt;</code> — a logic-only
+wrapper component, renders no element of its own.</li>
+<li><code>a.button-cta.sample-download</code> or <code>button.button-cta.sample-download</code> — the
+actual clickable element, produced by <code>ButtonLink.vue</code> (root class <code>button-cta</code>) with
+the caller-supplied <code>class="sample-download"</code> merged on by Vue's automatic class binding. Renders
+as an <code>&lt;a&gt;</code> (via the internal <code>Reference</code> component) when a <code>url</code>
+resolves, otherwise a plain <code>&lt;button&gt;</code>.</li>
+</ul>
+<p>
+SCSS: the <code>.sample-download</code> rule itself only sets layout spacing and lives inline in
+<code>DocumentationTopic.vue</code>'s <code>&lt;style scoped&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L944-L946">DocumentationTopic.vue#L944-L946</a>,
+<code>margin-top: 20px;</code>). All visual styling of the button chrome itself comes from
+<code>.button-cta</code> in <code>ButtonLink.vue</code>'s own <code>&lt;style scoped lang="scss"&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ButtonLink.vue#L51-L98">ButtonLink.vue#L51-L98</a>).
+CSS custom properties consumed there: <code>--colors-button-light-background</code> /
+<code>--color-button-background</code>, <code>--color-button-border</code>, <code>--button-border-radius</code>,
+<code>--button-border-style</code>, <code>--button-border-width</code>, <code>--colors-button-text</code> /
+<code>--color-button-text</code>, <code>--colors-button-light-backgroundActive</code> /
+<code>--color-button-background-active</code>, <code>--colors-button-light-backgroundHover</code> /
+<code>--color-button-background-hover</code>, and, for the (unused by this button) <code>is-dark</code>
+variant, <code>--colors-button-dark-background</code> and its active/hover counterparts.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current JS/Vue behavior: nothing in this chain holds client-side UI state. <code>DocumentationTopic.vue</code>
+conditionally mounts the wrapper <code>&lt;div&gt;</code> with a plain <code>v-if="sampleCodeDownload"</code>
+(a build-time/render-time presence check on a prop, not a runtime toggle a user can flip);
+<code>CallToActionButton.vue</code> and <code>ButtonLink.vue</code> are pure presentational components with no
+<code>data()</code>, no <code>v-show</code>, and no click handler that changes local state — <code>ButtonLink</code>
+renders either a real <code>&lt;a&gt;</code> (normal browser navigation to the download URL) or an inert
+<code>&lt;button&gt;</code> if no URL resolved. <code>DestinationDataProvider</code> only resolves a reference
+identifier to a URL/title pair at render time; it does not introduce interactivity either.
+</p>
+<p>
+Because there is no interactive state (no expand/collapse, no tab switch, no modal open/close) to reproduce,
+there is no native mechanism — <code>&lt;details&gt;</code>, radio-driven <code>:checked</code>, <code>:target</code>,
+Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>, container queries, or view-transitions — that
+applies here. This section is a single conditionally-rendered link/button whose only "logic" is presence-or-absence
+of an optional field, which plain HTML (element present or not present in the response) already expresses with
+zero client-side behavior to replace.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

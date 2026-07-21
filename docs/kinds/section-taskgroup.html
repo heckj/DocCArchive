@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: taskGroup — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>taskGroup</code></h1>
+<p class="wire-value">Wire value: <code>"taskGroup"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A grep of <code>src/components/</code> and <code>src/views/</code> for the literal string
+<code>"taskGroup"</code> finds nothing — this kind never appears as a wire-level discriminator that
+swift-docc-render switches on. Instead, a grep for <code>topicSections</code> (the RenderNode field that
+holds an array of <code>taskGroup</code> objects) turns up exactly two consuming files:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L137-L143"><code>DocumentationTopic.vue#L137-L143</code></a>
+and the shared <code>Topics.vue</code>/<code>TopicsTable.vue</code> pair it delegates to. The same shape is
+reused, unconditionally, for two sibling RenderNode fields —
+<code>defaultImplementationsSections</code> and <code>seeAlsoSections</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L144-L160"><code>DocumentationTopic.vue#L144-L160</code></a>)
+— because all three RenderNode fields are typed as an array of the identical
+<code>title</code>/<code>abstract</code>/<code>discussion</code>/<code>identifiers</code>/<code>generated</code>/<code>anchor</code>
+object; swift-docc's own name for that payload type is <code>TaskGroupRenderSection</code>, and its wire
+form has no <code>kind</code> discriminator field at all (see Section 3).
+</p>
+<p>
+<code>DocumentationTopic.vue</code> (the top-level component for API/symbol reference pages) passes
+<code>topicSections</code> straight into <code>&lt;Topics&gt;</code>:
+</p>
+<pre><code>&lt;Topics
+  v-if="shouldRenderTopicSection"
+  :sections="topicSections"
+  :isSymbolDeprecated="isSymbolDeprecated"
+  :isSymbolBeta="isSymbolBeta"
+  :topicStyle="topicSectionsStyle"
+/&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L137-L143"><code>DocumentationTopic.vue#L137-L143</code></a>.)
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/Topics.vue#L11-L20"><code>DocumentationTopic/Topics.vue#L11-L20</code></a>
+is a thin wrapper that just forwards <code>sections</code>/<code>topicStyle</code> straight through to
+<code>&lt;TopicsTable&gt;</code>, which is where each individual <code>taskGroup</code> entry is actually
+unpacked and rendered:
+</p>
+<pre><code>&lt;ContentTableSection
+  v-for="(section, i) in sectionsWithTopics"
+  :key="`${section.title}_${i}`"
+  :title="section.title"
+  :anchor="section.anchor"
+  :class="{ 'no-title': !section.title }"
+&gt;
+  ...
+  &lt;template v-if="section.abstract" #abstract&gt;
+    &lt;ContentNode :content="section.abstract" /&gt;
+  &lt;/template&gt;
+  &lt;template v-if="section.discussion" #discussion&gt;
+    &lt;ContentNode :content="section.discussion.content" /&gt;
+  &lt;/template&gt;
+  &lt;template v-if="shouldRenderList"&gt;
+    &lt;TopicsLinkBlock v-for="topic in section.topics" ... /&gt;
+  &lt;/template&gt;
+  &lt;TopicsLinkCardGrid v-else :items="section.topics" :topicStyle="topicStyle" class="topic" /&gt;
+&lt;/ContentTableSection&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsTable.vue#L11-L51"><code>DocumentationTopic/TopicsTable.vue#L11-L51</code></a>.)
+The computed property <code>sectionsWithTopics</code> is what resolves each <code>taskGroup</code>
+object's raw <code>identifiers</code> array of topic-reference URLs into full reference objects, by
+looking each one up in the page-level <code>references</code> map (a mixin, <code>referencesProvider</code>):
+</p>
+<pre><code>sectionsWithTopics() {
+  return this.sections.map(section => ({
+    ...section,
+    topics: section.identifiers.reduce(
+      (list, id) => (this.references[id] ? list.concat(this.references[id]) : list),
+      [],
+    ),
+  }));
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsTable.vue#L110-L118"><code>TopicsTable.vue#L110-L118</code></a>.)
+Depending on <code>topicStyle</code> (a sibling RenderNode field, <code>topicSectionsStyle</code>, one of
+<code>list</code>/<code>compactGrid</code>/<code>detailedGrid</code>/<code>hidden</code>), each resolved
+topic renders either as a <code>TopicsLinkBlock</code> row
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkBlock.vue#L11-L27"><code>TopicsLinkBlock.vue#L11-L27</code></a>)
+or as a card inside <code>TopicsLinkCardGrid</code>. The outer chrome (section title, top border,
+spacing) comes from <code>ContentTable.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentTable.vue#L11-L18"><code>ContentTable.vue#L11-L18</code></a>)
+and <code>ContentTableSection.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentTableSection.vue#L11-L29"><code>ContentTableSection.vue#L11-L29</code></a>),
+one <code>ContentTable</code> per RenderNode field and one <code>ContentTableSection</code> per
+<code>taskGroup</code> entry within it.
+</p>
+<p>
+The exact same <code>TopicsTable.vue</code> component (minus the list/grid style toggle) is reused
+verbatim by <code>SeeAlso.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/SeeAlso.vue#L11-L19"><code>SeeAlso.vue#L11-L19</code></a>,
+title "See Also") and by <code>DefaultImplementations.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/DefaultImplementations.vue#L11-L19"><code>DefaultImplementations.vue#L11-L19</code></a>,
+title "Default Implementations") — confirming that from swift-docc-render's point of view, "Topics",
+"See Also", and "Default Implementations" are three independent RenderNode array fields holding the
+identical <code>taskGroup</code> item shape, not three different render kinds.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Fixture source: <code>Tests/DocCArchiveTests/Fixtures/SampleLibrary.doccarchive/data/documentation/samplelibrary.json</code>,
+the module-root RenderNode's <code>topicSections</code> array (three automatically-curated groups —
+Classes, Structures, Enumerations). This is a real, DocC-emitted example, unmodified except for
+truncation.
+</p>
+<pre><code>{
+  "topicSections": [
+    {
+      "anchor": "Classes",
+      "generated": true,
+      "identifiers": [
+        "doc://SampleLibrary/documentation/SampleLibrary/SampleActor",
+        "doc://SampleLibrary/documentation/SampleLibrary/SampleClass"
+      ],
+      "title": "Classes"
+    },
+    {
+      "anchor": "Structures",
+      "generated": true,
+      "identifiers": [
+        "doc://SampleLibrary/documentation/SampleLibrary/SampleStruct"
+      ],
+      "title": "Structures"
+    },
+    {
+      "anchor": "Enumerations",
+      "generated": true,
+      "identifiers": [
+        "doc://SampleLibrary/documentation/SampleLibrary/SampleError"
+      ],
+      "title": "Enumerations"
+    }
+  ]
+}</code></pre>
+<p>
+None of the fixtures under <code>Tests/DocCArchiveTests/Fixtures/</code> happen to contain an
+<em>authored</em> task group (one with a populated <code>abstract</code> or <code>discussion</code>
+field, or <code>"generated": false</code>) — every <code>taskGroup</code> entry across both archives is
+an automatic curation group like the one above. The <code>abstract</code>/<code>discussion</code> fields
+in the data sheet below are documented from the vendored schema and swift-docc's Swift model
+(Section 3), not from a fixture, since no fixture exercises them.
+</p>
+<div class="mockup">
+  <div style="background:#fff; border-radius:10px; padding:28px 36px; box-shadow:0 1px 3px rgba(0,0,0,0.12); border-top:1px solid #d6d6d6;">
+    <div style="margin-top:0; font-size:1.4rem;">Topics</div>
+    <div style="margin-bottom:6px;">Classes</div>
+    <div style="margin:0 0 18px 0;">
+      <div style="padding:4px 0;"><a href="#" style="color:#0070c9; text-decoration:none;">SampleActor</a></div>
+      <div style="padding:4px 0;"><a href="#" style="color:#0070c9; text-decoration:none;">SampleClass</a></div>
+    </div>
+    <div style="margin-bottom:6px;">Structures</div>
+    <div style="margin:0 0 18px 0;">
+      <div style="padding:4px 0;"><a href="#" style="color:#0070c9; text-decoration:none;">SampleStruct</a></div>
+    </div>
+    <div style="margin-bottom:6px;">Enumerations</div>
+    <div style="margin:0;">
+      <div style="padding:4px 0;"><a href="#" style="color:#0070c9; text-decoration:none;">SampleError</a></div>
+    </div>
+  </div>
+  <p><em>mockup: one <code>section.contenttable</code> (the "Topics" content-table, titled from
+  <code>MainContentSectionAnchors.topics</code>) contains one
+  <code>div.contenttable-section</code> per <code>taskGroup</code> entry; each section's own
+  <code>title</code> becomes an <code>&lt;h3&gt;</code> heading (anchored via <code>section.anchor</code>)
+  and its resolved <code>identifiers</code> render as a list of <code>TopicsLinkBlock</code> rows, one
+  per topic link, in <code>topicStyle: "list"</code> (the default). "See Also" and "Default
+  Implementations" render identically, just as separate content tables lower on the page.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/TasksGroupSection</code> (note the schema's own name differs from both the
+wire discriminator string <code>"taskGroup"</code> used in swift-docc's <code>RenderSectionKind</code>
+enum and from swift-docc's Swift type name <code>TaskGroupRenderSection</code> — see the naming note
+below the table), cross-checked against <code>Components.Schemas.TasksGroupSection</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6301&ndash;6347). This schema is referenced
+from three sibling fields on <code>DocumentationRenderNode</code>: <code>topicSections</code>,
+<code>seeAlsoSections</code>, and <code>defaultImplementationsSections</code> (spec lines
+2111&ndash;2128; generated lines 5367, 5369, 5371).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>&mdash;</td>
+<td>not present on the wire</td>
+<td>&mdash;</td>
+<td>Unlike most <code>RenderSectionKind</code> cases, <code>TaskGroupRenderSection</code> declares
+<code>public let kind: RenderSectionKind = .taskGroup</code> in Swift but its <code>CodingKeys</code>
+enum (swift-docc, <code>TaskGroupRenderSection.swift</code> lines 60&ndash;62) deliberately omits
+<code>kind</code>, so the JSON never carries a <code>"kind": "taskGroup"</code> field. The vendored
+<code>TasksGroupSection</code> schema matches this: it has no <code>kind</code> property at all. A
+consumer can only tell which RenderNode field a given <code>taskGroup</code> object came from by which
+array (<code>topicSections</code> / <code>seeAlsoSections</code> / <code>defaultImplementationsSections</code>)
+it was found in.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>The task group's heading, e.g. <code>"Classes"</code> or an author-written <code>## Getting
+Started</code> heading. Absent for the single unnamed catch-all group DocC sometimes emits.</td>
+</tr>
+<tr>
+<td><code>abstract</code></td>
+<td>array of <code>RenderInlineContent</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>The first paragraph of authored prose under the group's heading, if any. Never populated for
+automatically-curated groups (<code>generated: true</code>).</td>
+</tr>
+<tr>
+<td><code>discussion</code></td>
+<td><code>ContentRenderSection</code> (vendored schema) / <code>any RenderSection</code> (swift-docc,
+in practice a <code>ContentRenderSection</code>)</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Additional authored prose after the abstract and before the link list, wrapped in its own nested
+render-section object (accessed in swift-docc-render as <code>section.discussion.content</code>).</td>
+</tr>
+<tr>
+<td><code>identifiers</code></td>
+<td>array of string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Topic-graph reference identifiers (URLs in the <code>doc://</code> scheme, or resolved external
+URLs) for the symbols/articles curated into this group. swift-docc-render resolves each one against the
+RenderNode's top-level <code>references</code> map before display.</td>
+</tr>
+<tr>
+<td><code>generated</code></td>
+<td>boolean</td>
+<td>no (generated schema field is optional; swift-docc always emits it as <code>false</code> when
+omitted)</td>
+<td>default <code>false</code></td>
+<td>Encoded only when <code>true</code> (swift-docc's <code>encode(to:)</code> uses
+<code>if generated { try container.encode(...) }</code>) — <code>true</code> marks a group DocC
+synthesized automatically (e.g. grouping all classes together) rather than one an author wrote under a
+<code>## Topics</code> heading.</td>
+</tr>
+<tr>
+<td><code>anchor</code></td>
+<td>string</td>
+<td>no</td>
+<td>defaults to a URL-readable slug of <code>title</code></td>
+<td>Used as the deep-link fragment for the group's heading; swift-docc computes it via
+<code>title.map(urlReadableFragment)</code> when not explicitly supplied.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM, outer to inner, for the "Topics" content table (identical structure for "See Also" and
+"Default Implementations", just with a different outer title/anchor):
+</p>
+<ul>
+<li><code>section.contenttable.alt-light</code> — the root element of <code>ContentTable.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentTable.vue#L11-L18"><code>ContentTable.vue#L11-L18</code></a>),
+one per RenderNode field (<code>topicSections</code>/<code>seeAlsoSections</code>/<code>defaultImplementationsSections</code>).
+Its scoped styles set <code>--section-spacing-single-side</code> from
+<code>$section-spacing-single-side</code> (40px, <code>src/styles/core/_vars.scss</code> line 61) and,
+for the non-minimized case, apply the <code>dynamic-content-container</code> mixin
+(<code>src/styles/core/_breakpoints.scss</code> line 405) to size the content column responsively.</li>
+<li><code>div.container</code> — wraps the heading and the per-group sections; gains
+<code>.minimized-container</code> (tighter, 1.5em spacing) when the page is rendered in the IDE-embedded
+"minimized" mode.</li>
+<li><code>div.contenttable-section[.no-title]</code> — one per <code>taskGroup</code> entry, the root
+element of <code>ContentTableSection.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentTableSection.vue#L11-L29"><code>ContentTableSection.vue#L11-L29</code></a>).
+Padded via <code>$contenttable-spacing-single-side</code> (2.353rem,
+<code>src/styles/core/_vars.scss</code> line 26); gets the <code>no-title</code> modifier class when the
+group's <code>title</code> is absent, which suppresses the first item's top margin.</li>
+<li><code>h3.contenttable-title</code> — the group's <code>title</code>, rendered by
+<code>LinkableHeading</code> and anchored with <code>section.anchor</code> (or an authored
+<code>&lt;h3&gt;</code> via the <code>#title</code> slot when <code>wrapTitle</code> is set, as
+<code>DefaultImplementations.vue</code> does).</li>
+<li><code>div.section-content &gt; .content</code> — wraps the resolved <code>abstract</code> and
+<code>discussion</code> prose (each passed through <code>ContentNode.vue</code>) and the topic list/grid
+itself; <code>TopicsTable.vue</code>'s own scoped style block gives <code>.topic</code> items
+<code>margin-top: 15px</code>, collapsed to <code>0</code> on the first child when the section has no
+title
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsTable.vue#L123-L135"><code>TopicsTable.vue#L123-L135</code></a>).</li>
+<li><code>div.link-block</code> (list style) or a card inside <code>.TopicsLinkCardGrid</code> (grid
+styles) — one per resolved topic in <code>identifiers</code>, from <code>TopicsLinkBlock.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkBlock.vue#L11-L27"><code>TopicsLinkBlock.vue#L11-L27</code></a>)
+or <code>TopicsLinkCardGrid.vue</code> depending on <code>topicStyle</code>.</li>
+</ul>
+<p>
+SCSS files involved: <code>ContentTable.vue</code>, <code>ContentTableSection.vue</code>, and
+<code>TopicsTable.vue</code> each carry their own <code>&lt;style scoped lang="scss"&gt;</code> block, all
+importing the shared <code>src/styles/_core.scss</code> for the <code>breakpoint()</code> mixin and the
+spacing variables noted above. CSS custom properties consumed include <code>--color-grid</code> (the
+content-table's top border color, set on <code>ContentTable.vue</code>'s <code>.title</code>) and
+<code>--content-table-title-border-width</code> (theme override for that border's width, default
+<code>1px</code>).
+</p>
+<p>
+DocCArchive transform status: not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub
+placeholders — the HTML transformer returns a hardcoded comment regardless of input and the Markdown
+transformer returns an empty string — so there is no code path today that walks a RenderNode's
+<code>topicSections</code>/<code>seeAlsoSections</code>/<code>defaultImplementationsSections</code> arrays
+into a "Topics" heading plus a link list in either output format.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior in play: rendering a <code>taskGroup</code> entry is a one-time, non-interactive
+template computation. <code>TopicsTable.vue</code>'s <code>sectionsWithTopics</code> computed property
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsTable.vue#L110-L118"><code>TopicsTable.vue#L110-L118</code></a>)
+runs once per render pass to resolve <code>identifiers</code> against the page's reference map, and the
+<code>v-for</code> loops over groups and topics are ordinary static list rendering — there is no
+component-local mutable state being toggled, no click handler, and no later state transition (unlike,
+say, a tab navigator whose visible pane changes after mount). The only "dynamic" aspect —
+<code>shouldRenderList</code> switching between the <code>TopicsLinkBlock</code> list layout and the
+<code>TopicsLinkCardGrid</code> card layout — is resolved once from the RenderNode's own
+<code>topicSectionsStyle</code> field at render time, not from user interaction. Because there is no
+interactive/stateful behavior here to replace, none of <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>,
+radio+<code>:checked</code>, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+<code>:has()</code>, container queries, CSS anchor positioning, or view-transitions has anything to hold
+on this kind's behalf; a static server-rendered HTML document with the same nested-list/heading structure
+would be behaviorally identical. (The per-group deep-link anchor, e.g. <code>#Classes</code>, is already
+just a plain HTML <code>id</code> attribute plus a same-page fragment link — ordinary browser navigation,
+not JS-held state.)
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: resources — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>resources</code></h1>
+<p class="wire-value">Wire value: <code>"resources"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>resources</code> is the <code>kind</code> discriminator for <code>ResourcesRenderSection</code>,
+a top-level section of a Tutorials Overview ("Table of Contents") page &mdash; the page produced from
+a <code>@Tutorials</code> directive's technology-overview file when it contains an authored
+<code>@Resources</code> block. The outer page component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview.vue#L45-L49"><code>TutorialsOverview.vue</code></a>,
+declares a small <code>SectionKind</code> map (<code>hero</code>, <code>resources</code>,
+<code>volume</code>) used to validate the incoming <code>sections</code> prop and to split out the
+<code>hero</code> section; every non-hero section (in practice, every <code>volume</code> and
+<code>resources</code> section) is handed to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/LearningPath.vue#L43-L104"><code>LearningPath.vue</code></a>
+as <code>otherSections</code>.
+</p>
+<p>
+<code>LearningPath.vue</code> is the actual dispatch site for this kind. It partitions
+<code>sections</code> into <code>volumes</code> (<code>kind === 'volume'</code>) and
+<code>otherSections</code>, then renders every remaining section &mdash; currently only
+<code>resources</code> in practice, since <code>hero</code>/<code>volume</code> are the map's only
+other keys &mdash; through a generic <code>componentFor(section)</code> / <code>propsFor(section)</code>
+lookup table:
+</p>
+<pre><code>const SectionKind = { resources: 'resources', volume: 'volume' };
+...
+componentFor: ({ kind }) => ({
+  [SectionKind.resources]: Resources,
+  [SectionKind.volume]: Volume,
+}[kind]),
+propsFor: ({ chapters, content, image, kind, name, tiles }) => ({
+  [SectionKind.resources]: { content, tiles },
+  [SectionKind.volume]: { chapters, content, image, name },
+}[kind]),</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/LearningPath.vue#L43-L104">LearningPath.vue lines 43&ndash;104</a>,
+via a <code>&lt;component :is="componentFor(section)" v-bind="propsFor(section)"&gt;</code> in the
+template.) So a <code>resources</code> section is rendered by the
+<code>Resources</code> component, receiving only its <code>content</code> and <code>tiles</code>
+fields as props &mdash; note that <code>kind</code> itself is not forwarded past this dispatch point.
+</p>
+<p>
+The whole template of
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/Resources.vue#L11-L16"><code>TutorialsOverview/Resources.vue</code></a>
+is:
+</p>
+<pre><code>&lt;section class="resources" id="resources" tabindex="-1"&gt;
+  &lt;VolumeName :name="$t('sections.resources')" :content="content" /&gt;
+  &lt;TileGroup :tiles="tiles" /&gt;
+&lt;/section&gt;</code></pre>
+<p>
+It reuses the same
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/VolumeName.vue#L11-L19"><code>VolumeName.vue</code></a>
+component that a named <code>VolumeRenderSection</code> uses for its header band, but passes it the
+localized string <code>$t('sections.resources')</code> ("Resources" in <code>en-US</code>) as the
+<code>name</code> instead of an authored title &mdash; so every resources section always shows a
+"Resources" heading, with the section's own <code>content</code> array rendered underneath it as the
+section's abstract. The tiles themselves are delegated to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/ResourcesTileGroup.vue#L11-L15"><code>ResourcesTileGroup.vue</code></a>
+(registered locally as <code>TileGroup</code>), which lays out one
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/ResourcesTile.vue#L11-L31"><code>ResourcesTile.vue</code></a>
+per entry in <code>tiles</code> in a CSS grid whose column/row template depends on
+<code>tiles.length</code> (<code>count-1</code> through <code>count-6</code> modifier classes).
+Each tile renders an identifier-specific icon (documentation/downloads/forums/sampleCode/videos, via
+a lookup table keyed on <code>identifier</code>), a <code>title</code>, its <code>content</code>
+through the shared <code>ContentNode.vue</code>, and an optional call-to-action link built from
+<code>action</code> resolved through <code>DestinationDataProvider</code>.
+</p>
+<p>
+<code>Resources.vue</code> also mixes in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/onIntersectViewport.js#L1-L45"><code>onIntersectViewport</code></a>,
+overriding the default <code>intersectionRootMargin</code> to <code>intersectionMargins.topOneThird</code>
+(<code>'-30% 0% -70% 0%'</code>, i.e. triggering when the section crosses the top third of the
+viewport rather than dead center as <code>Volume.vue</code> does). When triggered, it calls
+<code>this.store.setActiveSidebarLink('Resources')</code> and
+<code>this.store.setActiveVolume(null)</code> against the injected
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/stores/TutorialsOverviewStore.js#L11-L31"><code>TutorialsOverviewStore</code></a>,
+clearing any "active volume" highlight in the side nav. That side nav,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/TutorialsNavigation.vue#L11-L38"><code>TutorialsNavigation.vue</code></a>,
+renders a plain <code>TutorialsNavigationLink</code> (not an expandable menu, unlike named volumes)
+for each section it recognizes as <code>isResources(section)</code> (<code>kind === 'resources'</code>),
+labelled with the same <code>$t('sections.resources')</code> string.
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No literal JSON fixture containing <code>"kind": "resources"</code> was found. DocCArchive's own test
+fixtures (<code>ExampleDocs.doccarchive</code>, <code>SampleLibrary.doccarchive</code>) contain only
+documentation-topic pages, not tutorials, so the string <code>"resources"</code> only appears there
+inside minified render-side JS bundles (e.g. <code>js/tutorials-overview.9144a669.js</code>), not as
+page data. swift-docc's test suite exercises <code>ResourcesRenderSection</code> in
+<code>Tests/SwiftDocCTests/Model/SemaToRenderNodeTests.swift</code> only via Swift-literal
+<code>XCTAssert*</code> calls against a decoded object (asserting tile titles "Documentation",
+"Sample Code", "Xcode and SDKs" among <code>resources.tiles</code>), not an embedded JSON literal, so
+there is no ready-made JSON string to lift. The example below is hand-written to match the vendored
+schema exactly (required <code>kind</code> + <code>tiles</code>, each tile requiring
+<code>identifier</code>/<code>title</code>/<code>content</code>), with tile titles modeled on the
+names actually asserted in that test.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+    "kind": "resources",
+    "content": [
+        {
+            "type": "paragraph",
+            "inlineContent": [
+                { "type": "text", "text": "Explore more resources for learning about TechnologyX." }
+            ]
+        }
+    ],
+    "tiles": [
+        {
+            "identifier": "documentation",
+            "title": "Documentation",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "inlineContent": [
+                        { "type": "text", "text": "Browse the full API reference." }
+                    ]
+                },
+                {
+                    "type": "unorderedList",
+                    "items": [
+                        { "content": [ { "type": "paragraph", "inlineContent": [ { "type": "reference", "identifier": "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorial", "isActive": true } ] } ] }
+                    ]
+                }
+            ]
+        },
+        {
+            "identifier": "sampleCode",
+            "title": "Sample Code",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "inlineContent": [
+                        { "type": "text", "text": "Browse and download sample code projects." }
+                    ]
+                }
+            ],
+            "action": {
+                "type": "reference",
+                "identifier": "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorial2",
+                "isActive": true
+            }
+        },
+        {
+            "identifier": "downloads",
+            "title": "Xcode and SDKs",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "inlineContent": [
+                        { "type": "text", "text": "Get Xcode and the latest SDKs." }
+                    ]
+                }
+            ],
+            "media": "xcode-download.png"
+        }
+    ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#3a3a3c; border-radius:12px; padding:50px 60px; color:#f5f5f5; text-align:center;">
+    <div style="margin:0 0 8px; font-size:1.4rem;">Resources</div>
+    <p style="margin:0 0 24px; opacity:0.85;">Explore more resources for learning about TechnologyX.</p>
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; text-align:left;">
+      <div style="background:#2c2c2e; border-radius:8px; padding:20px;">
+        <div style="opacity:0.6; margin-bottom:8px;">&#128196;</div>
+        <p style="font-weight:600; margin:0 0 8px;">Documentation</p>
+        <p style="margin:0; font-size:0.85rem; opacity:0.85;">Browse the full API reference.</p>
+      </div>
+      <div style="background:#2c2c2e; border-radius:8px; padding:20px;">
+        <div style="opacity:0.6; margin-bottom:8px;">&#123;&#125;</div>
+        <p style="font-weight:600; margin:0 0 8px;">Sample Code</p>
+        <p style="margin:0 0 12px; font-size:0.85rem; opacity:0.85;">Browse and download sample code projects.</p>
+        <p style="margin:0; font-size:0.8rem; color:#4da3ff;">View more &rsaquo;</p>
+      </div>
+      <div style="background:#2c2c2e; border-radius:8px; padding:20px;">
+        <div style="opacity:0.6; margin-bottom:8px;">&#11015;</div>
+        <p style="font-weight:600; margin:0 0 8px;">Xcode and SDKs</p>
+        <p style="margin:0; font-size:0.85rem; opacity:0.85;">Get Xcode and the latest SDKs.</p>
+      </div>
+    </div>
+  </div>
+  <p><em>mockup: a "Resources" name band (shared <code>VolumeName</code> component, fed the localized
+  section title instead of an authored one) followed by a <code>ResourcesTileGroup</code> grid, one
+  tile per entry in <code>tiles</code>, laid out with a column count that depends on
+  <code>tiles.length</code>.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/ResourcesRenderSection</code> (lines 360&ndash;406), cross-checked against
+the generated <code>Components.Schemas.ResourcesRenderSection</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 3465&ndash;3546). Compare against
+swift-docc's own <code>ResourcesRenderSection.swift</code> Swift model (in
+<code>Sources/SwiftDocC/Model/Rendering/Tutorials Overview/Sections/ResourcesRenderSection.swift</code>),
+which additionally declares a section-level <code>content: [RenderBlockContent]</code> property
+(default <code>[]</code>) that is <strong>not</strong> present in the vendored JSON schema's
+<code>ResourcesRenderSection</code> object &mdash; the schema only lists <code>kind</code> and
+<code>tiles</code> as properties, so the generated Swift struct in this repository has no
+<code>content</code> field at all, even though swift-docc-render's dispatch table
+(<code>LearningPath.vue</code>'s <code>propsFor</code>, shown above) explicitly reads and forwards a
+<code>content</code> field from each section. This is a genuine authority gap between the vendored
+schema and the actual wire shape swift-docc emits and swift-docc-render expects; treat the schema's
+omission of top-level <code>content</code> as a likely gap in the vendored spec file rather than
+evidence that real archives never carry it.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"resources"</code></td>
+<td>Generated as a one-case <code>KindPayload</code> enum. In swift-docc's Swift model this defaults to
+<code>.resources</code> via <code>public var kind: RenderSectionKind = .resources</code>.</td>
+</tr>
+<tr>
+<td><code>tiles</code></td>
+<td>array of tile objects</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>One entry per <code>RenderTile</code>; forwarded to <code>Resources.vue</code>'s
+<code>ResourcesTileGroup</code>, which grids them by count and renders each through
+<code>ResourcesTile.vue</code>.</td>
+</tr>
+<tr>
+<td><code>tiles[].identifier</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"featured"</code>, <code>"documentation"</code>, <code>"sampleCode"</code>,
+<code>"downloads"</code>, <code>"videos"</code>, <code>"forums"</code></td>
+<td>Selects both the tile's icon in <code>ResourcesTile.vue</code> (documentation/downloads/forums/
+sampleCode/videos each map to a distinct icon component; <code>featured</code> has no icon mapping in
+that lookup table) and, on the authoring side, is produced by which <code>Tile</code> subdirective
+(<code>@Documentation</code>, <code>@SampleCode</code>, <code>@Downloads</code>, <code>@Videos</code>,
+<code>@Forums</code>) was written inside <code>@Resources</code>.</td>
+</tr>
+<tr>
+<td><code>tiles[].title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Rendered as <code>div.title</code> in <code>ResourcesTile.vue</code>.</td>
+</tr>
+<tr>
+<td><code>tiles[].content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Required at the tile level (unlike the section-level <code>content</code> discussed above); an
+empty array is schema-valid. Rendered through <code>ContentNode.vue</code> inside the tile.</td>
+</tr>
+<tr>
+<td><code>tiles[].action</code></td>
+<td><code>RenderInlineContent</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Typically a <code>reference</code> inline-content node; resolved via
+<code>DestinationDataProvider</code> into a <code>url</code>/<code>title</code> pair and rendered as a
+"View more"-style link with a trailing chevron icon. Absent when a tile has no call-to-action link.</td>
+</tr>
+<tr>
+<td><code>tiles[].media</code></td>
+<td>string (<code>format: reference</code>, nullable)</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>A reference-identifier string for accompanying media. Declared in the schema but not read by any
+prop in <code>ResourcesTileGroup.vue</code>'s <code>propsFor</code> (which forwards only
+<code>action</code>, <code>content</code>, <code>identifier</code>, <code>title</code>) or by
+<code>ResourcesTile.vue</code>'s own props &mdash; so as of the pinned commit, <code>media</code> is
+present on the wire but appears to be dead data for this particular tile presentation.</td>
+</tr>
+<tr>
+<td><code>content</code> <em>(section-level)</em></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>no <em>(swift-docc Swift model only; absent from the vendored JSON schema object entirely)</em></td>
+<td>default <code>[]</code> in swift-docc's Swift struct</td>
+<td>See the authority-gap note above. swift-docc-render's <code>LearningPath.vue</code>
+<code>propsFor</code> does forward a <code>content</code> field from the raw section object into
+<code>Resources.vue</code>'s <code>content</code> prop, which is what supplies the abstract shown
+under the "Resources" heading.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, assembled from <code>LearningPath.vue</code>, <code>Resources.vue</code>,
+<code>ResourcesTileGroup.vue</code>, and <code>ResourcesTile.vue</code>:</p>
+<ul>
+<li><code>div.learning-path</code> &gt; <code>div.main-container</code> &gt;
+<code>div.primary-content-container</code> &gt; <code>div.content-sections-container</code> &mdash;
+the shared outer scaffolding from <code>LearningPath.vue</code> (same as for <code>volume</code>
+sections); each direct child gets a <code>.content-section</code> class from the
+<code>v-for</code> loop, giving rounded corners and inter-section spacing.</li>
+<li><code>section.resources.content-section#resources</code> (<code>tabindex="-1"</code>) &mdash; the
+root element from <code>Resources.vue</code>'s template. The literal <code>id="resources"</code> makes
+this section a same-page anchor target (e.g. for a <code>#resources</code> deep link), and
+<code>tabindex="-1"</code> lets it receive programmatic focus without being in the normal tab order.</li>
+<li><code>div.volume-name</code> (from the reused <code>VolumeName.vue</code>) &mdash; contains
+<code>h2.name</code> (the localized "Resources" label) and the <code>ContentNode</code> output for the
+section's <code>content</code>.</li>
+<li><code>div.tile-group.count-N</code> (from <code>ResourcesTileGroup.vue</code>, <code>N</code> =
+<code>tiles.length</code>, 1&ndash;6 have dedicated grid rules) &mdash; a CSS grid container.</li>
+<li><code>div.tile</code> &times; N (from <code>ResourcesTile.vue</code>) &mdash; each containing an
+optional <code>div.icon</code> (SVG icon component keyed on <code>identifier</code>),
+<code>div.title</code>, the tile's <code>ContentNode</code> output, and an optional
+<code>Reference.link</code> built from <code>action</code>.</li>
+</ul>
+<p>
+SCSS lives in each component's own <code>&lt;style scoped lang="scss"&gt;</code> block, all importing
+<code>docc-render/styles/_core.scss</code>: <code>ResourcesTileGroup.vue</code> (the
+<code>count-1</code>&ndash;<code>count-6</code> grid-template rules and their small/medium breakpoint
+overrides) and <code>ResourcesTile.vue</code> (per-tile background, padding, icon sizing, and link
+styling). <code>Resources.vue</code> itself only styles bare <code>.title</code>/<code>.content</code>
+selectors (largely superseded since the markup now delegates those to <code>VolumeName.vue</code>).
+Key CSS custom properties consumed:
+</p>
+<ul>
+<li><code>--color-tutorials-overview-fill-secondary</code> on <code>ResourcesTile.vue</code>'s
+<code>.tile</code> (falls back to <code>dark-color(fill-secondary)</code>) &mdash; the same panel
+color used by named-volume chapter tiles and the <code>VolumeName</code> band.</li>
+<li><code>--color-tutorials-overview-content-alt</code> on <code>.tile</code>'s text color and on
+<code>.content</code>.</li>
+<li><code>--color-tutorials-overview-icon</code> on each tile's SVG icon fill, with
+<code>--color-tutorials-overview-content-alt</code> used for any icon stroke.</li>
+<li><code>--colors-link</code> (falling back to <code>--color-tutorials-overview-link</code>) on the
+tile's call-to-action <code>a</code>/<code>.content a</code> links.</li>
+</ul>
+<p>
+These custom properties are defined per color scheme under
+<code>src/styles/core/colors/</code> (e.g. <code>--color-tutorials-overview-fill-secondary</code> and
+its siblings starting around line 187 of <code>_light.scss</code>, mirrored for dark mode elsewhere in
+the same directory).
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML transformer
+returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment and the Markdown transformer returns an
+empty string) &mdash; there is no kind-specific handling for <code>resources</code>/
+<code>ResourcesRenderSection</code> today.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior in play: <code>ResourcesTileGroup.vue</code> selects a grid layout purely from a
+static, server/build-time-known prop (<code>tiles.length</code>, exposed as a
+<code>count-1</code>&hellip;<code>count-6</code> class computed once from <code>props.tiles</code>);
+there is no click handler, no toggled visibility, and no client-side state transition anywhere in
+<code>Resources.vue</code>, <code>ResourcesTileGroup.vue</code>, or <code>ResourcesTile.vue</code>.
+The one piece of runtime behavior tied to this kind, the <code>onIntersectViewport</code> mixin on
+<code>Resources.vue</code>, only writes to the shared <code>TutorialsOverviewStore</code>
+(<code>setActiveSidebarLink('Resources')</code> / <code>setActiveVolume(null)</code>) to update a
+side-nav highlight elsewhere on the page as the user scrolls &mdash; it does not gate or toggle any
+part of the resources section's own rendering, and the side nav's reaction to that store value is
+already covered by the discussion of <code>TutorialsNavigation.vue</code> on the <code>volume</code>
+kind's page. Within the scope of this section kind specifically, there is no interactive
+show/hide, expand/collapse, or tabbed state to replace: the tile count determines a fixed grid
+template via a plain reactive class binding, which is already exactly what CSS (a <code>grid-template-columns</code>
+rule keyed off a class or, natively, a container query) does today, not something JavaScript is doing
+that CSS could take over from a stateful, interaction-driven mechanism. So the verdict here is
+"not applicable" because this kind's own rendering is stateless with respect to user interaction, not
+because a suitable native mechanism is missing.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

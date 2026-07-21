@@ -1,0 +1,1364 @@
+[
+  {
+    "slug": "block-aside",
+    "tier": "block",
+    "wireValue": "aside",
+    "title": "aside",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/block-aside.html"
+  },
+  {
+    "slug": "block-codelisting",
+    "tier": "block",
+    "wireValue": "codeListing",
+    "title": "codeListing",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": true,
+    "path": "kinds/block-codelisting.html"
+  },
+  {
+    "slug": "block-dictionaryexample",
+    "tier": "block",
+    "wireValue": "dictionaryExample",
+    "title": "dictionaryExample",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/block-dictionaryexample.html"
+  },
+  {
+    "slug": "block-endpointexample",
+    "tier": "block",
+    "wireValue": "endpointExample",
+    "title": "endpointExample",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": false,
+    "path": "kinds/block-endpointexample.html"
+  },
+  {
+    "slug": "block-heading",
+    "tier": "block",
+    "wireValue": "heading",
+    "title": "heading",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": false,
+    "path": "kinds/block-heading.html"
+  },
+  {
+    "slug": "block-links",
+    "tier": "block",
+    "wireValue": "links",
+    "title": "links",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/block-links.html"
+  },
+  {
+    "slug": "block-orderedlist",
+    "tier": "block",
+    "wireValue": "orderedList",
+    "title": "orderedList",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/block-orderedlist.html"
+  },
+  {
+    "slug": "block-paragraph",
+    "tier": "block",
+    "wireValue": "paragraph",
+    "title": "paragraph",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      },
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/block-paragraph.html"
+  },
+  {
+    "slug": "block-row",
+    "tier": "block",
+    "wireValue": "row",
+    "title": "row",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/block-row.html"
+  },
+  {
+    "slug": "block-small",
+    "tier": "block",
+    "wireValue": "small",
+    "title": "small",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/block-small.html"
+  },
+  {
+    "slug": "block-step",
+    "tier": "block",
+    "wireValue": "step",
+    "title": "step",
+    "appearsOn": [
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": true,
+    "path": "kinds/block-step.html"
+  },
+  {
+    "slug": "block-table",
+    "tier": "block",
+    "wireValue": "table",
+    "title": "table",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/block-table.html"
+  },
+  {
+    "slug": "block-tabnavigator",
+    "tier": "block",
+    "wireValue": "tabNavigator",
+    "title": "tabNavigator",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": true,
+    "path": "kinds/block-tabnavigator.html"
+  },
+  {
+    "slug": "block-termlist",
+    "tier": "block",
+    "wireValue": "termList",
+    "title": "termList",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/block-termlist.html"
+  },
+  {
+    "slug": "block-thematicbreak",
+    "tier": "block",
+    "wireValue": "thematicBreak",
+    "title": "thematicBreak",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/block-thematicbreak.html"
+  },
+  {
+    "slug": "block-unorderedlist",
+    "tier": "block",
+    "wireValue": "unorderedList",
+    "title": "unorderedList",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/block-unorderedlist.html"
+  },
+  {
+    "slug": "block-video",
+    "tier": "block",
+    "wireValue": "video",
+    "title": "video",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": true,
+    "path": "kinds/block-video.html"
+  },
+  {
+    "slug": "inline-codevoice",
+    "tier": "inline",
+    "wireValue": "codeVoice",
+    "title": "codeVoice",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-codevoice.html"
+  },
+  {
+    "slug": "inline-emphasis",
+    "tier": "inline",
+    "wireValue": "emphasis",
+    "title": "emphasis",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-emphasis.html"
+  },
+  {
+    "slug": "inline-image",
+    "tier": "inline",
+    "wireValue": "image",
+    "title": "image",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/inline-image.html"
+  },
+  {
+    "slug": "inline-inlinehead",
+    "tier": "inline",
+    "wireValue": "inlineHead",
+    "title": "inlineHead",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-inlinehead.html"
+  },
+  {
+    "slug": "inline-newterm",
+    "tier": "inline",
+    "wireValue": "newTerm",
+    "title": "newTerm",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-newterm.html"
+  },
+  {
+    "slug": "inline-reference",
+    "tier": "inline",
+    "wireValue": "reference",
+    "title": "reference",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-reference.html"
+  },
+  {
+    "slug": "inline-strikethrough",
+    "tier": "inline",
+    "wireValue": "strikethrough",
+    "title": "strikethrough",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/inline-strikethrough.html"
+  },
+  {
+    "slug": "inline-strong",
+    "tier": "inline",
+    "wireValue": "strong",
+    "title": "strong",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-strong.html"
+  },
+  {
+    "slug": "inline-subscript",
+    "tier": "inline",
+    "wireValue": "subscript",
+    "title": "subscript",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-subscript.html"
+  },
+  {
+    "slug": "inline-superscript",
+    "tier": "inline",
+    "wireValue": "superscript",
+    "title": "superscript",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-superscript.html"
+  },
+  {
+    "slug": "inline-text",
+    "tier": "inline",
+    "wireValue": "text",
+    "title": "text",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      },
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/inline-text.html"
+  },
+  {
+    "slug": "node-article",
+    "tier": "node",
+    "wireValue": "article",
+    "title": "article",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/node-article.html"
+  },
+  {
+    "slug": "node-overview",
+    "tier": "node",
+    "wireValue": "overview",
+    "title": "overview",
+    "appearsOn": [
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/node-overview.html"
+  },
+  {
+    "slug": "node-section",
+    "tier": "node",
+    "wireValue": "section",
+    "title": "section",
+    "appearsOn": [],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/node-section.html"
+  },
+  {
+    "slug": "node-symbol",
+    "tier": "node",
+    "wireValue": "symbol",
+    "title": "symbol",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/node-symbol.html"
+  },
+  {
+    "slug": "node-tutorial",
+    "tier": "node",
+    "wireValue": "project",
+    "title": "tutorial",
+    "appearsOn": [
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": false,
+    "path": "kinds/node-tutorial.html"
+  },
+  {
+    "slug": "reference-download",
+    "tier": "reference",
+    "wireValue": "download",
+    "title": "download",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/reference-download.html"
+  },
+  {
+    "slug": "reference-externallocation",
+    "tier": "reference",
+    "wireValue": "externalLocation",
+    "title": "externalLocation",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/reference-externallocation.html"
+  },
+  {
+    "slug": "reference-file",
+    "tier": "reference",
+    "wireValue": "file",
+    "title": "file",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/reference-file.html"
+  },
+  {
+    "slug": "reference-filetype",
+    "tier": "reference",
+    "wireValue": "fileType",
+    "title": "fileType",
+    "appearsOn": [],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/reference-filetype.html"
+  },
+  {
+    "slug": "reference-image",
+    "tier": "reference",
+    "wireValue": "image",
+    "title": "image",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      },
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": true,
+    "path": "kinds/reference-image.html"
+  },
+  {
+    "slug": "reference-link",
+    "tier": "reference",
+    "wireValue": "link",
+    "title": "link",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      },
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/reference-link.html"
+  },
+  {
+    "slug": "reference-section",
+    "tier": "reference",
+    "wireValue": "section",
+    "title": "section",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/reference-section.html"
+  },
+  {
+    "slug": "reference-topic",
+    "tier": "reference",
+    "wireValue": "topic",
+    "title": "topic",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      },
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/reference-topic.html"
+  },
+  {
+    "slug": "reference-unresolvable",
+    "tier": "reference",
+    "wireValue": "unresolvable",
+    "title": "unresolvable",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/reference-unresolvable.html"
+  },
+  {
+    "slug": "reference-video",
+    "tier": "reference",
+    "wireValue": "video",
+    "title": "video",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      },
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": true,
+    "path": "kinds/reference-video.html"
+  },
+  {
+    "slug": "reference-xcoderequirement",
+    "tier": "reference",
+    "wireValue": "xcodeRequirement",
+    "title": "xcodeRequirement",
+    "appearsOn": [
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/reference-xcoderequirement.html"
+  },
+  {
+    "slug": "section-articlebody",
+    "tier": "section",
+    "wireValue": "articleBody",
+    "title": "articleBody",
+    "appearsOn": [
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-articlebody.html"
+  },
+  {
+    "slug": "section-assessments",
+    "tier": "section",
+    "wireValue": "assessments",
+    "title": "assessments",
+    "appearsOn": [
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": true,
+    "path": "kinds/section-assessments.html"
+  },
+  {
+    "slug": "section-attributes",
+    "tier": "section",
+    "wireValue": "attributes",
+    "title": "attributes",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-attributes.html"
+  },
+  {
+    "slug": "section-calltoaction",
+    "tier": "section",
+    "wireValue": "callToAction",
+    "title": "callToAction",
+    "appearsOn": [
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-calltoaction.html"
+  },
+  {
+    "slug": "section-content",
+    "tier": "section",
+    "wireValue": "content",
+    "title": "content",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-content.html"
+  },
+  {
+    "slug": "section-contentandmedia",
+    "tier": "section",
+    "wireValue": "contentAndMedia",
+    "title": "contentAndMedia",
+    "appearsOn": [
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-contentandmedia.html"
+  },
+  {
+    "slug": "section-contentandmediagroup",
+    "tier": "section",
+    "wireValue": "contentAndMediaGroup",
+    "title": "contentAndMediaGroup",
+    "appearsOn": [],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-contentandmediagroup.html"
+  },
+  {
+    "slug": "section-declarations",
+    "tier": "section",
+    "wireValue": "declarations",
+    "title": "declarations",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": false,
+    "path": "kinds/section-declarations.html"
+  },
+  {
+    "slug": "section-discussion",
+    "tier": "section",
+    "wireValue": "discussion",
+    "title": "discussion",
+    "appearsOn": [],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-discussion.html"
+  },
+  {
+    "slug": "section-hero",
+    "tier": "section",
+    "wireValue": "hero",
+    "title": "hero",
+    "appearsOn": [
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      },
+      {
+        "label": "Tutorial Article",
+        "href": "hierarchy/tutorial-article.html"
+      },
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": false,
+    "path": "kinds/section-hero.html"
+  },
+  {
+    "slug": "section-intro",
+    "tier": "section",
+    "wireValue": "intro",
+    "title": "intro",
+    "appearsOn": [],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-intro.html"
+  },
+  {
+    "slug": "section-mentions",
+    "tier": "section",
+    "wireValue": "mentions",
+    "title": "mentions",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-mentions.html"
+  },
+  {
+    "slug": "section-parameters",
+    "tier": "section",
+    "wireValue": "parameters",
+    "title": "parameters",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-parameters.html"
+  },
+  {
+    "slug": "section-plistdetails",
+    "tier": "section",
+    "wireValue": "details",
+    "title": "plistDetails",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-plistdetails.html"
+  },
+  {
+    "slug": "section-possiblevalues",
+    "tier": "section",
+    "wireValue": "possibleValues",
+    "title": "possibleValues",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-possiblevalues.html"
+  },
+  {
+    "slug": "section-properties",
+    "tier": "section",
+    "wireValue": "properties",
+    "title": "properties",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-properties.html"
+  },
+  {
+    "slug": "section-relationships",
+    "tier": "section",
+    "wireValue": "relationships",
+    "title": "relationships",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-relationships.html"
+  },
+  {
+    "slug": "section-resources",
+    "tier": "section",
+    "wireValue": "resources",
+    "title": "resources",
+    "appearsOn": [
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-resources.html"
+  },
+  {
+    "slug": "section-restbody",
+    "tier": "section",
+    "wireValue": "restBody",
+    "title": "restBody",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-restbody.html"
+  },
+  {
+    "slug": "section-restendpoint",
+    "tier": "section",
+    "wireValue": "restEndpoint",
+    "title": "restEndpoint",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-restendpoint.html"
+  },
+  {
+    "slug": "section-restparameters",
+    "tier": "section",
+    "wireValue": "restParameters",
+    "title": "restParameters",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-restparameters.html"
+  },
+  {
+    "slug": "section-restresponses",
+    "tier": "section",
+    "wireValue": "restResponses",
+    "title": "restResponses",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-restresponses.html"
+  },
+  {
+    "slug": "section-row",
+    "tier": "section",
+    "wireValue": "row",
+    "title": "row",
+    "appearsOn": [],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-row.html"
+  },
+  {
+    "slug": "section-sampledownload",
+    "tier": "section",
+    "wireValue": "sampleDownload",
+    "title": "sampleDownload",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-sampledownload.html"
+  },
+  {
+    "slug": "section-taskgroup",
+    "tier": "section",
+    "wireValue": "taskGroup",
+    "title": "taskGroup",
+    "appearsOn": [
+      {
+        "label": "Documentation Topic",
+        "href": "hierarchy/doc-topic.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": false,
+    "path": "kinds/section-taskgroup.html"
+  },
+  {
+    "slug": "section-tasks",
+    "tier": "section",
+    "wireValue": "tasks",
+    "title": "tasks",
+    "appearsOn": [
+      {
+        "label": "Tutorial (Project)",
+        "href": "hierarchy/tutorial-project.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-tasks.html"
+  },
+  {
+    "slug": "section-tile",
+    "tier": "section",
+    "wireValue": "tile",
+    "title": "tile",
+    "appearsOn": [
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "not-applicable",
+    "synthesized": true,
+    "path": "kinds/section-tile.html"
+  },
+  {
+    "slug": "section-volume",
+    "tier": "section",
+    "wireValue": "volume",
+    "title": "volume",
+    "appearsOn": [
+      {
+        "label": "Tutorials Overview",
+        "href": "hierarchy/overview.html"
+      }
+    ],
+    "verdict": "partial",
+    "synthesized": true,
+    "path": "kinds/section-volume.html"
+  }
+]

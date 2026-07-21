@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: newTerm — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>newTerm</code></h1>
+<p class="wire-value">Wire value: <code>"newTerm"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'newTerm'</code> lands, as with every
+other block/inline content kind on this reference site, on <code>src/components/ContentNode.vue</code>'s
+wire-constant table. <code>newTerm</code> is one of the entries in the <code>InlineType</code> map
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>):
+</p>
+<pre><code>const InlineType = {
+  codeVoice: 'codeVoice',
+  emphasis: 'emphasis',
+  image: 'image',
+  inlineHead: 'inlineHead',
+  link: 'link',
+  newTerm: 'newTerm',
+  ...
+};</code></pre>
+<p>
+That constant is matched in the <code>renderNode()</code> factory function's <code>switch (node.type)</code>
+dispatch table, where <code>newTerm</code> falls through to the <em>same case</em> as <code>emphasis</code>
+&mdash; there is no dedicated branch, dedicated Vue component, or distinct DOM output for
+<code>newTerm</code> at all:
+</p>
+<pre><code>case InlineType.emphasis:
+case InlineType.newTerm:
+  return createElement('em', (
+    renderChildren(node.inlineContent)
+  ));</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L437-L441"><code>ContentNode.vue#L437-L441</code></a>.)
+A <code>newTerm</code> node is turned directly into a bare native <code>&lt;em&gt;</code> element via Vue's
+<code>createElement</code>, exactly as an <code>emphasis</code> node would be. The node's only payload
+field, <code>inlineContent</code> (an array of nested <code>RenderInlineContent</code> nodes), is
+recursively rendered through the same module-local <code>renderChildren</code> helper
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L122-L124"><code>ContentNode.vue#L122-L124</code></a>)
+used by every other inline/block wrapper kind. The <code>type</code> discriminator itself is consumed only
+by the <code>switch</code> and never forwarded into the DOM, so a rendered page has no way to distinguish
+a <code>newTerm</code> span from an <code>emphasis</code> span after the fact &mdash; both are indistinguishable
+<code>&lt;em&gt;</code> elements.
+</p>
+<p>
+<code>ContentNode.vue</code> also has a tree-walking utility API (<code>map</code>, <code>forEach</code>,
+<code>reduce</code>) used elsewhere in the app to traverse a content tree without rendering it (for
+example, to build the plain-text abstract for search indexing or social-preview metadata). Both
+<code>map</code> and <code>forEach</code> explicitly list <code>InlineType.newTerm</code> alongside
+<code>emphasis</code>, <code>strong</code>, <code>inlineHead</code>, <code>superscript</code>,
+<code>subscript</code>, and <code>strikethrough</code> as "wrapper" kinds whose <code>inlineContent</code>
+array must be recursed into
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L564-L575"><code>ContentNode.vue#L564-L575</code></a>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L619-L628"><code>ContentNode.vue#L619-L628</code></a>).
+No other <code>.vue</code> file under <code>src/components/</code> or <code>src/views/</code> matches the
+literal string <code>'newTerm'</code> &mdash; there is no glossary panel, tooltip, or definition-popover
+component anywhere in <code>swift-docc-render</code> that treats a "new term" specially. Despite the name
+suggesting a glossary-style feature (a defined term a reader might hover or tap for a definition), the
+render side treats it purely as a synonym for italic emphasis.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture, from swift-docc's test suite:
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/custom-render-elements.json</code> (lines 74&ndash;108),
+pinned at swift-docc@8b8d8268aa. This excerpt is a <code>paragraph</code>'s <code>inlineContent</code> array
+containing plain text, a <code>newTerm</code> node, more text, and a sibling <code>inlineHead</code> node
+(kept here to show <code>newTerm</code> alongside another rare inline wrapper kind):
+</p>
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    {
+      "type": "text",
+      "text": "Use "
+    },
+    {
+      "type": "newTerm",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "www"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": " and "
+    },
+    {
+      "type": "inlineHead",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "ftp"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "."
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+<p>Use <em>www</em> and <strong>ftp</strong>.</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Field table for the <code>NewTerm</code> schema object
+(<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, one of the eleven members of the
+<code>RenderInlineContent</code> <code>oneOf</code> discriminator), cross-checked against the generated
+<code>Components.Schemas.NewTerm</code> struct in <code>Sources/DocCArchive/generated/Types.swift</code>:
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"newTerm"</code></td><td>Discriminator. Generated as <code>NewTerm._TypePayload</code>, a <code>String</code>-backed <code>enum</code> with exactly one case (<code>RenderNode.spec.json</code> lines 1377&ndash;1381 of the vendored copy). Unlike <code>Emphasis</code>, there is no alternate/legacy spelling accepted on the wire.</td></tr>
+<tr><td><code>inlineContent</code></td><td>array of <code>RenderInlineContent</code></td><td>yes</td><td>&mdash;</td><td>The nested inline-content children considered "the term"; generated as <code>[Components.Schemas.RenderInlineContent]</code>. Structurally identical in shape to <code>Emphasis.inlineContent</code> and <code>Strong.inlineContent</code> &mdash; the schema carries no extra metadata (no definition text, no glossary identifier, no cross-reference) that would let a consumer distinguish "this is a defined term" from "this is merely italicized."</td></tr>
+</tbody>
+</table>
+<p>
+Note the asymmetry with swift-docc's authoring-side Swift model: the in-memory <code>RenderInlineContent</code>
+Swift enum case at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift#L48">RenderInlineContent.swift#L48</a>
+is <code>case newTerm(inlineContent: [RenderInlineContent])</code>, documented only as "A piece of content
+that introduces a new term" &mdash; the doc comment gives no further semantics. Searching swift-docc's
+Markdown-to-render-tree compiler (<code>Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift</code>)
+for a constructor of this case found none: there is no <code>visitNewTerm</code>-style visitor, and DocC's
+term-list block syntax (a Markdown definition list, compiled by
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/Extensions/RenderTermLists.swift">RenderTermLists.swift</a>)
+builds its <code>TermListItem.Term</code> from plain <code>inlineContent</code>, not a <code>newTerm</code>
+wrapper. The only places <code>.newTerm(...)</code> is constructed in the swift-docc repository at this
+pin are test fixtures
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Tests/SwiftDocCTests/Rendering/InlineContentPlainTextTests.swift">InlineContentPlainTextTests.swift</a>,
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Tests/SwiftDocCTests/Model/RenderBlockContent+CapitalizationTests.swift">RenderBlockContent+CapitalizationTests.swift</a>)
+plus the plain-text/indexing extension
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Indexing/RenderInlineContent%2BTextIndexing.swift#L44">RenderInlineContent+TextIndexing.swift#L44</a>).
+Honestly stated: this reference could not find an authoring-side Markdown or directive syntax in the
+current swift-docc checkout that produces a <code>newTerm</code> node; the case, the JSON Schema entry, and
+the render-side handling all exist and are wired together, but the compiler path from author-written text to
+this case appears to be unused/reserved at this pinned commit.
+</p>
+<p>
+Within this repository, DocCArchive does not yet implement any transform logic keyed on
+<code>RenderInlineContent</code> case at all: <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>) are still
+stub/placeholder implementations of the <code>Transformer</code> protocol &mdash; the former returns a
+hardcoded HTML comment and the latter an empty string &mdash; so a <code>newTerm</code> node parsed via
+<code>Archive.parseRenderNode(dataPath:)</code> would decode correctly into
+<code>Components.Schemas.RenderInlineContent.NewTerm</code> but is not yet converted to any output format.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+The rendered output is a bare <code>&lt;em&gt;...&lt;/em&gt;</code> element with no <code>id</code>,
+<code>class</code>, or <code>data-*</code> attribute of its own &mdash; the same
+<code>createElement('em', renderChildren(node.inlineContent))</code> call used for <code>emphasis</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L438-L441">ContentNode.vue#L438-L441</a>)
+passes no <code>class</code>/<code>attrs</code> object at all, unlike sibling cases such as
+<code>InlineType.codeVoice</code> (which adds <code>class: 'inline-code'</code>) or
+<code>InlineType.reference</code> (which adds <code>class: 'inline-link'</code>) a few lines away in the
+same <code>switch</code>. No SCSS file under <code>src/styles/</code> targets a <code>newTerm</code>-specific
+class, and grepping the stylesheet tree for <code>new-term</code> or <code>newTerm</code> turns up nothing.
+The italic appearance is produced entirely by the browser's built-in default style for the
+<code>&lt;em&gt;</code> element (user-agent stylesheet <code>font-style: italic</code>), not by any
+DocC-render-authored CSS class or custom property &mdash; there is no visual signal in the shipped output
+that would let a reader tell a "new term" apart from ordinary emphasized text.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior, precisely: <code>newTerm</code> nodes are rendered as a plain, static <code>&lt;em&gt;</code>
+element via the identical one-line <code>createElement('em', renderChildren(...))</code> call used for
+<code>emphasis</code>, with no Vue <code>data</code>, no props, no event handlers, and no client-side state of
+any kind attached to the element or its rendering path. There is nothing dynamic to reproduce: the "behavior"
+in play is simply the HTML semantics of <code>&lt;em&gt;</code> (stress emphasis) combined with the browser's
+default <code>font-style: italic</code> presentation, which is already the plain, non-JavaScript,
+non-interactive mechanism in use today. Because the wire schema also carries no glossary identifier,
+definition text, or cross-reference field (see the data sheet above), there is no latent "tooltip" or
+"definition popover" feature being suppressed by CSS limitations either &mdash; the payload simply does not
+contain the information such a feature would need. There is no toggleable, hidden, or otherwise stateful
+aspect of this kind for a native CSS mechanism (<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>,
+<code>:target</code>, the Popover API, <code>:has()</code>, etc.) to replace.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

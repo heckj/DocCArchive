@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: contentAndMedia — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>contentAndMedia</code></h1>
+<p class="wire-value">Wire value: <code>"contentAndMedia"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>contentAndMedia</code> is one of three "article body layout" section kinds
+(<code>columns</code>, <code>contentAndMedia</code>, <code>fullWidth</code>) that a
+<code>RenderNode</code>'s <code>primaryContentSections</code> / article body can contain.
+The dispatch table lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/BodyContent.vue#L28-L77"><code>BodyContent.vue</code></a>,
+which defines a local <code>LayoutKind</code> map and a <code>componentFor(section)</code>
+method that switches on <code>section.kind</code> to pick a component to render via Vue's
+dynamic <code>&lt;component :is="..."&gt;</code>:
+</p>
+<pre><code>const LayoutKind = {
+  columns: 'columns',
+  contentAndMedia: 'contentAndMedia',
+  fullWidth: 'fullWidth',
+};
+...
+componentFor(section) {
+  return {
+    [LayoutKind.columns]: Columns,
+    [LayoutKind.contentAndMedia]: ContentAndMedia,
+    [LayoutKind.fullWidth]: FullWidth,
+  }[section.kind];
+},
+propsFor(section) {
+  const { content, kind, media, mediaPosition } = section;
+  return {
+    ...
+    [LayoutKind.contentAndMedia]: {
+      content,
+      media,
+      mediaPosition,
+    },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+For <code>kind: "contentAndMedia"</code>, <code>BodyContent.vue</code> passes exactly three
+props through — <code>content</code>, <code>media</code>, and <code>mediaPosition</code> — to the
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/Layouts/ContentAndMedia.vue#L1-L118"><code>ContentAndMedia.vue</code></a>
+layout component. That component's template is small and delegates immediately to two
+existing components — it does not implement any content or media rendering itself:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;div class="content-and-media" :class="classes"&gt;
+    &lt;ContentNode :content="content" /&gt;
+    &lt;Asset :identifier="media" /&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+<p>
+<code>content</code> (an array of <code>RenderBlockContent</code>) is handed to
+<code>ContentNode.vue</code>, the general block-content renderer used throughout
+swift-docc-render. <code>media</code> is a plain string reference identifier
+that is handed to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Asset.vue#L1-L20"><code>Asset.vue</code></a>,
+which resolves it against the render node's <code>references</code> map (via the
+<code>referencesProvider</code> mixin) and dispatches to <code>ImageAsset.vue</code> or
+<code>VideoAsset.vue</code> depending on the resolved reference's <code>type</code>.
+<code>mediaPosition</code> (<code>"leading"</code> or <code>"trailing"</code>) is turned into a
+computed <code>classes</code> object (<code>media-leading</code> / <code>media-trailing</code>)
+applied to the root <code>&lt;div class="content-and-media"&gt;</code>, which purely a CSS
+concern (flex-direction), not a structural one — see
+<a href="#css-mapping">section 4</a>.
+</p>
+<p>
+Note on scope: this is the "article body layout" flavor of <code>contentAndMedia</code>
+(matching DocCArchive's vendored schema exactly — see <a href="#data-sheet">section 3</a>).
+swift-docc's Swift model separately defines a same-named-kind
+<code>ContentAndMediaSection</code> used for tutorial-overview "slides"
+(<code>Tutorial Table of Contents</code> pages), which carries additional
+<code>layout</code>, <code>title</code>, and <code>eyebrow</code> fields not present on the
+wire schema DocCArchive vendors. swift-docc-render's tutorial overview views were not found
+to consume that variant directly under the <code>src/components/Tutorial/</code> or
+<code>src/views/</code> trees searched for this page; only the article-layout consumer above
+was confirmed by direct grep and read of the source.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<p class="synthesized-note">
+No real fixture matching the vendored <code>ContentAndMedia</code> schema (kind/content/media/mediaPosition
+only) was found. DocCArchive's own fixtures (<code>ExampleDocs.doccarchive</code>,
+<code>SampleLibrary.doccarchive</code>) only contain the string <code>"contentAndMedia"</code>
+inside a minified render-side JS bundle (<code>js/topic.c7f55345.js</code>), not a JSON data
+fixture. swift-docc's test suite has a fixture in
+<code>Tests/SwiftDocCTests/Model/ContentAndMediaSectionTests.swift</code>, but it exercises the
+tutorial-overview <code>ContentAndMediaSection</code> variant (extra <code>layout</code>,
+<code>title</code>, <code>eyebrow</code> keys) rather than the article-layout schema vendored
+into DocCArchive, so it was not reused verbatim. The example below is hand-written to satisfy
+the vendored JSON Schema exactly.
+</p>
+<pre><code>{
+  "kind": "contentAndMedia",
+  "media": "media-1234",
+  "mediaPosition": "trailing",
+  "content": [
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Sensor fusion pipeline",
+      "anchor": "sensor-fusion-pipeline"
+    },
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "The pipeline combines readings from multiple sensors into a single, denoised estimate of device orientation."
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <p style="display:flex; gap:16px; align-items:center;">
+    <span style="flex: 0 0 60%;">
+      <strong>Sensor fusion pipeline</strong><br>
+      The pipeline combines readings from multiple sensors into a single, denoised
+      estimate of device orientation.
+    </span>
+    <span style="flex: 0 0 35%; border:1px dashed var(--color-border); border-radius:6px; padding:24px; text-align:center; color: var(--color-text-secondary);">
+      [ media-1234 ]
+    </span>
+  </p>
+  <p><em>mockup: content column leading, media column trailing (mediaPosition: "trailing")</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/ContentAndMedia</code>, cross-checked against the generated
+<code>Components.Schemas.ContentAndMedia</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code>.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"contentAndMedia"</code> (single-value enum)</td>
+<td>Discriminator value; generated as <code>KindPayload</code>, a one-case <code>String</code> enum.</td>
+</tr>
+<tr>
+<td><code>media</code></td>
+<td>string (format: <code>reference</code>)</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>A <code>RenderReferenceIdentifier</code>-style key into the render node's top-level <code>references</code> map; generated as a plain <code>Swift.String</code>.</td>
+</tr>
+<tr>
+<td><code>mediaPosition</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"leading"</code>, <code>"trailing"</code></td>
+<td>Generated as <code>MediaPositionPayload</code> enum. No default at the schema level — swift-docc's <em>tutorial-overview</em> <code>ContentAndMediaSection</code> decoder separately falls back to <code>.leading</code> when absent, but that fallback belongs to the other Swift type, not this vendored wire schema, where the field is required.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Arbitrary block content (headings, paragraphs, lists, etc.); rendered via <code>ContentNode.vue</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>
+Fields present on swift-docc's <em>tutorial-overview</em> <code>ContentAndMediaSection</code>
+Swift struct (<code>layout</code>, <code>title</code>, <code>eyebrow</code>) — see
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Tutorials%20Overview/Sections/ContentAndMediaSection.swift#L11-L40"><code>ContentAndMediaSection.swift</code></a> —
+are <strong>not</strong> part of the vendored <code>ContentAndMedia</code> schema DocCArchive
+generates types from, and are omitted from this table accordingly. Treat the table above,
+not that Swift file, as authoritative for what a DocCArchive consumer actually receives on
+the wire for this schema object.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, from <code>ContentAndMedia.vue</code>'s template:</p>
+<ul>
+<li><code>div.content-and-media</code> &mdash; root element; also receives modifier class
+<code>media-leading</code> or <code>media-trailing</code> depending on the
+<code>mediaPosition</code> prop.</li>
+<li>Child: whatever root element(s) <code>ContentNode.vue</code> renders for the
+<code>content</code> array (a <code>div.content</code> wrapper style is targeted by the
+component's own scoped CSS via the <code>.content</code> selector).</li>
+<li>Child: <code>div.asset</code> &mdash; rendered by <code>Asset.vue</code>, wrapping the
+resolved <code>ImageAsset</code>/<code>VideoAsset</code> component for the <code>media</code>
+reference.</li>
+</ul>
+<p>
+SCSS lives inline in <code>ContentAndMedia.vue</code>'s <code>&lt;style scoped lang="scss"&gt;</code>
+block, importing the shared <code>docc-render/styles/_core.scss</code> partial. Key rules:
+</p>
+<ul>
+<li><code>.content-and-media { display: flex; }</code>, with
+<code>&amp;.media-leading { flex-direction: row-reverse; }</code> and
+<code>&amp;.media-trailing { flex-direction: row; }</code> &mdash; this is the entire mechanism
+by which <code>mediaPosition</code> changes the visual arrangement.</li>
+<li>Column widths are computed with the SCSS helper <code>calculate-column-width()</code>:
+<code>$col-width-content: calculate-column-width(7.5)</code>,
+<code>$col-width-media: calculate-column-width(3.5)</code>, with the remainder
+(<code>$col-offset</code>) applied as a margin on <code>.asset</code> to push it away from
+<code>.content</code>.</li>
+<li>A <code>@include breakpoints-from(medium)</code> block vertically centers the two columns
+on medium/large viewports; a <code>@include breakpoint(small)</code> block collapses both
+to <code>flex-direction: column</code> and <code>width: 100%</code>, always showing
+<code>.content</code> before <code>.asset</code> regardless of <code>mediaPosition</code>.</li>
+</ul>
+<p>
+No CSS custom properties (<code>--...</code>) are consumed directly in this component; sizing
+and spacing use SCSS variables/mixins from <code>_core.scss</code>
+(e.g. <code>$article-stacked-margin-small</code>) resolved at build time, not runtime custom
+properties.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML
+transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment and the Markdown
+transformer returns an empty string) — neither has any kind-specific handling for
+<code>contentAndMedia</code> or any other render section today.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: <code>ContentAndMedia.vue</code> has no interactive state whatsoever. The
+<code>mediaPosition</code> prop is read once at render time into a computed <code>classes</code>
+object, which is a one-way, static mapping from the JSON payload to a CSS modifier class
+(<code>media-leading</code>/<code>media-trailing</code>) on the root <code>div</code>. There is
+no click handler, no toggle, no component data that changes after mount, and no
+show/hide behavior to replace — the layout is fixed for the lifetime of the rendered page.
+</p>
+<p>
+Because there is no client-side state transition to reproduce, none of the stateful-CSS
+mechanisms (<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, checked radio +
+sibling selector, <code>:target</code>, Popover API, <code>&lt;dialog&gt;</code>) apply here —
+they all exist to hold or toggle state, and this component has none. The only thing that
+varies is which of two static flex layouts is used, and that is already accomplished with
+plain conditional class selection at render/build time (server- or static-render-time
+class assignment), which requires no JavaScript or CSS pseudo-class trickery to begin with.
+The one place modern CSS could simplify implementation (not behavior) is swapping the
+<code>calculate-column-width()</code> SCSS helper for native CSS, e.g. sizing
+<code>.content</code>/<code>.asset</code> with <code>flex-basis</code> percentages directly or
+container queries instead of the SCSS breakpoint mixins — but that is a build-tooling/authoring
+simplification, not a behavioral one, so it does not change the verdict.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: section — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>section</code></h1>
+<p class="wire-value">Wire value: <code>"section"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A quick warning about naming before anything else: the string <code>"section"</code> appears on the
+RenderNode wire in <em>two unrelated positions</em>, and this page is about the reference-discriminator
+one, not the page-kind one that several other things on the wire also happen to call
+<code>"section"</code>. Specifically:
+</p>
+<ul>
+<li><code>RenderReferenceType.section</code> (swift-docc:
+<code>Sources/SwiftDocC/Model/Rendering/References/RenderReference.swift</code>, line 29) &mdash; the
+<code>type</code> discriminator on an entry in a RenderNode's top-level <code>references</code>
+dictionary. This is the target of this page.</li>
+<li><code>RenderNode.Kind.section</code> (swift-docc:
+<code>Sources/SwiftDocC/Model/Rendering/RenderNode.swift</code>, line 257) &mdash; a value of the
+<em>separate</em> <code>kind</code> field carried <em>inside</em> a <code>TopicRenderReference</code>
+(and, unrelatedly, inside a top-level RenderNode's own <code>metadata.role</code>/<code>kind</code>-style
+fields elsewhere in the schema), meaning "this reference points at an in-page landmark/anchor," as
+opposed to <code>article</code>, <code>symbol</code>, <code>project</code>, <code>overview</code>, or
+<code>root</code>.</li>
+</ul>
+<p>
+Both values are produced together for the same reference object. In swift-docc's
+<code>DocumentationContentRenderer.renderReference(for:with:dependencies:)</code>, when a topic URL
+resolves to a Markdown heading anchor rather than to a whole page (<code>context.nodeAnchorSections[reference]</code>
+is non-nil), the content renderer builds a <code>TopicRenderReference</code> with
+<code>kind: .section</code>, and later in the same function, sets <code>renderReference.type = .section</code>
+whenever <code>kind == .section</code>
+(swift-docc <code>Sources/SwiftDocC/Model/Rendering/DocumentationContentRenderer.swift</code>, lines
+299&ndash;308 and 450&ndash;452). So on the wire, a reference to an in-page landmark carries
+<code>"type": "section"</code> <em>and</em> <code>"kind": "section"</code> simultaneously &mdash; the
+struct underneath is the ordinary <code>TopicRenderReference</code>, not a distinct type.
+</p>
+<p>
+On the decode side, swift-docc's own <code>CodableRenderReference</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderNode/CodableRenderReference.swift</code>, lines 25&ndash;46)
+switches on the <code>type</code> discriminator and, for both <code>.topic</code> and <code>.section</code>,
+decodes into the very same <code>TopicRenderReference(from:)</code> initializer:
+</p>
+<pre><code>switch type {
+case .topic:
+    reference = try TopicRenderReference(from: decoder)
+case .section:
+    reference = try TopicRenderReference(from: decoder)
+...
+}</code></pre>
+<p>
+Grepping swift-docc-render's <code>src/components/</code> and <code>src/views/</code> for the literal
+string <code>'section'</code> turns up no dedicated Vue component for this reference type &mdash; there is
+no <code>SectionReference.vue</code> or similar. Instead, the render app treats <code>"section"</code> and
+<code>"topic"</code> reference-type entries identically at every point that matters. The clearest evidence
+is <code>src/utils/references.js</code>, lines 13&ndash;16:
+</p>
+<pre><code>const TopicReferenceTypes = new Set([
+  'section',
+  'topic',
+]);</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/utils/references.js#L13-L16"><code>utils/references.js#L13-L16</code></a>.)
+This set is used by <code>filterInactiveReferences()</code> in the same file to decide whether a reference
+entry needs its <code>url</code> stripped when it originates from an archive that isn't in the currently
+loaded/"included" set of archives; both <code>section</code>- and <code>topic</code>-typed references get
+that same active/inactive URL-filtering treatment, unlike <code>image</code>, <code>download</code>, etc.
+That function is called from <code>DocumentationTopicStore.js</code>'s <code>setReferences()</code> action
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/stores/DocumentationTopicStore.js#L39-L41"><code>stores/DocumentationTopicStore.js#L39-L41</code></a>),
+which is how every RenderNode's <code>references</code> dictionary gets loaded into the app's shared
+state before any component renders a link.
+</p>
+<p>
+Once a reference entry is in that shared store, the actual dispatch site that turns a
+<code>type: "reference"</code> <em>inline-content</em> node into a link is
+<code>ContentNode.vue</code>'s <code>renderNode()</code> function &mdash; but note this switches on the
+inline-content node's own <code>type</code> (<code>"reference"</code>), not on the referenced object's
+<code>type</code> (<code>"topic"</code>/<code>"section"</code>):
+</p>
+<pre><code>case InlineType.reference: {
+  const reference = references[node.identifier];
+  if (!reference) return null;
+  const titleInlineContent = node.overridingTitleInlineContent
+    || reference.titleInlineContent;
+  const titlePlainText = node.overridingTitle || reference.title;
+  return createElement(Reference, {
+    props: {
+      url: reference.url,
+      kind: reference.kind,
+      role: reference.role,
+      isActive: node.isActive,
+      ideTitle: reference.ideTitle,
+      titleStyle: reference.titleStyle,
+      hasInlineFormatting: !!titleInlineContent,
+    },
+    class: 'inline-link',
+  }, (
+    titleInlineContent ? renderChildren(titleInlineContent) : titlePlainText
+  ));
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L467-L487"><code>ContentNode.vue#L467-L487</code></a>.)
+Notice the reference object's own <code>type</code> field (<code>"topic"</code> or <code>"section"</code>)
+is never read here at all &mdash; only its <code>kind</code> field is forwarded as a prop, straight into
+<code>ContentNode/Reference.vue</code>. Inside <code>Reference.vue</code>, <code>kind</code> is checked
+in exactly one place, <code>isSymbolReference</code>, which only special-cases
+<code>kind === 'symbol'</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L77-L80"><code>ContentNode/Reference.vue#L77-L80</code></a>). A reference whose <code>kind</code> is
+<code>"section"</code> takes the same fallback path as <code>article</code>, <code>project</code>, and
+<code>overview</code> kinds: it resolves to a plain internal/external link component
+(<code>ReferenceInternal.vue</code> or <code>ReferenceExternal.vue</code>), which is just a
+<code>&lt;router-link&gt;</code> (or plain <code>&lt;a&gt;</code> for external URLs) wrapping the slotted
+title text &mdash; no distinct visual treatment exists for "this link points at a heading anchor" versus
+"this link points at a whole page."
+</p>
+<p>
+The one place a <code>section</code>-kind reference is treated distinctly (though still not with a
+dedicated component) is the navigator sidebar's client-side filtering: <code>TopicTypes.section</code>
+(<code>src/constants/TopicTypes.js</code>, line 42) is mapped to the "tutorials" filter-tag bucket in
+<code>TOPIC_TYPE_TO_TAG</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/Tags.js#L29-L39"><code>constants/Tags.js#L29-L39</code></a>), consumed by the navigator's
+<code>tagsProvider</code> and <code>filteredChildren</code> mixins when the sidebar's type-filter chips are
+applied &mdash; so a section/anchor reference, if it ever appears as a navigator child node, is bucketed
+alongside tutorials for filtering purposes, not alongside articles or symbols.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture in this repository's test archives (<code>ExampleDocs.doccarchive</code>,
+<code>SampleLibrary.doccarchive</code>) or in swift-docc's own
+<code>Tests/SwiftDocCTests/</code> JSON/Swift-literal fixtures contains a reference with
+<code>"type": "section"</code> as of the pinned commits &mdash; both example docs projects link only to
+whole pages, never to a Markdown heading anchor by URL fragment, so swift-docc never had reason to emit an
+anchor-section reference for them. The example below is therefore hand-written to match the wire schema
+(Section 3) and the encode path in <code>DocumentationContentRenderer.swift</code> lines 299&ndash;308.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "section",
+  "kind": "section",
+  "identifier": "doc://com.example.ExampleDocs/documentation/ExampleDocs/ExampleArticle#Overview",
+  "title": "Overview",
+  "url": "/documentation/exampledocs/examplearticle#Overview",
+  "abstract": []
+}</code></pre>
+<div class="mockup">
+  <p style="margin:0 0 8px;">Inline content referencing this entry (e.g. <code>"For more, see &lt;doc:ExampleArticle#Overview&gt;"</code>):</p>
+  <div style="background:#fff; border-radius:6px; padding:16px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.12); font-size:0.95em;">
+    For more, see
+    <a href="#Overview" style="text-decoration:underline; color:#0070c9;">Overview</a>.
+  </div>
+  <p><em>mockup: the rendered result is an ordinary <code>&lt;a&gt;</code>/<code>&lt;router-link&gt;</code>
+  produced by <code>ReferenceInternal.vue</code>, styled with the shared <code>.inline-link</code> rule
+  (see Section 4). Nothing in the DOM or CSS distinguishes a link to an anchor/section from a link to a
+  whole page &mdash; the only difference is that <code>url</code> carries a <code>#Overview</code>
+  fragment, and the destination page must contain an element whose <code>id</code> matches that
+  fragment (produced by a <code>heading</code> block's own <code>anchor</code> field, see the
+  <code>heading</code> reference page on this site).</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/TopicRenderReference</code> (lines 1742&ndash;1840), cross-checked against
+<code>Components.Schemas.TopicRenderReference</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 2473&ndash;2622). There is no separate
+<code>SectionRenderReference</code> schema object &mdash; <code>"section"</code> is one of two allowed
+values of this single struct's <code>type</code> field (the other being <code>"topic"</code>), and,
+independently, one of six allowed values of the same struct's <code>kind</code> field.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"topic" | "section"</code></td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case topic =
+"topic"; case section = "section" }</code>, decoded/encoded under the Swift property name
+<code>_type</code> via <code>CodingKeys.case _type = "type"</code>. This is the reference-dictionary
+discriminator documented on this page.</td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"article" | "project" | "section" | "overview" | "symbol" | "root"</code></td>
+<td>Generated as <code>KindPayload</code>, a separate six-case enum. <code>"section"</code> here means
+"this reference points at an in-page landmark," and swift-docc always sets it in lockstep with
+<code>type: "section"</code> (see Section 1) &mdash; but the wire schema itself does not encode that
+coupling; nothing prevents a hand-written or third-party RenderNode from setting <code>kind: "section"</code>
+with <code>type: "topic"</code> or vice versa.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>For a section/anchor reference, this is the anchor's heading title
+(<code>AnchorSection.title</code>, swift-docc <code>Sources/SwiftDocC/Model/AnchorSection.swift</code>,
+line 20), not the containing page's title.</td>
+</tr>
+<tr>
+<td><code>identifier</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Key into the RenderNode's top-level <code>references</code> dictionary; for a section reference this
+is the resolved topic URL <em>including</em> the URL fragment (e.g. <code>doc://.../Article#Heading</code>).</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Presentation URL, also fragment-bearing for a section reference (e.g.
+<code>/documentation/.../article#Heading</code>).</td>
+</tr>
+<tr>
+<td><code>abstract</code></td>
+<td>array of <code>RenderInlineContent</code></td>
+<td>no</td>
+<td>default <code>[]</code></td>
+<td>swift-docc's <code>renderReference(for:with:dependencies:)</code> returns immediately with an empty
+abstract for the anchor-section early-exit path (lines 299&ndash;308); a full section reference built via
+the general path further down borrows the abstract of the <em>containing symbol</em>, not the heading
+itself (lines 334&ndash;343: "Sections don't have their own abstract so take the one of the container
+symbol").</td>
+</tr>
+<tr>
+<td><code>required</code></td>
+<td>boolean</td>
+<td>no</td>
+<td>default <code>false</code> (field omitted on the wire when false)</td>
+<td>Generated as <code>Swift.Bool?</code>.</td>
+</tr>
+<tr>
+<td><code>role</code></td>
+<td>string (<code>DocumentationRole</code> ref)</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Not set on the anchor-section early-exit path; would be <code>nil</code>/absent for a pure
+heading-anchor reference.</td>
+</tr>
+<tr>
+<td><code>fragments</code>, <code>navigatorTitle</code></td>
+<td>array of <code>DeclarationToken</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Symbol-only fields (abbreviated declaration for links/navigator); not populated for section/anchor
+references, which are never symbols.</td>
+</tr>
+<tr>
+<td><code>conformance</code></td>
+<td>object (<code>ConformanceSection</code> ref)</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Symbol-only; not applicable to section references.</td>
+</tr>
+<tr>
+<td><code>estimatedTime</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td><code>nil</code> on the anchor-section early-exit path.</td>
+</tr>
+<tr>
+<td><code>beta</code>, <code>deprecated</code></td>
+<td>boolean</td>
+<td>no</td>
+<td>default <code>false</code> (field omitted when false)</td>
+<td>Generated as <code>Swift.Bool?</code>; swift-docc's encoder only writes these keys when true.</td>
+</tr>
+<tr>
+<td><code>titleStyle</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"title" | "symbol"</code></td>
+<td>Property-list-key display-style hint; not applicable to section references.</td>
+</tr>
+<tr>
+<td><code>name</code>, <code>ideTitle</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Property-list/entitlement-key naming fields; not applicable to section references.</td>
+</tr>
+<tr>
+<td><code>images</code></td>
+<td>array of <code>TopicImage</code></td>
+<td>no</td>
+<td>default <code>[]</code></td>
+<td>Author-provided page images; empty for a section/anchor reference since anchors are not pages.</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>array of <code>SymbolTag</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Not populated on the anchor-section early-exit path.</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the
+discriminator enum is declared at <code>Sources/SwiftDocC/Model/Rendering/References/RenderReference.swift</code>,
+line 29:
+</p>
+<pre><code>public enum RenderReferenceType: String, Codable, Equatable {
+    case image, video, file, fileType, xcodeRequirement, topic, section, download, link, externalLocation
+    case unresolvable
+}</code></pre>
+<p>
+and the struct that carries it, <code>TopicRenderReference</code>
+(<code>Sources/SwiftDocC/Model/Rendering/References/TopicRenderReference.swift</code>, lines 12&ndash;16),
+defaults its own <code>type</code> property to <code>.topic</code>:
+</p>
+<pre><code>public struct TopicRenderReference: RenderReference, VariantContainer, Equatable {
+    public var type: RenderReferenceType = .topic
+    ...
+}</code></pre>
+<p>
+It is only mutated to <code>.section</code> imperatively, after construction, by
+<code>DocumentationContentRenderer.renderReference(for:with:dependencies:)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/DocumentationContentRenderer.swift</code>, lines 450&ndash;452:
+<code>if kind == .section { renderReference.type = .section }</code>), and by the dedicated early-return
+branch for anchor sections that constructs the reference with <code>kind: .section</code> directly
+(same file, lines 299&ndash;308). Authoring-side, an anchor/section reference is produced whenever a
+Markdown link target resolves to a heading inside another page rather than to the page itself &mdash; for
+example a doc-link written as <code>&lt;doc:SomeArticle#Some-Heading&gt;</code>, or a Markdown link
+<code>[text](SomeArticle.md#Some-Heading)</code>, where <code>Some-Heading</code> matches a heading's
+derived anchor slug in the target article/tutorial. swift-docc's context tracks these under
+<code>DocumentationContext.nodeAnchorSections: [ResolvedTopicReference: AnchorSection]</code>
+(<code>Sources/SwiftDocC/Infrastructure/DocumentationContext.swift</code>, line 142), populated by
+<code>DocumentationCurator</code> as it walks headings while resolving curated links.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>, lines
+242&ndash;254) are still stub placeholders that return a hardcoded HTML comment and an empty string
+respectively for an entire <code>RenderNode</code>, with no reference-dictionary handling reached yet
+&mdash; so a decoded <code>Components.Schemas.TopicRenderReference</code> with
+<code>_type: .section</code> is available on the model today (via the generated
+<code>Components.Schemas.References</code> discriminated-union case at line 2127,
+<code>case TopicRenderReference(Components.Schemas.TopicRenderReference)</code>), but nothing in this
+repository currently reads it or converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Because no dedicated component exists for this reference type (Section 1), the rendered DOM for a
+<code>section</code>-typed/<code>section</code>-kinded reference is exactly the DOM produced for an
+ordinary internal topic link:
+</p>
+<ul>
+<li><code>a.inline-link</code> (a Vue Router <code>&lt;router-link&gt;</code>, rendered as
+<code>&lt;a&gt;</code>, from <code>ReferenceInternal.vue</code>) &mdash; wraps the slotted title text; the
+<code>.inline-link</code> class is applied by <code>ContentNode.vue</code>'s <code>createElement(Reference,
+{ ... class: 'inline-link' })</code> call at the inline-reference dispatch site
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L473-L486"><code>ContentNode.vue#L473-L486</code></a>), not by any component that knows the reference is a
+section/anchor link specifically.</li>
+<li>The link's <code>href</code>/<code>to</code> target is the reference's <code>url</code> value,
+fragment and all (e.g. <code>/documentation/exampledocs/examplearticle#Overview</code>); the fragment
+navigation itself is handled by the browser/Vue Router, not by any DocC-render-authored CSS or JS specific
+to this reference kind.</li>
+</ul>
+<p>
+SCSS: the only styling rule that applies is the shared, kind-agnostic inline-link rule in
+<code>src/styles/base/_typography.scss</code>, line 141:
+</p>
+<pre><code>a {
+  color: var(--colors-link, var(--color-link));
+  &amp;:link, &amp;:visited { text-decoration: none; }
+  // Inline links need to be underline under WCAG 2.2 compliance
+  &amp;:hover, &amp;.inline-link { @include underline-text; }
+  &amp;:active { text-decoration: none; }
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_typography.scss#L131-L148"><code>styles/base/_typography.scss#L131-L148</code></a>.)
+CSS custom properties consumed: <code>--colors-link</code> (falling back to <code>--color-link</code>) for
+link text color. No SCSS file anywhere in <code>src/styles/</code> or any component's scoped
+<code>&lt;style&gt;</code> block keys off <code>kind === 'section'</code> or <code>type === 'section'</code>
+&mdash; the visual result of following a section/anchor link is indistinguishable from following any other
+topic link; only the destination page's own <code>:target</code>-independent scroll-to-heading behavior
+(driven by <code>LinkableHeading.vue</code>'s <code>anchor</code>-linked heading, documented on the
+<code>heading</code> reference page) makes the fragment do anything once the browser arrives.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: a <code>section</code>-typed reference entry carries no interactive or
+stateful UI behavior of its own. It is a static data record (title, url, kind, abstract) rendered, via
+<code>ContentNode.vue</code>'s <code>InlineType.reference</code> case and <code>Reference.vue</code>'s
+<code>refComponent</code> computed property, into a single <code>&lt;a&gt;</code>/<code>&lt;router-link&gt;</code>
+element whose only "state" is Vue Router's client-side navigation on click &mdash; there is no toggle, no
+tab, no show/hide, no JS-held boolean that a CSS mechanism like <code>:checked</code>,
+<code>&lt;details&gt;</code>, or the Popover API could take over, because there is nothing here for such a
+mechanism to hold in place of JavaScript. The one piece of dynamic behavior anywhere near this kind
+&mdash; scrolling to and focusing the destination heading after navigation &mdash; belongs to the
+<em>destination</em> page's <code>heading</code>/<code>LinkableHeading.vue</code> rendering (already
+covered, and already partly native via <code>:target</code>-style fragment navigation, on the
+<code>heading</code> reference page), not to this reference-type kind itself. Concluding "not applicable"
+here reflects that this kind is a stateless data-carrying wire object with a plain-link rendering; there is
+no client-side interactive behavior on this kind for a native CSS mechanism to replace.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

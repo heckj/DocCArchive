@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: unresolvable — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>unresolvable</code></h1>
+<p class="wire-value">Wire value: <code>"unresolvable"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>unresolvable</code> is one of the ten variants of the <code>RenderReference</code>
+discriminated union (keyed on a <code>type</code> field) that can appear as a value in a
+RenderNode's top-level <code>references</code> dictionary. It marks a link whose destination
+symbol or page could not be resolved at documentation-build time — for example, a symbol from
+a module that DocC does not have symbol-graph information for (a common case: references into
+<code>_Concurrency</code>, as seen in the fixture example below).
+</p>
+<p>
+swift-docc-render does not have a component dedicated to the <code>unresolvable</code> type
+specifically. Instead, the generic reference-dispatch code in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L467-L487"><code>ContentNode.vue</code>'s <code>renderNode()</code>, case <code>InlineType.reference</code></a>
+looks up the reference object by <code>node.identifier</code> in the <code>references</code> map
+and forwards whatever fields it finds — <code>url</code>, <code>kind</code>, <code>role</code>,
+<code>ideTitle</code>, <code>titleStyle</code> — onto a shared
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L1-L96"><code>Reference.vue</code></a>
+component:
+</p>
+<pre><code>case InlineType.reference: {
+  const reference = references[node.identifier];
+  if (!reference) return null;
+  const titleInlineContent = node.overridingTitleInlineContent
+    || reference.titleInlineContent;
+  const titlePlainText = node.overridingTitle || reference.title;
+  return createElement(Reference, {
+    props: {
+      url: reference.url,
+      kind: reference.kind,
+      role: reference.role,
+      isActive: node.isActive,
+      ideTitle: reference.ideTitle,
+      titleStyle: reference.titleStyle,
+      hasInlineFormatting: !!titleInlineContent,
+    },
+    class: 'inline-link',
+  }, (
+    titleInlineContent ? renderChildren(titleInlineContent) : titlePlainText
+  ));
+}</code></pre>
+<p>
+Because the <code>UnresolvableRenderReference</code> schema (see the data sheet below) only
+defines <code>type</code>, <code>title</code>, and <code>identifier</code> — it has no
+<code>url</code> field — the <code>url</code> prop passed into <code>Reference.vue</code> is
+always <code>undefined</code> for this reference type. Inside
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L53-L96"><code>Reference.vue</code></a>,
+the <code>isInternal</code> computed property short-circuits to <code>false</code> whenever
+<code>!url</code>, which selects the <code>ReferenceExternal</code> (or, if it were a
+display-symbol, <code>ReferenceExternalSymbol</code>) branch of <code>refComponent</code>. In
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/ReferenceExternal.vue#L11-L14"><code>ReferenceExternal.vue</code></a>:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;a v-if="url &amp;&amp; isActive" :href="url"&gt;&lt;slot /&gt;&lt;/a&gt;
+  &lt;span v-else&gt;&lt;slot /&gt;&lt;/span&gt;
+&lt;/template&gt;</code></pre>
+<p>
+With no <code>url</code>, the <code>v-if</code> is false, so the reference is rendered as a
+plain <code>&lt;span class="inline-link"&gt;{title}&lt;/span&gt;</code> — inline text with no
+<code>href</code> and no click/navigation behavior at all, styled the same as other inline
+links via the shared <code>.inline-link</code> typography rule. In short: an
+<code>unresolvable</code> reference degrades gracefully to unlinked plain text carrying only
+its <code>title</code>.
+</p>
+<p>
+The <code>filterInactiveReferences</code> helper in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/utils/references.js#L13-L44"><code>src/utils/references.js</code></a>
+strips <code>url</code> from references whose <code>type</code> is in the small
+<code>TopicReferenceTypes</code> set (<code>section</code>, <code>topic</code>) when they come
+from an archive that isn't in <code>includedArchiveIdentifiers</code>; <code>unresolvable</code>
+is not in that set and is passed through unchanged — it has no <code>url</code> to begin with,
+so this filtering is a no-op for it.
+</p>
+<p>
+In DocCArchive itself, reference-dictionary lookups and the <code>Transformer</code> protocol
+exist (<code>Sources/DocCArchive/Documentation.docc/DocCArchive/Transformer.md</code>), but the
+two example conformers — <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code> —
+are still stub placeholders (a hardcoded HTML comment and an empty string, respectively) and do
+not yet read the <code>references</code> map or branch on <code>type == "unresolvable"</code>;
+this kind is decoded into <code>Components.Schemas.UnresolvableRenderReference</code> today but
+is not yet routed through any real transform.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real example taken from this repository's test fixture
+<code>Tests/DocCArchiveTests/Fixtures/SampleLibrary.doccarchive/data/documentation/samplelibrary/sampleactor.json</code>
+(entry <code>doc://SampleLibrary/ScA</code>, a reference to <code>_Concurrency.Actor</code> that
+DocC could not resolve because the built archive has no symbol graph for the
+<code>_Concurrency</code> module):
+</p>
+<pre><code>{
+  "doc://SampleLibrary/ScA": {
+    "identifier": "doc://SampleLibrary/ScA",
+    "title": "_Concurrency.Actor",
+    "type": "unresolvable"
+  }
+}</code></pre>
+<p>
+An inline content node elsewhere in the same document points at this reference by identifier,
+roughly:
+</p>
+<pre><code>{
+  "type": "reference",
+  "identifier": "doc://SampleLibrary/ScA",
+  "isActive": true
+}</code></pre>
+<p>Rendered mockup — plain text, no link, no hover/focus affordance:</p>
+<div class="mockup">
+<p>SampleActor conforms to <span class="inline-link" style="text-decoration:none;color:inherit;cursor:text;">_Concurrency.Actor</span>.</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>UnresolvableRenderReference</code> (one of the <code>oneOf</code> branches of the
+<code>RenderReference</code> discriminated union, alongside <code>ImageRenderReference</code>,
+<code>TopicRenderReference</code>, <code>LinkRenderReference</code>, etc.), cross-checked
+against <code>Sources/DocCArchive/generated/Types.swift</code>,
+<code>Components.Schemas.UnresolvableRenderReference</code>.
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"unresolvable"</code> (only value)</td><td>Discriminator; generated as <code>_TypePayload</code> enum with the single case <code>.unresolvable</code>, exposed as <code>_type</code> in Swift (renamed from <code>type</code> via <code>CodingKeys</code>).</td></tr>
+<tr><td><code>title</code></td><td>string</td><td>yes</td><td>—</td><td>Display text for the unresolved link; this is the only content shown since there is no destination to link to.</td></tr>
+<tr><td><code>identifier</code></td><td>string</td><td>yes</td><td>—</td><td>The reference-scheme identifier (e.g. <code>doc://Module/Symbol</code>) used as the key of this entry in the RenderNode's <code>references</code> map and cross-referenced by inline <code>reference</code> content nodes.</td></tr>
+</tbody>
+</table>
+<p>
+No <code>url</code>, <code>kind</code>, or <code>role</code> field is present in this schema —
+that absence is exactly what drives the render-side fallback to unlinked plain text described
+above. Swift-docc's authoring-side model type is
+<code>UnresolvedRenderReference</code> (<code>Sources/SwiftDocC/Model/Rendering/References/UnresolvedReference.swift:12</code>),
+which mirrors the same three fields (<code>type</code> defaulted to <code>.unresolvable</code>,
+<code>identifier</code>, <code>title</code>) and conforms to the <code>RenderReference</code>
+protocol declared alongside the <code>RenderReferenceType</code> enum in
+<code>Sources/SwiftDocC/Model/Rendering/References/RenderReference.swift:30</code>, where
+<code>.unresolvable</code> is one case among <code>image, video, file, fileType,
+xcodeRequirement, topic, section, download, link, externalLocation, unresolvable</code>.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li>Root element: <code>&lt;span class="inline-link"&gt;</code> (via <code>ReferenceExternal.vue</code>'s <code>v-else</code> branch) — no <code>&lt;a&gt;</code>, no <code>href</code>.</li>
+<li>The <code>inline-link</code> class is shared by every inline reference/link kind (resolved or not); it is applied uniformly by <code>ContentNode.vue</code> regardless of whether the underlying element ends up being an anchor or a span.</li>
+<li>Styling comes from the global typography rules in <code>src/styles/base/_typography.scss</code> (selector <code>&amp;:hover, &amp;.inline-link</code> at line 141), which is shared across all link-like inline content rather than defined per-component.</li>
+<li>No dedicated SCSS module exists for the unresolved/unresolvable case specifically — because the fallback is a bare <code>&lt;span&gt;</code>, it inherits ambient text styling from its containing paragraph/block rather than acquiring link color, underline, or hover states.</li>
+<li>No CSS custom properties are consumed specifically for this state; the component simply omits the <code>&lt;a&gt;</code> tag that would otherwise pick up the link color custom properties (e.g. link-color tokens applied elsewhere in the typography partials).</li>
+</ul>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+The current behavior is not interactive state at all: <code>Reference.vue</code>'s
+<code>isInternal</code>/<code>refComponent</code> computed properties make a one-time,
+render-time choice (based purely on whether <code>url</code> is present) between emitting an
+<code>&lt;a&gt;</code>/<code>&lt;router-link&gt;</code> or a plain <code>&lt;span&gt;</code>.
+There is no client-side toggle, no user interaction, and no subsequent state change to hold —
+once the page has rendered, an unresolvable reference is permanently inert markup. This is a
+static, build-time-determined choice of tag, not a UI state machine, so there is no
+<code>:checked</code>/<code>:target</code>/<code>&lt;details&gt;</code>/Popover-style mechanism
+to substitute: those mechanisms exist to hold *changing* interactive state in CSS, and this kind
+has none to hold. The only "modern CSS" angle worth naming is that the existing conditional
+tag-selection (anchor vs. span) is inherent to server/build-time rendering choice, not a runtime
+CSS concern, so no CSS-only replacement applies.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

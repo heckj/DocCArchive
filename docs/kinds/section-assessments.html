@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: assessments — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>assessments</code></h1>
+<p class="wire-value">Wire value: <code>"assessments"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+The <code>assessments</code> section kind is dispatched from <strong>two</strong> different top-level
+page components, both of which ultimately delegate to the same interactive quiz component.
+</p>
+<p>
+In tutorial pages, <code>Tutorial.vue</code> keeps a static <code>SectionComponents</code> lookup table
+keyed by <code>section.kind</code> and maps <code>assessments</code> straight to
+<code>Tutorial/Assessments.vue</code>:
+</p>
+<pre><code>const SectionComponents = {
+  assessments: Assessments,
+  hero: Hero,
+  tasks: SectionList,
+  callToAction: CallToAction,
+};</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial.vue#L46-L66">Tutorial.vue#L46-L66</a>
+for the dispatch table and the <code>TutorialSection</code> render function that instantiates the
+matched component with the section's own properties spread as props.
+</p>
+<p>
+In free-standing <code>Article</code> pages (a DocC "article" that includes a
+<code>@Assessments</code> block, not a full tutorial), <code>Article.vue</code> has its own parallel
+<code>SectionKind</code> map and routes <code>assessments</code> to a thin wrapper,
+<code>Article/Assessments.vue</code>:
+</p>
+<pre><code>const SectionKind = {
+  articleBody: 'articleBody',
+  callToAction: 'callToAction',
+  hero: 'hero',
+  assessments: 'assessments',
+};
+...
+[SectionKind.assessments]: Assessments,   // Article/Assessments.vue</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L45-L167">Article.vue#L45-L167</a>
+(the <code>SectionKind</code> table, <code>componentFor</code>, and <code>propsFor</code>, which forwards only
+<code>anchor</code> and <code>assessments</code> from the section payload).
+</p>
+<p>
+<code>Article/Assessments.vue</code> does not reimplement anything — it simply re-exports the tutorial
+component's props and renders it, supplying a custom <code>#success</code> slot string appropriate for an
+article rather than a tutorial:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;TutorialAssessments v-bind="$props"&gt;
+    &lt;template #success&gt;
+      &lt;p&gt;Great job, you've answered all the questions for this article.&lt;/p&gt;
+    &lt;/template&gt;
+  &lt;/TutorialAssessments&gt;
+&lt;/template&gt;</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/Assessments.vue#L11-L28">Article/Assessments.vue#L11-L28</a>.
+</p>
+<p>
+The real behavior lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Assessments.vue">Tutorial/Assessments.vue</a>.
+It renders a <code>LinkableElement</code> (root class <code>assessments-wrapper</code>, anchored at the
+section's <code>anchor</code>), and inside it a grid <code>Row</code> with class <code>assessments</code>. The
+component keeps local state: <code>activeIndex</code> (which question of the <code>assessments</code> array
+is showing) and <code>completed</code> (whether the user has finished the quiz). While incomplete, it shows
+an <code>AssessmentsProgress</code> "Question N of M" indicator plus a <code>Quiz</code> child bound to
+<code>this.assessments[this.activeIndex]</code>; once <code>completed</code> is true it swaps to a
+<code>success</code> slot message instead:
+</p>
+<pre><code>&lt;div v-if="!completed"&gt;
+  &lt;Progress v-bind="progress" ref="progress"/&gt;
+  &lt;Quiz :choices="activeAssessment.choices" :content="activeAssessment.content"
+        :isLast="isLast" :key="activeIndex" :title="activeAssessment.title"
+        @submit="onSubmit" @advance="onAdvance" @see-results="onSeeResults" /&gt;
+&lt;/div&gt;
+&lt;div v-else class="success"&gt;
+  &lt;slot name="success"&gt;&lt;p&gt;{{ SuccessMessage }}&lt;/p&gt;&lt;/slot&gt;
+&lt;/div&gt;</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Assessments.vue#L11-L170">Tutorial/Assessments.vue#L11-L170</a>.
+<code>onAdvance</code> increments <code>activeIndex</code> and re-mounts <code>Quiz</code> (the <code>:key</code>
+binding forces a fresh instance per question); <code>onSeeResults</code> sets <code>completed = true</code>.
+</p>
+<p>
+The actual per-question interaction — selecting a radio choice, checking correctness, revealing
+justification text, and enabling "Next" — lives one level deeper in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Assessments/Quiz.vue">Tutorial/Assessments/Quiz.vue</a>,
+which renders a <code>&lt;fieldset class="choices"&gt;</code> of radio-button <code>&lt;label&gt;</code>s
+(<code>v-model="selectedIndex"</code>), tracks a <code>userChoices</code> array of
+<code>{ checked }</code> flags, and computes <code>showNextQuestion</code> as "every choice flagged
+<code>isCorrect</code> has been checked" — i.e. the learner must find all correct answers (there can be
+more than one) before advancing. See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Assessments/Quiz.vue#L11-L152">Quiz.vue#L11-L152</a>.
+Question and choice text is itself further delegated to the generic block-content renderer,
+<code>ContentNode</code> (<code>&lt;ContentNode :content="choice.content" /&gt;</code>, etc.), since
+<code>title</code>/<code>content</code>/<code>choices[].content</code>/<code>justification</code> are all
+arrays of <code>RenderBlockContent</code>.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture in this repository's test archives or in swift-docc's own JSON test corpus contains a raw
+<code>"kind": "assessments"</code> literal (swift-docc's own coverage for this section,
+<code>SemaToRenderNodeTests.swift</code>, asserts against decoded Swift values rather than embedding a JSON
+literal). The example below is hand-written to match the schema in the data sheet.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "assessments",
+  "anchor": "Check-Your-Understanding",
+  "assessments": [
+    {
+      "type": "multiple-choice",
+      "title": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "Which method starts the animation?" }
+        ] }
+      ],
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "codeVoice", "code": "anchor.hitTest(view)" }
+        ] }
+      ],
+      "choices": [
+        {
+          "content": [
+            { "type": "paragraph", "inlineContent": [
+              { "type": "codeVoice", "code": "startAnimating()" }
+            ] }
+          ],
+          "isCorrect": true,
+          "justification": [
+            { "type": "paragraph", "inlineContent": [
+              { "type": "text", "text": "This is correct because it starts the run loop." }
+            ] }
+          ]
+        },
+        {
+          "content": [
+            { "type": "paragraph", "inlineContent": [
+              { "type": "codeVoice", "code": "stopAnimating()" }
+            ] }
+          ],
+          "isCorrect": false,
+          "justification": [
+            { "type": "paragraph", "inlineContent": [
+              { "type": "text", "text": "This stops the animation instead of starting it." }
+            ] }
+          ],
+          "reaction": "Not quite!"
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<p>Rendered mockup approximating question 1 of 1, before an answer is chosen:</p>
+<div class="mockup">
+  <div class="mockup-assessments">
+    <p class="mockup-caption">Question 1 of 1</p>
+    <div class="mockup-title">Check Your Understanding</div>
+    <p class="mockup-question"><code>anchor.hitTest(view)</code> — Which method starts the animation?</p>
+    <ul class="mockup-choices">
+      <li class="mockup-choice"><code>startAnimating()</code></li>
+      <li class="mockup-choice"><code>stopAnimating()</code></li>
+    </ul>
+    <button class="mockup-button" disabled>Submit</button>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema objects, from
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, cross-checked against the generated
+<code>Components.Schemas.AssessmentsSection</code> / <code>.Assessment</code> / <code>.Choice</code> types in
+<code>Sources/DocCArchive/generated/Types.swift</code>.
+</p>
+<h3><code>AssessmentsSection</code></h3>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>"assessments"</code> (only value)</td><td>Discriminator; generated as <code>KindPayload</code> single-case enum.</td></tr>
+<tr><td><code>anchor</code></td><td>string</td><td>yes</td><td>—</td><td>Section anchor id for deep-linking, e.g. <code>Check-Your-Understanding</code>.</td></tr>
+<tr><td><code>assessments</code></td><td>array of <code>Assessment</code></td><td>yes</td><td>—</td><td>One entry per question; rendered one at a time in the UI.</td></tr>
+</tbody>
+</table>
+<h3><code>Assessment</code></h3>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"multiple-choice"</code> (only value)</td><td>Generated as <code>_TypePayload.multipleChoice</code>; only assessment kind DocC currently emits.</td></tr>
+<tr><td><code>title</code></td><td>array of <code>RenderBlockContent</code></td><td>yes</td><td>—</td><td>The question phrasing, rendered by <code>ContentNode</code>.</td></tr>
+<tr><td><code>content</code></td><td>array of <code>RenderBlockContent</code></td><td>no</td><td>—</td><td>Optional introductory content (often a code block) shown above the choices.</td></tr>
+<tr><td><code>choices</code></td><td>array of <code>Choice</code></td><td>yes</td><td>—</td><td>Rendered as radio-button <code>&lt;label&gt;</code>s in <code>Quiz.vue</code>.</td></tr>
+</tbody>
+</table>
+<h3><code>Choice</code></h3>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>content</code></td><td>array of <code>RenderBlockContent</code></td><td>yes</td><td>—</td><td>The answer text shown in the choice label.</td></tr>
+<tr><td><code>isCorrect</code></td><td>boolean</td><td>yes</td><td>—</td><td>Drives <code>correct</code>/<code>incorrect</code> CSS classes and icon choice once checked; a question can have more than one correct choice.</td></tr>
+<tr><td><code>justification</code></td><td>array of <code>RenderBlockContent</code></td><td>no</td><td>—</td><td>Explanation revealed only after that choice is selected.</td></tr>
+<tr><td><code>reaction</code></td><td>string</td><td>no</td><td>—</td><td>Plain-text aside shown after the choice is selected, alongside <code>justification</code>.</td></tr>
+</tbody>
+</table>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> lines 216-297 (schema objects
+<code>AssessmentsSection</code>, <code>Assessment</code>, <code>Choice</code>); generated types at
+<code>Sources/DocCArchive/generated/Types.swift</code> lines 3278-3384.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li><code>.assessments-wrapper</code> — root wrapper rendered by <code>LinkableElement</code> inside
+<code>Tutorial/Assessments.vue</code>; carries the section's top/bottom spacing
+(<code>$tutorial-section-spacing-single-side</code> in the tutorial context, or the article-specific
+padding rules added by <code>Article/Assessments.vue</code>'s own scoped <code>.assessments-wrapper</code>
+block).</li>
+<li><code>.assessments</code> (on the inner <code>Row</code>) — sets
+<code>background: var(--color-tutorial-assessments-background)</code>, which resolves to
+<code>var(--color-fill-secondary)</code> per
+<code>src/styles/core/colors/_light.scss:182</code>.</li>
+<li><code>.banner</code> / <code>.title</code> — the "Check Your Understanding" heading band; heading text
+uses <code>font-styles(heading-2)</code> and <code>var(--colors-header-text, --color-header-text)</code>.</li>
+<li><code>.success</code> — shown once <code>completed</code> is true, styled via
+<code>font-styles(alert-content)</code>.</li>
+<li><code>.quiz</code>, <code>.choices</code>, <code>.choice</code> (in <code>Quiz.vue</code>) — the
+fieldset/label list of answer choices; each <code>.choice</code> label gets
+<code>active</code> (currently selected radio), <code>disabled</code>, <code>correct</code>, or
+<code>incorrect</code> modifier classes depending on <code>userChoices</code>/<code>selectedIndex</code>
+state.</li>
+<li><code>.correct</code> / <code>.incorrect</code> — background/border driven by
+<code>var(--color-form-valid)</code> / <code>var(--color-form-valid-background)</code> and
+<code>var(--color-form-error)</code> / <code>var(--color-form-error-background)</code>
+(<code>_light.scss:93-96</code>); the choice icon (<code>CheckCircleIcon</code>/<code>ResetCircleIcon</code>)
+inherits the same fill color.</li>
+<li><code>.active</code> — focus/selection ring via <code>var(--color-tutorial-quiz-border-active)</code>
+(<code>_light.scss:186</code>) plus the shared <code>focus-shadow()</code> mixin.</li>
+<li><code>input[type="radio"]</code> — visually hidden (<code>opacity: 0</code>, absolutely positioned) but
+kept in the DOM/tab order so the whole <code>&lt;label&gt;</code> acts as the clickable/keyboard-operable
+control; this is a real native radio group (<code>name="assessment"</code>), which is how "only one choice
+selectable at a time, but re-selectable before submit" is implemented.</li>
+<li><code>.controls</code> / <code>.button-cta</code> (via <code>ButtonLink</code>) — the Submit / Next /
+See Results buttons, disabled according to <code>selectedIndex === null</code> or
+<code>showNextQuestion</code>.</li>
+<li>SCSS files involved: <code>Tutorial/Assessments.vue</code> (scoped style block),
+<code>Tutorial/Assessments/Quiz.vue</code> (scoped style block),
+<code>Tutorial/AssessmentsProgress.vue</code> (scoped style block),
+<code>Article/Assessments.vue</code> (scoped style block), plus shared
+<code>src/styles/core/colors/_light.scss</code> / <code>_dark.scss</code> and
+<code>src/styles/core/typography/_font-styles.scss</code> (the <code>assessments-code</code> font style
+used for inline code inside questions/choices).</li>
+<li>CSS custom properties consumed: <code>--color-tutorial-assessments-background</code>,
+<code>--color-tutorial-quiz-border-active</code>, <code>--color-form-valid</code>,
+<code>--color-form-valid-background</code>, <code>--color-form-error</code>,
+<code>--color-form-error-background</code>, <code>--colors-header-text</code>/<code>--color-header-text</code>,
+<code>--colors-text</code>/<code>--color-text</code>, <code>--colors-grid</code>/<code>--color-grid</code>,
+<code>--colors-secondary-label</code>/<code>--color-secondary-label</code>.</li>
+</ul>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">Partial</span></p>
+<p>
+Current behavior in play: <code>Tutorial/Assessments.vue</code> holds <code>activeIndex</code> and
+<code>completed</code> as Vue component <code>data()</code>, and swaps which question/success view is
+shown via <code>v-if="!completed"</code> plus re-keying the <code>Quiz</code> child on
+<code>activeIndex</code>; separately, <code>Quiz.vue</code> holds per-question state
+(<code>selectedIndex</code>, <code>userChoices[]</code>) and toggles <code>correct</code>/<code>incorrect</code>
+classes and reveal of <code>justification</code>/<code>reaction</code> text via a
+<code>v-model</code>-bound native <code>&lt;input type="radio" name="assessment"&gt;</code> per choice, with
+button <code>:disabled</code> bindings computed from that state.
+</p>
+<p>
+The per-question choice interaction (select one radio, reveal that choice's justification, style it
+correct/incorrect) maps cleanly onto native CSS today: it is already implemented with a real
+<code>&lt;input type="radio"&gt;</code> group, so the "which choice is active/selected" half of the state
+could be held purely by <code>:checked</code> plus a general sibling or <code>:has()</code> selector (e.g.
+<code>label:has(input:checked) .answer { display: block; }</code>) with zero JavaScript, replacing the
+<code>v-if="userChoices[index].checked"</code> conditional reveal of the justification text. This part is
+squarely <strong>applicable</strong> to a native mechanism.
+</p>
+<p>
+However, the section as a whole is not just a single self-contained toggle: correctness must be checked
+against server-supplied <code>isCorrect</code> data (CSS cannot compare a selected choice's identity
+against a data-defined "correct answer" — it can only react to which native form control is
+<code>:checked</code>, not evaluate a boolean encoded in JSON), and advancing between questions
+(<code>onAdvance</code>) replaces the entire rendered question array element (a new
+<code>Quiz</code> instance keyed by <code>activeIndex</code>, driven by <code>this.assessments[this.activeIndex]</code>)
+rather than toggling visibility of pre-rendered siblings, and <code>onSeeResults</code>/<code>onSubmit</code> also
+perform imperative scroll-into-view logic (<code>scrollTo</code>/<code>scrollIntoView</code> with a
+navigation-bar height offset). None of that survives translation to a static selector — it depends on
+which answer the schema marks correct and on scripted scroll positioning. For that reason the overall
+<code>assessments</code> section is rated <strong>partial</strong>: the single-choice reveal/highlight
+interaction per question is a good <code>:checked</code>/<code>:has()</code> fit, but correctness
+evaluation against JSON data and multi-question progression/auto-scroll are not expressible in CSS alone.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

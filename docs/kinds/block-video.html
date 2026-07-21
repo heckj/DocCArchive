@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: video — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>video</code></h1>
+<p class="wire-value">Wire value: <code>"video"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'video'</code> turns up
+<code>src/components/ContentNode.vue</code>'s wire-constant table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>),
+whose <code>video</code> key holds <code>BlockType.video = 'video'</code>. That constant is matched in
+the <code>renderNode()</code> factory function's <code>switch (node.type)</code> dispatch table:
+</p>
+<pre><code>case BlockType.video: {
+  if (node.metadata && node.metadata.abstract) {
+    return renderFigure(node);
+  }
+  if (!references[node.identifier]) return null;
+  const { deviceFrame } = node.metadata || {};
+  return createElement(BlockVideo, {
+    props: {
+      identifier: node.identifier,
+      deviceFrame,
+    },
+  });
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L382-L394"><code>ContentNode.vue#L382-L394</code></a>.)
+There are two branches. If <code>node.metadata.abstract</code> is present (an author-supplied caption),
+the node is routed through the shared <code>renderFigure()</code> helper
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L220-L249"><code>ContentNode.vue#L220-L249</code></a>), which wraps the video (with its <code>metadata</code>
+stripped down to just <code>deviceFrame</code>) in a <code>Figure</code> element and renders
+<code>metadata.abstract</code> as a <code>Caption</code> (<code>&lt;figcaption&gt;</code>), positioned
+above the video if <code>metadata.title</code> is also set, otherwise below it. If there is no abstract,
+the plain path runs: if the referenced asset identifier can't be resolved in the render node's
+<code>references</code> map the whole node renders as nothing (<code>return null</code>), otherwise a
+<code>BlockVideo</code> component is mounted with the bare <code>identifier</code> and optional
+<code>deviceFrame</code> string as props. <code>BlockVideo</code> is imported at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L26"><code>ContentNode.vue#L26</code></a>.
+</p>
+<p>
+<code>src/components/ContentNode/BlockVideo.vue</code> is a thin wrapper that forwards straight to the
+shared <code>Asset</code> component:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;Asset
+    :identifier="identifier"
+    :deviceFrame="deviceFrame"
+  /&gt;
+&lt;/template&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/BlockVideo.vue#L11-L16"><code>BlockVideo.vue#L11-L16</code></a>.)
+<code>src/components/Asset.vue</code> looks the identifier up in the shared <code>references</code> map
+(via the <code>referencesProvider</code> mixin), and because the resolved reference's own
+<code>type</code> is <code>"video"</code> it picks a video-playing component rather than
+<code>ImageAsset</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Asset.vue#L80-L89"><code>Asset.vue#L80-L89</code></a>):
+</p>
+<pre><code>assetComponent() {
+  switch (this.asset.type) {
+  case AssetTypes.image:
+    return ImageAsset;
+  case AssetTypes.video:
+    return this.showsReplayButton ? ReplayableVideoAsset : VideoAsset;
+  default:
+    return undefined;
+  }
+},</code></pre>
+<p>
+<code>showsReplayButton</code> defaults to <code>true</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Asset.vue#L44-L47"><code>Asset.vue#L44-L47</code></a>), so a bare <code>video</code> block normally resolves to
+<code>ReplayableVideoAsset</code>, not the lower-level <code>VideoAsset</code> directly.
+<code>Asset.vue</code> also honors <code>prefers-reduced-motion</code>: if that media query matches, the
+component substitutes the video's poster image reference for the video itself
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Asset.vue#L74-L79"><code>Asset.vue#L74-L79</code></a>).
+</p>
+<p>
+<code>ReplayableVideoAsset.vue</code> renders a <code>&lt;div class="video-replay-container"
+role="group"&gt;</code> containing a <code>VideoAsset</code> plus, when
+<code>showsDefaultControls</code> is false (the default), a custom <code>&lt;a class="control-button"&gt;</code>
+that toggles playback and swaps its icon/label between Play, Pause and Replay depending on component
+state tracked in <code>data() { isPlaying, videoEnded }</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ReplayableVideoAsset.vue#L12-L50"><code>ReplayableVideoAsset.vue#L12-L50</code></a>). The click handler calls the native
+<code>HTMLVideoElement.play()</code>/<code>.pause()</code> directly on a template ref
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ReplayableVideoAsset.vue#L116-L125"><code>ReplayableVideoAsset.vue#L116-L125</code></a>), and <code>playing</code>/<code>pause</code>/<code>ended</code> events emitted
+from the underlying native <code>&lt;video&gt;</code> keep <code>isPlaying</code>/<code>videoEnded</code>
+in sync. Finally, <code>VideoAsset.vue</code> renders the real
+<code>&lt;video&gt;</code> element, deriving <code>&lt;source&gt;</code>, <code>poster</code>,
+<code>autoplay</code>/<code>muted</code>/<code>controls</code> attributes and an intrinsic-orientation
+data attribute from the resolved reference's light/dark variant arrays, and optionally wraps everything
+in a <code>DeviceFrame</code> component when a device-frame identifier was supplied
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/VideoAsset.vue#L11-L54"><code>VideoAsset.vue#L11-L54</code></a>).
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+<p class="see-concept">See also: <a href="../concepts/assets.html">Asset variant resolution</a> — the full light/dark/@2x/@3x bucketing mechanism shared with video and hero backgrounds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture containing a <code>"type": "video"</code> <em>block-content</em> node was found in
+<code>Tests/DocCArchiveTests/Fixtures/</code> (its two <code>.doccarchive</code> fixtures only contain the
+substring <code>video</code> inside minified, bundled DocC-render JS assets, not in any
+<code>data/documentation/*.json</code> RenderNode). Searching
+<code>Tests/SwiftDocCTests/</code> for JSON or Swift-literal fixtures of a <code>RenderBlockContent.video</code>
+node also came up empty &mdash; the matches there are all for the unrelated tutorial-hero
+<code>video</code>/<code>poster</code> keys in <code>TutorialSectionsTests</code>-style fixtures (a
+different, top-level Hero field, not this block-content kind) or for <code>VideoReference</code>
+unit tests that never assemble a full <code>video</code> block. The example below is therefore
+hand-written, built directly from the <code>Video</code> schema (Section 3) and from
+<code>VideoMedia.render(with:)</code>'s encoding logic in swift-docc
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Semantics/Media/VideoMedia.swift#L86-L128">VideoMedia.swift#L86-L128</a>), which is what an authored
+</p>
+<pre><code>@Video(source: "earth-orbit.mov", poster: "earth-orbit-poster.png") {
+  The satellite completes one full orbit every 90 minutes.
+}</code></pre>
+<p>directive compiles down to.</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "video",
+  "identifier": "video-earth-orbit",
+  "metadata": {
+    "abstract": [
+      {
+        "type": "text",
+        "text": "The satellite completes one full orbit every 90 minutes."
+      }
+    ]
+  }
+}</code></pre>
+<p>Its companion reference in the render node's top-level <code>references</code> map:</p>
+<pre><code>"video-earth-orbit": {
+  "type": "video",
+  "identifier": "video-earth-orbit",
+  "alt": "A satellite orbiting Earth",
+  "poster": "earth-orbit-poster",
+  "variants": [
+    {
+      "traits": ["1x", "light"],
+      "url": "/videos/org.example/earth-orbit.mov"
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <figure style="margin:0; background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12); text-align:center;">
+    <div style="position:relative; display:inline-block; background:#000; border-radius:4px; width:320px; height:180px;">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:2em;">&#9658;</div>
+    </div>
+    <div style="margin-top:8px;">
+      <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.85em; color:#515154; cursor:pointer;">&#9658; Play</span>
+    </div>
+    <figcaption style="margin-top:10px; font-size:0.85em; color:#515154;">The satellite completes one full orbit every 90 minutes.</figcaption>
+  </figure>
+  <p><em>mockup: because <code>metadata.abstract</code> is present, <code>ContentNode.vue</code> routes
+  this node through <code>renderFigure()</code>, wrapping the video in a <code>&lt;figure&gt;</code> with
+  the abstract text rendered as a trailing <code>&lt;figcaption&gt;</code> (no <code>metadata.title</code>
+  here, so the caption sits below rather than above). Below the video frame sits the custom
+  Play/Pause/Replay control rendered by <code>ReplayableVideoAsset.vue</code>, since
+  <code>showsReplayButton</code> defaults to true and native <code>controls</code> are therefore
+  suppressed.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Video</code> (lines 680&ndash;697), cross-checked against
+<code>Components.Schemas.Video</code> in <code>Sources/DocCArchive/generated/Types.swift</code> (lines
+4050&ndash;4082). <code>Video</code> is one arm of the <code>RenderBlockContent</code> discriminated
+union that makes up a <code>content</code> array anywhere block content is allowed. Its
+<code>identifier</code> field is a <code>format: reference(VideoRenderReference)</code> pointer into the
+render node's top-level <code>references</code> map, and its optional <code>metadata</code> field
+reuses the shared <code>RenderContentMetadata</code> schema (lines 484&ndash;502 / generated lines
+2768&ndash;2794).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"video"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case video = "video" }</code>; the discriminator matched by <code>BlockType.video</code> in <code>ContentNode.vue</code>.</td>
+</tr>
+<tr>
+<td><code>identifier</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td><code>format: reference(VideoRenderReference)</code>. A key into the render node's <code>references</code> map; the target reference object's own <code>type</code> must be <code>"video"</code> and carries the actual playable <code>variants</code>/<code>poster</code>/<code>alt</code> data.</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>RenderContentMetadata</code> object</td>
+<td>no</td>
+<td>default: absent (decoded as <code>nil</code>)</td>
+<td>Nested fields: <code>anchor</code> (string, optional named anchor), <code>title</code> (string, optional custom caption title), <code>abstract</code> (array of <code>RenderInlineContent</code>, optional caption body), <code>deviceFrame</code> (string, optional device-frame identifier). Presence of a non-empty <code>abstract</code> is what triggers the <code>renderFigure()</code> branch in <code>ContentNode.vue</code>; presence of <code>deviceFrame</code> alone does not.</td>
+</tr>
+</tbody>
+</table>
+<p>
+The referenced <code>VideoRenderReference</code> object (schema lines 1605&ndash;1631 / generated lines
+575&ndash;609) is what actually supplies playable media: <code>type</code> (<code>"video"</code>,
+required), <code>identifier</code> (string, required, matches the block's <code>identifier</code>),
+<code>variants</code> (required array of <code>RenderReferenceVariant</code>, each with a <code>url</code>
+and a <code>traits</code> array such as <code>["1x", "dark"]</code> used to pick light/dark and
+density-appropriate sources), <code>poster</code> (optional string identifier of a separate image
+reference shown before playback / under reduced motion), and <code>alt</code> (optional string,
+nullable, rendered as a visually-hidden description alongside the player).
+</p>
+<p>
+DocCArchive's own transform layer does not yet act on this kind: <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>) are still stub
+placeholders &mdash; the former returns a hardcoded HTML comment and the latter an empty string &mdash;
+so a parsed <code>Components.Schemas.Video</code> value would currently reach a transformer only as an
+untyped case inside the still-unimplemented walk over <code>RenderBlockContent</code>, with no real
+conversion logic written for it.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Without a caption, the DOM is: <code>div.asset</code> (from <code>Asset.vue</code>) &gt;
+<code>div.video-replay-container[role="group"]</code> (from <code>ReplayableVideoAsset.vue</code>, only
+when <code>showsReplayButton</code> is true) &gt; a wrapper <code>div</code> (from
+<code>VideoAsset.vue</code>) &gt; the native <code>&lt;video&gt;</code> element with a nested
+<code>&lt;source&gt;</code>, plus a sibling hidden <code>&lt;span&gt;</code> holding the localized
+<code>alt</code> description, and finally an <code>a.control-button</code> for the custom Play/Pause/Replay
+toggle. With a caption (<code>metadata.abstract</code> present), the whole thing is instead wrapped in
+<code>&lt;figure id="{anchor}"&gt;</code> (from <code>Figure.vue</code>) with a
+<code>&lt;figcaption class="caption leading|trailing"&gt;</code> (from <code>Caption.vue</code>) placed
+before or after it depending on whether <code>metadata.title</code> was also supplied. If
+<code>metadata.deviceFrame</code> is set, a <code>div.device-frame[data-device="{deviceFrame}"]</code>
+(from <code>DeviceFrame.vue</code>) wraps the video's screen area, with a <code>div.device-screen</code>
+containing the actual player and a decorative <code>div.device</code> overlay for the frame artwork.
+</p>
+<p>
+Relevant SCSS: <code>BlockVideo.vue</code>'s scoped style block imports
+<code>docc-render/styles/_core.scss</code> and sets <code>.asset</code> margins plus a
+<code>:deep(video) { display: block; margin: 0 auto; object-fit: contain; max-width: 100%; }</code> rule
+using the CSS custom property <code>--spacing-stacked-margin-xlarge</code> (defined in
+<code>src/styles/base/_typography.scss</code> as <code>calc(var(--spacing-stacked-margin-large) * 2)</code>) for
+spacing between stacked siblings. <code>Asset.vue</code>'s own scoped style repeats the same
+<code>:deep(img), :deep(video)</code> block/center/contain rule. <code>ReplayableVideoAsset.vue</code>'s
+scoped style lays out <code>.control-button</code> as a small centered flex row with a
+<code>-webkit-tap-highlight-color: transparent</code> tap-highlight reset and sized SVG icons.
+<code>VideoAsset.vue</code> itself has no <code>&lt;style&gt;</code> block; its only structural styling
+comes from the shared rules above plus whatever <code>ConditionalWrapper</code>/<code>DeviceFrame</code>
+contribute when a device frame is present.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">PARTIAL</span></p>
+<p>
+Current JS/Vue behavior in play: <code>ReplayableVideoAsset.vue</code> keeps <code>isPlaying</code> and
+<code>videoEnded</code> as component <code>data()</code>, mutated by <code>playing</code>/<code>pause</code>/<code>ended</code>
+event handlers on the underlying native <code>&lt;video&gt;</code>, and a custom
+<code>a.control-button</code> click handler that calls <code>videoPlayer.play()</code>/<code>.pause()</code>
+imperatively via a template ref, swapping its label/icon (Play &rarr; Pause &rarr; Replay) reactively based
+on that state.
+</p>
+<p>
+Native <code>&lt;video controls&gt;</code> already gives play/pause/replay affordances with zero JS or CSS
+state-holding at all &mdash; and DocC-Render itself falls back to exactly that whenever
+<code>showsDefaultControls</code> is true (<code>VideoAsset.vue</code>'s <code>:controls="showsDefaultControls"</code>
+binding). The only reason the Vue layer exists is to render a <em>custom-styled</em> replacement control
+(matching the site's iconography and copy) instead of the browser's native control strip, and that
+substitution inherently needs to react to real, continuous playback state (currentTime advancing,
+<code>ended</code> firing) that CSS alone cannot observe &mdash; there is no selector that matches "video
+element whose <code>ended</code> event has fired" the way <code>:checked</code> matches a checkbox's
+boolean state. A <code>:has()</code>-based rule such as <code>.video-replay-container:has(video:paused)
+.control-button</code> could statelessly restyle the button between a generic "paused" and "playing" look
+purely from the live DOM (no JS-managed boolean needed for that part, since <code>:paused</code>/<code>:playing</code>
+pseudo-classes reflect the element's real media state), but distinguishing the three-way
+Play/Pause/Replay label &mdash; specifically detecting "ended" as opposed to merely "paused" &mdash;
+still has no matching CSS pseudo-class, so the label/icon swap component would still need JS. Verdict is
+therefore partial: the play/pause restyling slice is replaceable with <code>:has(video:paused)</code>,
+but the ended-vs-paused distinction that drives the Replay state is not.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

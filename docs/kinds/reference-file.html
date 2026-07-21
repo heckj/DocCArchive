@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: file — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>file</code></h1>
+<p class="wire-value">Wire value: <code>"file"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>file</code> is not a block/inline content kind dispatched from <code>ContentNode.vue</code>'s
+<code>render()</code> switch — it is a <em>reference</em>-tier object. RenderNodes carry a top-level
+<code>references</code> dictionary keyed by identifier string, and other parts of the tree (here, a
+tutorial <code>Step</code>) point at an entry in that dictionary by identifier rather than embedding
+the object inline. The tutorial-only chain that resolves a <code>file</code> reference is:
+</p>
+<ul>
+<li>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L44-L57"><code>components/Tutorial/SectionSteps.vue#L44-L57</code></a> —
+for the active step's asset, if <code>visibleAsset.code</code> is set (a reference identifier string
+taken from the step's <code>code</code> field), it renders
+<code>&lt;CodePreview :code="visibleAsset.code" :preview="visibleAsset.runtimePreview" .../&gt;</code>.
+</li>
+<li>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/CodePreview.vue#L106-L159"><code>components/Tutorial/CodePreview.vue#L106-L159</code></a> —
+<code>CodePreview</code> injects the shared tutorial <code>store</code> and resolves the actual
+reference object with a plain dictionary lookup:
+</li>
+</ul>
+<pre><code>references: ({ tutorialState }) => tutorialState.references,
+...
+codeProps() {
+  return this.references[this.code];
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/CodePreview.vue#L107-L159"><code>CodePreview.vue#L107-L159</code></a>).
+<code>this.code</code> is the identifier string; <code>this.references</code> is the RenderNode's
+<code>references</code> map; <code>this.references[this.code]</code> is therefore the raw
+<code>FileRenderReference</code> JSON object (with its <code>type: "file"</code>,
+<code>identifier</code>, <code>fileName</code>, <code>fileType</code>, <code>syntax</code>,
+<code>content</code>, <code>highlights</code> fields) for that step.
+</p>
+<p>
+That whole object is then spread onto the leaf component in the template:
+</p>
+<pre><code>&lt;CodeListing v-if="code" v-bind="codeProps" showLineNumbers /&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/CodePreview.vue#L14"><code>CodePreview.vue#L14</code></a>).
+<code>v-bind="codeProps"</code> is a whole-object prop spread: Vue maps each of the reference's keys
+onto a same-named prop of
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L102-L138"><code>components/ContentNode/CodeListing.vue</code></a>,
+which happens to declare props named <code>fileName</code>, <code>fileType</code>, <code>syntax</code>,
+<code>content</code>, and <code>highlights</code> — an exact match to the reference's field names (the
+extra <code>type</code>/<code>identifier</code> keys are simply ignored as unrecognized props). No
+code here inspects <code>type === 'file'</code> explicitly; the "dispatch" is really just "this step
+has a <code>code</code> identifier, so look it up and spread it," and the schema tag <code>file</code>
+is never tested at render time — it only round-trips through JSON decoding on the Swift side (see
+section 3).
+</p>
+<p>
+Inside <code>CodeListing.vue</code>, the <code>fileName</code> prop conditionally renders a
+<code>&lt;Filename&gt;</code> (<code>CodeListingFilename.vue</code>) header showing a file-type icon
+(<code>CodeListingFileIcon.vue</code>, which special-cases <code>fileType === 'swift'</code> to show a
+Swift file glyph and falls back to a generic file glyph otherwise —
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListingFileIcon.vue#L11-L20"><code>CodeListingFileIcon.vue#L11-L20</code></a>)
+plus the <code>fileName</code> text; the <code>content</code> lines are syntax-highlighted per
+<code>syntax</code> and rendered into a line-numbered <code>&lt;pre&gt;</code>; and <code>highlights</code>
+drives which lines get the <code>highlighted</code> background/border treatment. <code>CodePreview.vue</code>
+always passes <code>showLineNumbers</code> as a bare boolean attribute, so tutorial code steps always
+show a line-number gutter (unlike a plain <code>codeListing</code> block, where that is opt-in). On
+small/mobile breakpoints the analogous lookup happens in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/MobileCodePreview.vue"><code>components/Tutorial/MobileCodePreview.vue</code></a>,
+which feeds the same reference fields into <code>ContentNode/MobileCodeListing.vue</code> (a windowed,
+scroll-following variant of the same rendering, showing only a few lines around the current
+highlight).
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No literal JSON fixture containing <code>"type": "file"</code> was found in either
+<code>Tests/DocCArchiveTests/Fixtures/</code> in this repository (its two archives,
+<code>ExampleDocs.doccarchive</code> and <code>SampleLibrary.doccarchive</code>, contain no tutorial
+content, so they never emit <code>file</code> references) or in
+<code>swift-docc</code>'s <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/</code> JSON files.
+swift-docc's own test suite does construct real <code>FileReference</code> values as Swift literals —
+<code>Tests/SwiftDocCTests/DocumentationService/ConvertService/ConvertServiceTests.swift:979-989</code> —
+which was used as the factual basis (field values, not exact JSON) for the hand-written example below:
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "file",
+  "identifier": "after.swift",
+  "fileName": "Something.swift",
+  "fileType": "swift",
+  "syntax": "swift",
+  "content": [
+    "// This is an example swift file",
+    "let something = 0"
+  ],
+  "highlights": [
+    { "line": 2 }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="border:1px solid #ddd; border-radius:6px; overflow:hidden; max-width:360px; font-family:monospace; font-size:0.85em;">
+    <div style="display:flex; align-items:center; gap:6px; padding:6px 10px; color:#555; border-bottom:1px solid #eee; background:#f6f6f6;">
+      <span style="display:inline-block; width:14px; height:16px; background:#f05138; border-radius:2px;"></span>
+      Something.swift
+    </div>
+    <div style="display:flex; background:#1e1e24; color:#ddd; padding:8px 0;">
+      <span style="width:2em; text-align:right; padding-right:1em; color:#888; user-select:none;">1<br>2</span>
+      <span>
+        // This is an example swift file<br>
+        <span style="background:rgba(10,132,255,0.15); border-left:4px solid #0a84ff; display:block; padding-left:8px; margin-left:-8px;">let something = 0</span>
+      </span>
+    </div>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema object: <code>#/components/schemas/FileRenderReference</code> in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json:1636-1676</code>, with a companion
+<code>#/components/schemas/FileRenderReferenceHighlight</code> object at lines 1677-1693. Generated
+Swift: <code>Components.Schemas.FileRenderReference</code>, a plain <code>Codable, Hashable, Sendable</code>
+struct at <code>Sources/DocCArchive/generated/Types.swift:2309-2365</code>, and
+<code>Components.Schemas.FileRenderReferenceHighlight</code> at <code>Types.swift:2366-2394</code>. It
+is reachable as the <code>.FileRenderReference</code> case of the generated top-level references-map
+value enum (<code>Types.swift:2121</code>, also duplicated at <code>Types.swift:4809</code> for a
+second occurrence of the same discriminated union elsewhere in the spec).
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"file"</code></td><td>Discriminator; generated as <code>_TypePayload</code> with the single case <code>.file</code>. Matches <code>RenderReferenceType.file</code> in swift-docc's Swift model (<code>RenderReference.swift:29</code>).</td></tr>
+<tr><td><code>identifier</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Key used to look this object up from the RenderNode's top-level <code>references</code> dictionary, and the value a step's <code>code</code> field points at.</td></tr>
+<tr><td><code>fileName</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Display name of the file, e.g. <code>"Something.swift"</code>. Drives the optional filename header in <code>CodeListing.vue</code>.</td></tr>
+<tr><td><code>fileType</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Typically a file extension (e.g. <code>"swift"</code>). Only actually branched on by <code>CodeListingFileIcon.vue</code> (<code>=== 'swift'</code> selects the Swift glyph, anything else falls back to a generic file glyph).</td></tr>
+<tr><td><code>syntax</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Highlighter language id, e.g. <code>"swift"</code>; drives which grammar <code>CodeListing.vue</code> loads for syntax highlighting.</td></tr>
+<tr><td><code>content</code></td><td>[string]</td><td>yes</td><td>&mdash;</td><td>Line-by-line file contents, one array element per line (no embedded newlines).</td></tr>
+<tr><td><code>highlights</code></td><td>[FileRenderReferenceHighlight]</td><td>no</td><td>defaults to <code>[]</code> in swift-docc's Swift <code>FileReference</code> initializer/decoder (<code>FileReference.swift:40,75</code>); generated Swift type is optional (<code>nil</code> when absent), not defaulted, since OpenAPI Generator does not synthesize schema-level defaults</td><td>Each entry: required <code>line</code> (integer), optional <code>start</code>/<code>length</code> (integers, character-range within the line — not consumed anywhere in swift-docc-render's rendering path found in step 1, which only reads <code>.line</code>).</td></tr>
+</table>
+<p>
+A closely related but distinct reference kind is <code>fileType</code>
+(<code>FileTypeRenderReference</code>, wire value <code>"fileType"</code>, spec lines 1694-1717): a
+reference to a <em>category</em> of file (display name + Base64 icon), not to one specific file's
+contents. It is out of scope for this page.
+</p>
+<p>
+Authoring side (context, not schema-authoritative): a <code>file</code> reference is produced when a
+tutorial author writes a <code>@Code(file: "Something.swift", name: "Something.swift")</code>
+directive inside a <code>@Step</code> in a <code>.tutorial</code> file. See
+<code>Sources/SwiftDocC/Semantics/Tutorial/Tasks/Steps/Code.swift:14-51</code>: the directive's
+<code>file</code> argument names the source file to load from the bundle
+(<code>fileReference</code>/<code>previousFileReference</code>, resolved via
+<code>ResourceReference</code>), and its <code>name</code> argument becomes the reference's
+<code>fileName</code>; an optional <code>previousFile</code> plus a <code>reset</code> flag support
+showing a diff between two consecutive steps' files (the diff itself is realized as two separate
+<code>file</code> references, one per step, not as an extra field on this schema).
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+There is no dedicated root element "for a <code>file</code> reference" as such — the reference is pure
+data; the DOM it produces is entirely <code>CodeListing.vue</code>'s markup (shared with the
+<code>codeListing</code> block-content kind), wrapped by the tutorial-specific
+<code>CodePreview.vue</code> chrome:
+</p>
+<ul>
+<li><code>&lt;div class="code-preview"&gt;</code> (root of <code>CodePreview.vue</code>, modifier class <code>ide</code> when embedded in an Xcode-hosted context) contains the code panel and, absolutely positioned, a runtime-preview panel.</li>
+<li>Inside it, <code>&lt;CodeTheme&gt;</code> wraps <code>&lt;CodeListing v-bind="codeProps" showLineNumbers /&gt;</code>, i.e. the same <code>&lt;div class="code-listing" data-syntax="…"&gt;</code> markup documented on the <code>codeListing</code> block-kind page: an optional <code>&lt;span class="filename"&gt;</code> (icon + text), a <code>&lt;div class="container-general"&gt;</code> holding the copy button and the <code>&lt;pre&gt;&lt;code&gt;</code> block of per-line <code>&lt;span class="code-line-container"&gt;</code> elements.</li>
+<li><code>&lt;div class="runtime-preview"&gt;</code> — a collapsible panel (modifier classes <code>collapsed</code>, <code>disabled</code>, <code>runtime-preview-ide</code>) with a <code>&lt;button class="header"&gt;</code> toggle and a <code>&lt;div class="runtime-preview-asset"&gt;</code> that projects the <code>&lt;slot/&gt;</code> (an <code>Asset</code> image/video keyed by the step's <code>runtimePreview</code> reference, unrelated to the <code>file</code> reference itself).</li>
+</ul>
+<p>
+Styling: <code>CodePreview.vue</code>'s own <code>&lt;style scoped lang="scss"&gt;</code> block
+(imports <code>docc-render/styles/_core.scss</code>) sets the sticky, full-height code panel
+(<code>height: calc(100vh - $nav-height)</code>, <code>100vh</code> when <code>.ide</code>) and the
+absolutely positioned, width-transitioning runtime-preview box. CSS custom properties consumed:
+<code>--background</code> / <code>--color-step-background</code> (code panel background),
+<code>--text</code> / <code>--color-code-plain</code> (code text color),
+<code>--color-runtime-preview-background</code>, <code>--color-runtime-preview-text</code> /
+<code>--colors-runtime-preview-text</code>, and a locally scoped
+<code>--color-runtime-preview-shadow</code> that flips value under <code>@include prefers-dark</code>.
+<code>CodeListing.vue</code>'s own scoped SCSS (documented in full on the <code>codeListing</code>
+page) additionally consumes <code>--color-code-line-highlight</code>,
+<code>--color-code-line-highlight-border</code>, <code>--color-fill-gray-tertiary</code>,
+<code>--color-fill-gray</code>, and <code>--code-indentationWidth</code>.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+<code>file</code> itself is a static reference-tier data record — an entry in the RenderNode's
+<code>references</code> dictionary with no independent interactive behavior of its own. All of the
+stateful JS in this page's render path (the <code>runtime-preview</code> show/hide toggle in
+<code>CodePreview.vue</code>, the copy-to-clipboard button state, and the asynchronous
+client-side syntax highlighter) belongs to the <em>consuming</em> components
+(<code>CodePreview.vue</code>, <code>CodeListing.vue</code>) and is exactly the same machinery already
+analyzed, mechanism-by-mechanism, on the <code>codeListing</code> block-kind page — none of it is
+specific to, or triggered by, the fact that the data came from a <code>file</code> reference rather
+than being inline block content. There is nothing left at the level of "what does a <code>file</code>
+reference itself hold or toggle" for a native CSS mechanism to replace: the schema's own fields
+(<code>fileName</code>, <code>fileType</code>, <code>syntax</code>, <code>content</code>,
+<code>highlights</code>) are plain strings/arrays with no client-side state machine attached to the
+reference object as such.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

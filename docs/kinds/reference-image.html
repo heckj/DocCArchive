@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: image — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>image</code></h1>
+<p class="wire-value">Wire value: <code>"image"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a>, <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+There are two distinct places the literal string <code>"image"</code> appears on the wire, and it's
+important to keep them apart. One is the <em>inline content node</em> that sits inside an
+<code>inlineContent</code>/<code>content</code> array (schema name <code>Image</code>, generated Swift
+<code>Components.Schemas.Image</code>) &mdash; it carries only a <code>type</code> and an
+<code>identifier</code> pointer, no pixels. The other is the <em>reference-dictionary entry</em> that the
+pointer resolves to (schema name <code>ImageRenderReference</code>, matching this page's
+<code>doccArchiveType</code> and swift-docc's <code>RenderReferenceType.image</code> case /
+<code>ImageReference</code> struct) &mdash; it carries the actual <code>alt</code> text and
+<code>variants</code> (URLs, pixel-density/appearance traits, optional SVG element id). This page
+documents the reference-dictionary entry; the inline node that points at it is covered in the data
+sheet below for completeness since the two are inseparable in practice.
+</p>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'image'</code> turns up
+<code>src/components/ContentNode.vue</code>'s <code>InlineType</code> constant table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>), whose <code>image</code> key holds
+<code>InlineType.image = 'image'</code>. That constant is matched in the <code>renderNode()</code>
+factory function's <code>switch (node.type)</code> dispatch table:
+</p>
+<pre><code>case InlineType.image: {
+  if (node.metadata &amp;&amp; (node.metadata.anchor || node.metadata.abstract)) {
+    return renderFigure(node);
+  }
+
+  const image = references[node.identifier];
+  if (!image) return null;
+  if (node.metadata &amp;&amp; node.metadata.deviceFrame) {
+    return renderDeviceFrame(node);
+  }
+  return createElement(InlineImage, {
+    props: {
+      alt: image.alt,
+      variants: image.variants,
+    },
+  });
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L442-L458"><code>ContentNode.vue#L442-L458</code></a>.) Three branches, checked in order. If
+<code>node.metadata.anchor</code> or <code>node.metadata.abstract</code> is present, the node is routed
+through the shared <code>renderFigure()</code> helper
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L220-L249"><code>ContentNode.vue#L220-L249</code></a>), which re-invokes <code>renderChildren</code> on the image node
+(with <code>metadata</code> stripped down to everything except <code>abstract</code>/<code>anchor</code>/<code>title</code>) inside
+a <code>&lt;figure&gt;</code>, and renders <code>metadata.abstract</code> as a <code>Caption</code>
+(<code>&lt;figcaption&gt;</code>), positioned above the image if <code>metadata.title</code> is also set,
+otherwise below it. Otherwise, the reference is looked up by <code>node.identifier</code> in the render
+node's shared <code>references</code> map; if it can't be resolved the node renders as nothing
+(<code>return null</code>). If it resolves and <code>node.metadata.deviceFrame</code> is set, the node is
+instead routed through <code>renderDeviceFrame()</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L251-L257"><code>ContentNode.vue#L251-L257</code></a>), which wraps an <code>InlineImage</code> in a
+<code>DeviceFrame</code> component keyed by the device string. In the plain case, an
+<code>InlineImage</code> component is mounted with just <code>alt</code> and <code>variants</code> plucked
+off the resolved <code>ImageRenderReference</code> object &mdash; the block's own <code>identifier</code>
+and <code>metadata</code> are discarded once the lookup succeeds.
+</p>
+<p>
+There is a fourth piece of context worth noting from the surrounding <code>paragraph</code> block
+handling: if a paragraph's <code>inlineContent</code> is a single <code>image</code> node, the enclosing
+<code>&lt;p&gt;</code> gets an extra <code>inline-image-container</code> class
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L305-L313"><code>ContentNode.vue#L305-L313</code></a>), which is purely a styling hook (see Section 4) and has no
+effect on which Vue component renders the image itself.
+</p>
+<p>
+<code>src/components/ContentNode/InlineImage.vue</code> is a thin wrapper that forwards straight to the
+shared <code>ImageAsset</code> component:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;ImageAsset :alt="alt" :variants="variants"/&gt;
+&lt;/template&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/InlineImage.vue#L11-L13"><code>InlineImage.vue#L11-L13</code></a>.) Its only scoped style constrains any nested <code>&lt;img&gt;</code>
+to <code>max-width: 100%</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/InlineImage.vue#L34-L38"><code>InlineImage.vue#L34-L38</code></a>).
+</p>
+<p>
+<code>src/components/ImageAsset.vue</code> is where the <code>variants</code> array actually becomes DOM.
+It groups the reference's flat <code>variants</code> array into light/dark buckets and per-density
+<code>srcset</code> strings via the <code>imageAsset</code> mixin
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/imageAsset.js#L20-L30"><code>mixins/imageAsset.js#L20-L30</code></a>), then picks one of three template branches depending on the
+app-wide <code>preferredColorScheme</code> setting (light / dark / auto, read from
+<code>AppStore.state</code>, not the OS alone): a fallback <code>&lt;img&gt;</code> if a previous load
+already failed, a dark-preferring <code>&lt;img&gt;</code> if the user explicitly chose "Dark" and a dark
+variant exists, or (the "Auto" default) a native <code>&lt;picture&gt;</code> with a
+<code>&lt;source media="(prefers-color-scheme: dark)"&gt;</code> plus a light/default
+<code>&lt;img&gt;</code> fallback
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ImageAsset.vue#L11-L59"><code>ImageAsset.vue#L11-L59</code></a>). On an <code>error</code> event from the mounted
+<code>&lt;img&gt;</code>, <code>handleImageLoadError()</code> swaps in a bundled
+<code>no-image@2x.png</code> placeholder
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ImageAsset.vue#L150-L155"><code>ImageAsset.vue#L150-L155</code></a>). After the image first loads, if no explicit size was already
+supplied by the JSON, <code>optimizeImageSize()</code> measures the loaded image's intrinsic dimensions
+and divides by its pixel density to compute a stable <code>width</code>/<code>height</code> for layout,
+so 1x and 2x variants of the same asset render at the same on-page size
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ImageAsset.vue#L156-L219"><code>ImageAsset.vue#L156-L219</code></a>).
+</p>
+<p>
+When <code>metadata.deviceFrame</code> routes through <code>DeviceFrame.vue</code> instead, the resolved
+device name is looked up against a theme-settings table and rendered as CSS custom properties
+(background art URLs, screen inset percentages) on a <code>div.device-frame</code> wrapper, with the
+actual <code>InlineImage</code> positioned absolutely inside a <code>div.device-screen</code> cutout
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/DeviceFrame.vue#L11-L76"><code>DeviceFrame.vue#L11-L76</code></a>).
+</p>
+<p class="see-concept">See also: <a href="../concepts/assets.html">Asset variant resolution</a> — the full light/dark/@2x/@3x bucketing mechanism shared with video and hero backgrounds.</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+A real <code>ImageRenderReference</code> fixture (the reference-dictionary entry) exists in swift-docc's
+test suite: <code>Tests/SwiftDocCTests/Indexing/RenderIndexTests.swift</code>, inside a
+<code>RenderIndex.fromString(...)</code> JSON literal used to assert round-trip encoding of a rendered
+index (lines 803&ndash;818 at the pinned commit). It shows a <code>plus.svg</code> icon reference with a
+<code>1x</code>/<code>light</code> SVG variant carrying an <code>svgID</code>:
+</p>
+<pre><code>"references" : {
+  "plus.svg" : {
+    "alt" : "A plus icon.",
+    "type" : "image",
+    "identifier" : "plus.svg",
+    "variants" : [
+      {
+        "url" : "/images/org.swift.docc.Book/plus.svg",
+        "traits" : [
+          "1x",
+          "light"
+        ],
+        "svgID" : "plus-id"
+      }
+    ]
+  }
+}</code></pre>
+<p class="synthesized-note">
+That fixture only shows the reference-dictionary side. No fixture in either
+<code>Tests/DocCArchiveTests/Fixtures/</code> (neither <code>.doccarchive</code> bundle's
+<code>data/documentation/*.json</code> files contain an inline <code>"type": "image"</code> content node
+&mdash; their sample articles don't embed any images) or the rest of
+<code>Tests/SwiftDocCTests/</code> pairs a real inline <code>Image</code> node with its reference in one
+place, so the combined example below splices the real fixture's reference object together with a
+hand-written inline node that points at it, following the <code>Image</code> schema from Section 3 (an
+author would produce this pair by writing standard Markdown <code>![alt](plus.svg)</code> image syntax,
+or the tutorial-only <code>@Image(source:alt:)</code> directive documented in swift-docc's
+<code>Directives.md</code>).
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "image",
+  "identifier": "plus.svg",
+  "metadata": {
+    "abstract": [
+      { "type": "text", "text": "The add-item icon used throughout the toolbar." }
+    ]
+  }
+}</code></pre>
+<p>Its companion reference in the render node's top-level <code>references</code> map (verbatim from the
+<code>RenderIndexTests.swift</code> fixture cited above):</p>
+<pre><code>"plus.svg": {
+  "alt": "A plus icon.",
+  "type": "image",
+  "identifier": "plus.svg",
+  "variants": [
+    {
+      "url": "/images/org.swift.docc.Book/plus.svg",
+      "traits": ["1x", "light"],
+      "svgID": "plus-id"
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <figure style="margin:0; background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12); text-align:center;">
+    <div style="display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; background:#f5f5f7; border-radius:8px; margin:0 auto;">
+      <span style="font-size:2em; color:#1d1d1f; line-height:1;">&#43;</span>
+    </div>
+    <figcaption style="margin-top:10px; font-size:0.85em; color:#515154;">The add-item icon used throughout the toolbar.</figcaption>
+  </figure>
+  <p><em>mockup: because <code>metadata.abstract</code> is present, <code>ContentNode.vue</code> routes
+  this node through <code>renderFigure()</code>, wrapping the resolved image in a
+  <code>&lt;figure&gt;</code> with the abstract rendered as a trailing <code>&lt;figcaption&gt;</code> (no
+  <code>metadata.title</code> here, so the caption sits below rather than above). Without an abstract or
+  anchor, the same reference would render as a bare <code>&lt;picture&gt;</code>/<code>&lt;img&gt;</code>
+  with no figure/caption wrapper at all.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>. Two schema objects are involved.
+The inline content node, <code>#/components/schemas/Image</code> (lines 1332&ndash;1351), is one arm of
+the <code>RenderInlineContent</code> discriminated union; cross-checked against
+<code>Components.Schemas.Image</code> in <code>Sources/DocCArchive/generated/Types.swift</code> (lines
+1814&ndash;1845). The reference-dictionary entry it points at,
+<code>#/components/schemas/ImageRenderReference</code> (lines 1552&ndash;1578), is one arm of the
+<code>RenderReference</code> discriminated union that populates a render node's top-level
+<code>references</code> map; cross-checked against
+<code>Components.Schemas.ImageRenderReference</code> (generated lines 376&ndash;414, exposed as the
+<code>.ImageRenderReference</code> case of the generated <code>RenderReference</code> enum at line 2117).
+This matches this page's <code>doccArchiveType</code> and swift-docc's <code>ImageReference</code> struct
+(<code>Sources/SwiftDocC/Model/Rendering/References/ImageReference.swift:14</code>), whose
+<code>type</code> property is hard-coded to <code>.image</code> and which conforms to the
+<code>RenderReference</code> protocol's <code>type: RenderReferenceType</code> requirement
+(<code>Sources/SwiftDocC/Model/Rendering/References/RenderReference.swift:29</code>, the <code>case
+image</code> arm of the <code>RenderReferenceType</code> enum).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td colspan="5"><strong><code>Image</code> (inline content node)</strong></td></tr>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"image"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload { case image = "image" }</code>; the discriminator matched by
+<code>InlineType.image</code> in <code>ContentNode.vue</code>.</td>
+</tr>
+<tr>
+<td><code>identifier</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td><code>format: reference(ImageRenderReference)</code>. A key into the render node's
+<code>references</code> map; if unresolvable, <code>ContentNode.vue</code> renders nothing for the node.</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>RenderContentMetadata</code> object</td>
+<td>no</td>
+<td>default: absent (decoded as <code>nil</code>)</td>
+<td>Schema at lines 484&ndash;503 / generated lines 2768&ndash;2794. Nested fields: <code>anchor</code>
+(string, optional named anchor &mdash; triggers the figure branch), <code>title</code> (string, optional
+caption title), <code>abstract</code> (array of <code>RenderInlineContent</code>, optional caption body
+&mdash; also triggers the figure branch), <code>deviceFrame</code> (string, optional device-frame
+identifier, checked only after the figure branch is ruled out).</td>
+</tr>
+<tr><td colspan="5"><strong><code>ImageRenderReference</code> (reference-dictionary entry)</strong></td></tr>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"image"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload { case image = "image" }</code>. Matches
+<code>RenderReferenceType.image</code> in swift-docc's Swift model.</td>
+</tr>
+<tr>
+<td><code>identifier</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The dictionary key this object is stored under in <code>references</code>; also duplicated as this
+field for self-description.</td>
+</tr>
+<tr>
+<td><code>alt</code></td>
+<td>string</td>
+<td>no</td>
+<td>nullable; default: absent</td>
+<td>Alternate/accessibility text. Passed straight through as the <code>alt</code> prop to
+<code>InlineImage</code>/<code>ImageAsset</code> and ultimately the native <code>&lt;img alt&gt;</code>
+attribute. Swift-docc's <code>ImageReference.altText</code> documents this as text for screen readers.</td>
+</tr>
+<tr>
+<td><code>variants</code></td>
+<td>array of <code>RenderReferenceVariant</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Schema at lines 1579&ndash;1600 / generated lines 415&ndash;444. Each variant has a required
+<code>url</code> (string), a required <code>traits</code> array of <code>RenderReferenceVariantTrait</code>
+values (enum <code>"1x"</code>/<code>"2x"</code>/<code>"3x"</code>/<code>"light"</code>/<code>"dark"</code>;
+schema lines 1601&ndash;1604 / generated lines 447&ndash;453, generated as
+<code>case _1x = "1x"</code>, etc.), and an optional <code>svgID</code> (string) naming the element id to
+render when the asset is an SVG sprite sheet. <code>ImageAsset.vue</code> groups these variants by
+appearance trait (light/dark) and then by density trait (1x/2x/3x) to build <code>srcset</code> strings.</td>
+</tr>
+</tbody>
+</table>
+<p>
+DocCArchive's own transform layer does not yet act on this kind: <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>) are still stub
+placeholders &mdash; the former returns a hardcoded HTML comment and the latter an empty string &mdash;
+so a parsed <code>Components.Schemas.Image</code> inline node or
+<code>Components.Schemas.RenderReference.ImageRenderReference</code> case would currently reach a
+transformer only as an untyped case inside the still-unimplemented walk over
+<code>RenderInlineContent</code>/<code>references</code>, with no real conversion logic written for
+either.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+In the plain case (no <code>metadata.anchor</code>/<code>abstract</code>/<code>deviceFrame</code>), the
+DOM is just a native <code>&lt;picture&gt;</code> (from <code>ImageAsset.vue</code>) containing an
+optional <code>&lt;source media="(prefers-color-scheme: dark)"&gt;</code> and a single <code>&lt;img
+decoding="async" data-orientation="..."&gt;</code>, with no wrapping <code>&lt;div&gt;</code> of its own
+&mdash; the enclosing element comes from whatever block contains the inline content (typically a
+<code>&lt;p class="inline-image-container"&gt;</code> when the image is the paragraph's only child, per
+<code>ContentNode.vue#L305-L313</code>). If the source image failed to load, the <code>&lt;picture&gt;</code>
+is replaced by a single fallback <code>&lt;img class="fallback"&gt;</code> pointing at the bundled
+placeholder. With a caption, the whole thing is wrapped in <code>&lt;figure id="{anchor}"&gt;</code> (from
+<code>Figure.vue</code>) with a <code>&lt;figcaption class="caption leading|trailing"&gt;</code> (from
+<code>Caption.vue</code>) placed before or after depending on whether <code>metadata.title</code> was also
+supplied. With a device frame, a <code>div.device-frame[data-device="{deviceFrame}"]</code> (from
+<code>DeviceFrame.vue</code>) wraps a <code>div.device-screen.with-device</code> containing the picture,
+plus a decorative <code>div.device</code> for the frame artwork.
+</p>
+<p>
+Relevant SCSS: <code>InlineImage.vue</code>'s own scoped style is minimal &mdash; just
+<code>:deep(img) { max-width: 100%; }</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/InlineImage.vue#L34-L38"><code>InlineImage.vue#L34-L38</code></a>). The heavier layout rules live one level up, in
+<code>src/components/DocumentationTopic/ContentNode.vue</code>'s scoped SCSS block, which imports
+<code>docc-render/styles/_core.scss</code> and declares generic <code>img { display: block; margin: auto;
+max-width: 100%; }</code> plus a <code>between-els('.inline-image-container')</code> helper selector that
+adds <code>margin-top: var(--spacing-stacked-margin-xlarge)</code> whenever an
+<code>.inline-image-container</code> paragraph is adjacent to another block-level sibling
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentNode.vue#L40-L75"><code>DocumentationTopic/ContentNode.vue#L40-L75</code></a>). <code>DeviceFrame.vue</code>'s scoped SCSS
+consumes several CSS custom properties it computes itself from a theme-settings lookup:
+<code>--screen-top</code>, <code>--screen-left</code>, <code>--screen-width</code>,
+<code>--screen-height</code>, <code>--screen-aspect</code>, <code>--frame-width</code>,
+<code>--frame-aspect</code>, <code>--device-light-url</code>, and <code>--device-dark-url</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/DeviceFrame.vue#L41-L108"><code>DeviceFrame.vue#L41-L108</code></a>), and also swaps its background art via a
+<code>@include prefers-dark</code> mixin. <code>ImageAsset.vue</code> itself has no <code>&lt;style&gt;</code>
+block of its own; its native <code>&lt;picture&gt;</code>/<code>&lt;img&gt;</code>/<code>&lt;source&gt;</code>
+structure relies entirely on the ancestor rules above plus normal browser image layout.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">PARTIAL</span></p>
+<p>
+Current JS/Vue behavior in play: <code>ImageAsset.vue</code> reads a global, three-state
+<code>preferredColorScheme</code> (light/dark/auto) out of a shared Vuex-like <code>AppStore.state</code>
+object (set elsewhere in the app by an explicit user toggle, not just the OS setting) and uses that,
+via computed properties <code>prefersAuto</code>/<code>prefersDark</code>, to pick between three mutually
+exclusive template branches &mdash; a fallback <code>&lt;img&gt;</code>, a forced-dark
+<code>&lt;img v-bind="darkVariantAttributes"&gt;</code>, or a <code>&lt;picture&gt;</code> containing a
+<code>&lt;source media="(prefers-color-scheme: dark)"&gt;</code> plus a light/default
+<code>&lt;img&gt;</code> fallback.
+</p>
+<p>
+For the "Auto" branch specifically &mdash; the default, and the one most visitors see &mdash; DocC-Render
+is already using a purely native CSS-adjacent mechanism: the browser's own
+<code>prefers-color-scheme</code> media feature inside a <code>&lt;picture&gt;</code>/<code>&lt;source
+media&gt;</code> pair does the light/dark selection with no JavaScript involved once the markup is
+emitted; the Vue layer's job there is just to decide *whether* to emit that native construct, and to
+build the <code>srcset</code> strings from the reference's <code>variants</code> array. That decision-making
+step could not be replaced by CSS alone, because it depends on an explicit, app-level three-way user
+preference (persisted across the whole site, overriding the OS setting when set to "Light" or "Dark")
+rather than only the OS media query &mdash; there is no selector for "the user picked 'Dark' in our own
+in-app toggle" the way <code>:checked</code> matches a checkbox. A radio-input-driven approach (three
+hidden <code>&lt;input type="radio" name="color-scheme"&gt;</code> elements plus <code>:checked</code> and
+general sibling selectors to swap which <code>&lt;picture&gt;</code>/<code>&lt;img&gt;</code> variant is
+<code>display</code>ed) could hold the three-way "Light/Dark/Auto" *choice* itself in pure CSS, but the
+"Auto" state still needs the <code>prefers-color-scheme</code> media query nested inside that same rule
+to resolve to an actual light/dark image, and the "load-error fallback" branch
+(<code>fallbackImageSrcSet</code>, driven by a real <code>@error</code> event fired only after a network
+request fails) has no CSS equivalent at all &mdash; CSS has no selector that reacts to an
+<code>&lt;img&gt;</code> failing to load. So the color-scheme branch of this kind's behavior is
+replaceable with native CSS (<code>prefers-color-scheme</code>, already partially in use, extendable with
+a radio/<code>:checked</code> override for the explicit in-app toggle), while the load-error fallback
+branch is not. Verdict is therefore partial.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

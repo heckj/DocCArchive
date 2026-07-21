@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: superscript — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>superscript</code></h1>
+<p class="wire-value">Wire value: <code>"superscript"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'superscript'</code> lands on
+<code>src/components/ContentNode.vue</code>'s inline wire-constant table,
+<code>InlineType</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>),
+whose <code>superscript</code> key holds <code>InlineType.superscript = 'superscript'</code>:
+</p>
+<pre><code>const InlineType = {
+  codeVoice: 'codeVoice',
+  emphasis: 'emphasis',
+  image: 'image',
+  inlineHead: 'inlineHead',
+  link: 'link',
+  newTerm: 'newTerm',
+  reference: 'reference',
+  strong: 'strong',
+  text: 'text',
+  superscript: 'superscript',
+  subscript: 'subscript',
+  strikethrough: 'strikethrough',
+};</code></pre>
+<p>
+That constant is matched inside the <code>renderNode()</code> factory function's <code>switch
+(node.type)</code> dispatch table, immediately alongside the <code>subscript</code> case it mirrors:
+</p>
+<pre><code>case InlineType.superscript:
+  return createElement('sup', renderChildren(node.inlineContent));
+case InlineType.subscript:
+  return createElement('sub', renderChildren(node.inlineContent));</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L499-L502"><code>ContentNode.vue#L499-L502</code></a>.)
+Unlike kinds such as <code>heading</code>, <code>aside</code>, or <code>strikethrough</code>,
+<code>superscript</code> is <em>not</em> delegated to a dedicated child Vue component (there is no
+<code>Superscript.vue</code> under <code>src/components/ContentNode/</code>). It is turned directly into a
+bare native <code>&lt;sup&gt;</code> element via Vue's <code>createElement</code> render function, with the
+node's <code>inlineContent</code> array recursively mapped back through the same <code>renderNode()</code>
+closure (<code>renderChildren</code>) to produce the element's children. No extra props, classes, or
+attributes are attached — the <code>type</code> discriminator is consumed only by the <code>switch</code>
+and never forwarded to the DOM.
+</p>
+<p>
+The same <code>InlineType.superscript</code> constant also appears in two of <code>ContentNode</code>'s
+tree-walking helper methods exposed to other components: the recursive <code>map()</code> method, which
+descends into <code>node.inlineContent</code> when rebuilding a superscript node
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L564-L575"><code>ContentNode.vue#L564-L575</code></a>), and the depth-first <code>forEach()</code> walker, which likewise
+recurses into a superscript node's children when visiting every node in a content tree
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L619-L628"><code>ContentNode.vue#L619-L628</code></a>). Both treat <code>superscript</code> exactly like
+<code>subscript</code>, <code>emphasis</code>, <code>strong</code>, and <code>newTerm</code> — inline
+wrapper kinds whose only payload is a nested <code>inlineContent</code> array to recurse into, as opposed to
+leaf kinds like <code>text</code> or kinds with other payload shapes like <code>reference</code>.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: swift-docc's own test suite ships a fixture built specifically to exercise this kind,
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/subscript-superscript-elements.json</code>, decoded
+by <code>SubscriptSuperscriptElementsTests.swift</code> in the same directory. DocCArchive's own test
+fixtures (<code>ExampleDocs.doccarchive</code>, <code>SampleLibrary.doccarchive</code>) contain no
+<code>superscript</code> nodes in their RenderNode data files — the only hits there are inside the bundled,
+minified DocC-render JavaScript assets, not authored content — so this excerpt (the
+<code>primaryContentSections[0].content[1]</code> paragraph) is used instead:
+</p>
+<pre><code>{
+  "type" : "paragraph",
+  "inlineContent" : [
+    { "type" : "text", "text" : "Use " },
+    {
+      "type" : "subscript",
+      "inlineContent": [
+        { "type" : "text", "text" : "sub" }
+      ]
+    },
+    { "type" : "text", "text" : " and " },
+    {
+      "type" : "superscript",
+      "inlineContent": [
+        { "type" : "text", "text" : "sup" }
+      ]
+    },
+    { "type" : "text", "text" : " to render attributed text." }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.12); font-family:-apple-system,BlinkMacSystemFont,sans-serif; font-size:15px; line-height:1.5;">
+    <p style="margin:0;">Use <sub>sub</sub> and <sup>sup</sup> to render attributed text.</p>
+  </div>
+  <p><em>mockup: the <code>superscript</code> node's <code>inlineContent</code> (here a single
+  <code>text</code> leaf, <code>"sup"</code>) is rendered inside a bare <code>&lt;sup&gt;</code> element,
+  exactly as the sibling <code>subscript</code> node becomes a bare <code>&lt;sub&gt;</code> element. Both
+  inherit the surrounding paragraph's font and color; only <code>&lt;sup&gt;</code> gets the site's
+  reduced-size, raised-baseline typography rule (see Section 4).</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Superscript</code> (lines 1390&ndash;1409), cross-checked against
+<code>Components.Schemas.Superscript</code> in <code>Sources/DocCArchive/generated/Types.swift</code>
+(lines 1900&ndash;1925). <code>Superscript</code> is one arm of the <code>RenderInlineContent</code>
+discriminated union (the <code>oneOf</code> list starting at spec line 1190, with the <code>$ref</code> to
+<code>Superscript</code> at line 1217), the same union that backs every inline-content array on the wire
+(paragraph text runs, list-item text, table-cell text, term-list terms/definitions, and so on).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"superscript"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case superscript =
+"superscript" }</code>, decoded/encoded under the Swift property name <code>_type</code> via an explicit
+<code>CodingKeys</code> mapping (<code>case _type = "type"</code>) — the leading underscore avoids colliding
+with Swift's own <code>type</code> keyword-adjacent naming conventions in generated code.</td>
+</tr>
+<tr>
+<td><code>inlineContent</code></td>
+<td>array of <code>RenderInlineContent</code></td>
+<td>yes</td>
+<td>&mdash; (no minItems/maxItems constraint)</td>
+<td>Generated as <code>[Components.Schemas.RenderInlineContent]</code>. This is the recursive payload: a
+superscript node wraps zero or more further inline-content nodes (typically plain <code>text</code>, but
+schema-legally any other <code>RenderInlineContent</code> arm, including nested formatting), matching the
+"wrapper kind with a child inline-content array" shape shared with <code>emphasis</code>,
+<code>strong</code>, <code>subscript</code>, <code>strikethrough</code>, <code>newTerm</code>, and
+<code>inlineHead</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the
+enclosing enum case is
+</p>
+<pre><code>/// A superscript piece of content.
+case superscript(inlineContent: [RenderInlineContent])</code></pre>
+<p>
+(<code>Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift</code>, lines 53&ndash;54), part
+of the <code>RenderInlineContent</code> enum whose Codable conformance encodes/decodes the discriminator
+through a private <code>InlineType</code> enum and dispatches on <code>.superscript</code> at lines
+129&ndash;130 (decode) and 162&ndash;163 (encode). Unlike block-tier kinds such as <code>Heading</code>,
+there is no separately-declared payload struct for <code>superscript</code> in
+<code>Sources/SwiftDocC/Model/Rendering/Content/</code> — the associated value is an inline tuple-style
+enum payload (<code>inlineContent: [RenderInlineContent]</code>) directly on the case, not a nested type, so
+no distinct <code>swiftStructSite</code> exists to cite beyond the case declaration itself. A companion
+extension, <code>RenderInlineContent+TextIndexing.swift</code> (lines 50&ndash;51), defines
+<code>rawIndexableTextContent</code> for <code>.superscript</code> by simply recursing into the wrapped
+<code>inlineContent</code> — superscripted text is indexed as plain text, with no marker distinguishing it
+from its surrounding prose.
+</p>
+<p>
+Authoring-side, swift-docc's own <code>RenderInlineContent</code> catalog article
+(<code>Sources/SwiftDocC/SwiftDocC.docc/SwiftDocC/RenderingModel/RenderInlineContent.md</code>) lists
+<code>superscript(inlineContent:)</code> as a topic alongside <code>subscript(inlineContent:)</code> but adds
+no prose beyond the doc comment already quoted above. Markdown has no native superscript syntax (unlike, say,
+GFM strikethrough's <code>~~text~~</code>, which swift-docc does translate into the <code>strikethrough</code>
+kind), and a search of swift-docc's Markup/Semantics conversion code
+(<code>Sources/SwiftDocC/Model/RenderNodeTranslator.swift</code> and the Markup/Semantics directories) turns
+up no reference to <code>superscript</code> at all outside the model and indexing files already cited — so,
+honestly, this pinned commit's Markdown-to-RenderNode translation path does not appear to have an active
+producer for this case in the sources searched. The most plausible authoring mechanism, given cmark-gfm's raw
+inline-HTML passthrough (used elsewhere for e.g. inline <code>&lt;br&gt;</code>), would be writing literal
+<code>&lt;sup&gt;text&lt;/sup&gt;</code> in a doc comment, but this could not be confirmed by reading a
+matching translator branch, so it is reported here as informed speculation rather than a verified fact.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>) are still stub
+placeholders that return a hardcoded HTML comment and an empty string respectively for an entire
+<code>RenderNode</code>, with no per-inline-kind switch reached yet — so a <code>superscript</code> node
+parsed via <code>Components.Schemas.Superscript</code> is available on the decoded model today (nested
+inside any <code>RenderInlineContent</code> array DocCArchive parses), but nothing in this repository
+currently converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>superscript</code> node, in context: a bare <code>&lt;sup&gt;</code> element
+wrapping whatever elements/text its <code>inlineContent</code> children render to. No wrapper
+<code>&lt;div&gt;</code>, no class, no id, no data attribute — this is the plainest possible mapping among
+the inline kinds on this reference site.
+</p>
+<p>
+SCSS: the only rule targeting the element is a site-wide, un-namespaced <code>sup</code> selector in
+<code>src/styles/base/_typography.scss</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_typography.scss#L170-L191"><code>_typography.scss#L170-L191</code></a>), which applies to <em>every</em> <code>&lt;sup&gt;</code> in the
+document regardless of whether it came from a <code>superscript</code> RenderInlineContent node or static
+template markup elsewhere in the app:
+</p>
+<pre><code>sup {
+  font-size: .6em;
+  vertical-align: top;
+  position: relative;
+  bottom: -.2em;
+
+  h1 &amp;,
+  h2 &amp;,
+  h3 &amp; {
+    font-size: .4em;
+  }
+
+  a {
+    vertical-align: inherit;
+    color: inherit;
+
+    &amp;:hover {
+      color: var(--figure-blue);
+      text-decoration: none;
+    }
+  }
+}</code></pre>
+<p>
+The sibling rule for <code>sub</code>, two lines below, is far simpler
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_typography.scss#L193-L195"><code>_typography.scss#L193-L195</code></a>): just <code>sub { line-height: 1; }</code>, relying on the
+browser's UA-stylesheet default of <code>vertical-align: sub</code> rather than overriding position/offset
+the way the <code>sup</code> rule does. Nesting rules inside the <code>sup</code> block further shrink the
+font-size to <code>.4em</code> when the superscript appears inside an <code>h1</code>/<code>h2</code>/<code>h3</code>,
+so a superscripted footnote marker in a heading doesn't dominate the heading's visual weight; a nested rule
+for <code>a</code> descendants normalizes any link placed inside a superscript to inherit the surrounding
+color and vertical alignment rather than looking like a differently-sized, differently-colored inline link.
+</p>
+<p>
+CSS custom properties consumed: only <code>--figure-blue</code>, and only in the edge case of a link nested
+inside a superscript being hovered. No custom properties are consumed by the base <code>sup</code> rule
+itself — its sizing/offset values (<code>.6em</code>, <code>.4em</code>, <code>-.2em</code>) are hardcoded
+Sass-file literals, not theme-able runtime variables.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: there is none to replace. <code>ContentNode.vue</code>'s <code>renderNode()</code>
+dispatch for <code>InlineType.superscript</code> is a single, stateless, one-line mapping —
+<code>createElement('sup', renderChildren(node.inlineContent))</code> — with no component-local
+<code>data()</code>, no computed property, no event listener, and no conditional branching beyond the
+<code>switch</code> case selection itself. The one CSS rule involved (<code>sup { font-size: .6em;
+vertical-align: top; position: relative; bottom: -.2em; ... }</code>) is already plain, static CSS with no
+JavaScript reading or writing any of those properties at runtime; it is not a JS-driven visual state being
+held in Vue data that a native HTML/CSS mechanism like <code>&lt;details&gt;</code>, <code>:target</code>,
+or the Popover API could take over, because there is no interactive state — hover/focus/open/closed — being
+tracked at all for a superscript node itself (the only <code>:hover</code> rule in scope belongs to a nested
+<code>&lt;a&gt;</code> descendant, and that is already native CSS <code>:hover</code>, not JS). This kind is
+purely a static typographic transform of its children, so the "modern CSS alternative" question has no
+target to aim at.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

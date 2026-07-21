@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept: localization fallback ($t()) — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="../archive-structure.html">Archive Structure</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">concept</p>
+<h1>Localization fallback (<code>$t()</code> / locale keys)</h1>
+<p>Most content on a DocC-rendered page is author-written text embedded directly on the wire and
+rendered verbatim &mdash; there's nothing to translate. But a fixed set of chrome strings that DocC
+itself generates rather than the author &mdash; an aside's default label ("Note", "Warning"), a
+button's accessible name, a "Language" picker's options &mdash; are never present on the wire at all;
+they're looked up at render time from a locale file by a fixed key, with English as the runtime
+fallback. Fullest single-kind treatment prior to this page:
+<a href="../kinds/block-aside.html"><code>block-aside.html</code></a>, which documents the
+<code>aside-kind.&lt;kind&gt;</code> key family in depth.</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Worked example</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. Where else this shows up</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+The mechanism is Vue-i18n, wired up once at app startup in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/setup-utils/SwiftDocCRenderi18n.js"><code>src/setup-utils/SwiftDocCRenderi18n.js</code></a>,
+which constructs one shared <code>VueI18n</code> instance:
+</p>
+<pre><code>const i18n = new VueI18n({
+  locale: defaultLocale,
+  fallbackLocale: defaultLocale,
+  messages: { [defaultLocale]: enUS },
+  silentFallbackWarn: true,
+});</code></pre>
+<p>
+(Paraphrased from <code>SwiftDocCRenderi18n.js</code>.) <code>defaultLocale</code> is <code>"en-US"</code>
+and doubles as the <code>fallbackLocale</code> &mdash; meaning that no matter which locale is active, a
+missing key in that locale's message file always resolves to the English string rather than rendering
+a raw key or empty text. Additional locale bundles under
+<code>src/lang/locales/{ar,ja-JP,ko-KR,zh-CN}.json</code> are loaded on demand via
+<code>updateLocale()</code> (<code>src/utils/i18n-utils.js</code>) when the app detects a different
+preferred language, merging that locale's messages into the same <code>VueI18n</code> instance rather
+than replacing it wholesale &mdash; which is why a translation gap in, say, the Japanese bundle degrades
+to English for just that one string rather than breaking the rest of the page.
+</p>
+<p>
+Every component that needs one of these chrome strings calls the injected <code>$t(key)</code> method
+directly in its template or a computed property &mdash; there's no central registry of which components
+use which keys, and no build-time check that a referenced key exists in every locale file (a typo in a
+key name resolves silently to the fallback locale's value for that key, or to Vue-i18n's own
+missing-key handling if it's absent from every locale, since <code>silentFallbackWarn</code> suppresses
+console warnings for the common case of a locale simply not having translated a string yet). The
+<code>aside-kind.&lt;kind&gt;</code> lookup on
+<a href="../kinds/block-aside.html">block-aside.html</a> is the clearest example of the pattern:
+</p>
+<pre><code>label: ({ kind }) => `aside-kind.${kind}`,
+// in the template:
+// {{ name || $t(label) }}</code></pre>
+<p>
+&mdash; the wire payload's own <code>name</code> field always wins when present; <code>$t()</code> is
+consulted only as a fallback when the author didn't supply an explicit label, which is the common case
+since most asides are written as plain <code>&gt; Note:</code>/<code>&gt; Warning:</code> Markdown with
+no custom name.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Worked example: two different key families</h2>
+<p>
+Two real, unrelated components illustrate the same fallback shape. The first is the aside label
+covered in full on <a href="../kinds/block-aside.html">block-aside.html</a>:
+</p>
+<pre><code>// English locale (src/lang/locales/en-US.json), excerpt:
+{
+  "aside-kind": {
+    "note": "Note", "tip": "Tip", "experiment": "Experiment",
+    "important": "Important", "warning": "Warning", "deprecated": "Deprecated", "beta": "Beta"
+  }
+}</code></pre>
+<p>
+The second is <code>ReplayableVideoAsset.vue</code>'s custom video controls (see
+<a href="../kinds/reference-video.html">reference-video.html</a> &sect;4), which read several
+<code>video.*</code> keys purely for accessibility &mdash; none of them ever appear as visible text,
+only as <code>aria-label</code>/<code>aria-labelledby</code> targets for screen readers:
+</p>
+<pre><code>{
+  "video": {
+    "play": "Play", "pause": "Pause", "replay": "Replay",
+    "title": "Video", "custom-controls": "Video controls", "description": "Video description"
+  }
+}</code></pre>
+<div class="mockup">
+<p><em>Both families follow the identical shape: a nested JSON object under one namespace key
+(<code>aside-kind</code>, <code>video</code>), each leaf a plain English string, looked up via
+<code>$t("aside-kind.note")</code> / <code>$t("video.play")</code> respectively. Swap the active
+locale to <code>ja-JP</code> and, if that bundle has translated <code>aside-kind.note</code> but not
+yet <code>video.play</code>, the aside label renders in Japanese while the video button's accessible
+name silently falls back to the English <code>fallbackLocale</code> string &mdash; two independently
+partial translations, resolved key-by-key rather than file-by-file.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+This mechanism has no wire-schema representation at all &mdash; it's purely a swift-docc-render runtime
+concern, not a <code>RenderNode</code> field, so there is no corresponding entry in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> or generated Swift type. What's
+"documented" here instead is the shape of the locale JSON files themselves
+(<code>src/lang/locales/{en-US,ar,ja-JP,ko-KR,zh-CN}.json</code>) and the two functions that manage
+them: <code>createI18n()</code>/the module-level <code>i18n</code> singleton in
+<code>SwiftDocCRenderi18n.js</code> (constructs the <code>VueI18n</code> instance with
+<code>en-US</code> as both default and fallback locale), and <code>updateLocale(locale)</code> in
+<code>i18n-utils.js</code> (fetches and merges an additional locale bundle into the running instance
+when the app's detected preferred language changes, without discarding what's already loaded).
+</p>
+<p>
+Because this is purely a rendering-time concern with no wire representation, it's also entirely
+invisible to any archive-level tooling: neither <code>indexing-records.json</code>'s full-text index
+nor <code>linkable-entities.json</code>'s summaries (see
+<a href="../archive-structure.html">Archive Structure</a>) capture these strings in any locale other
+than whichever one was active when <code>docc convert</code> ran &mdash; the localized UI chrome is
+generated fresh by the browser at view time, not baked into the archive per-locale.
+</p>
+</section>
+<section id="css-mapping"><h2>4. Where else this shows up</h2>
+<p>
+Beyond the aside-label and video-controls families above, the same <code>$t(key)</code> pattern
+covers a wide range of UI chrome scattered across many kinds: accessibility strings on
+<a href="../kinds/section-attributes.html">attributes</a>,
+<a href="../kinds/section-parameters.html">parameters</a>,
+<a href="../kinds/section-possiblevalues.html">possible-values</a>, and
+<a href="../kinds/section-restbody.html">REST body</a> section headers; call-to-action button labels
+on <a href="../kinds/section-calltoaction.html">call-to-action</a>; relationship-graph labels on
+<a href="../kinds/section-relationships.html">relationships</a>; download-button text on
+<a href="../kinds/reference-download.html">download</a>; and screen-reader-only strikethrough
+announcement text on <a href="../kinds/inline-strikethrough.html">strikethrough</a>. In every case the
+pattern is the same: the wire JSON never carries the localized string itself, only the data needed to
+pick the right lookup key (a <code>kind</code>/<code>role</code>/<code>type</code> discriminator, or
+nothing at all for a context-independent string like "Play").
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Locale-string lookup with a fallback chain is fundamentally a data-selection problem (which of N
+translated strings should render for this key, given the active locale and what that locale's bundle
+actually contains) &mdash; there is no CSS mechanism that selects between arbitrary text content based
+on an app-level locale preference. The closest native primitive, the <code>:lang()</code> pseudo-class,
+can style text differently per language but cannot supply the different text itself the way
+<code>$t()</code> does; some engines support <code>content: attr(data-i18n-note)</code>-style
+substitution, but that still requires every localized string to be pre-rendered into a per-element data
+attribute at build/render time, which is exactly the JS-side lookup this mechanism already performs, not
+a CSS-only replacement for it.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

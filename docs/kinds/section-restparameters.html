@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: restParameters — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>restParameters</code></h1>
+<p class="wire-value">Wire value: <code>"restParameters"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>restParameters</code> is one of the "Rest symbol sections" cases on
+<code>RenderSectionKind</code> (<code>Sources/SwiftDocC/Model/Rendering/RenderSection.swift</code>,
+line 23 at the pinned commit). It is the render section swift-docc emits for the parameter
+tables on a REST-API reference page &mdash; path parameters, query parameters, and HTTP header
+parameters are each rendered as a separate <code>restParameters</code> section (distinguished only
+by their <code>title</code> and <code>source</code> field, not by a different <code>kind</code>
+string; see the data sheet). It appears inside a symbol/documentation RenderNode's
+<code>primaryContentSections</code> array alongside sibling kinds like <code>declarations</code> and
+<code>parameters</code>.
+</p>
+<p>
+On the swift-docc-render side, the dispatch table for primary-content sections lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L90"><code>src/components/DocumentationTopic/PrimaryContent.vue</code>, <code>componentFor(section)</code>
+(lines 74&ndash;90)</a>, keyed on the string constants declared in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L11-L27"><code>src/constants/PrimaryContentSection.js</code> (lines 11&ndash;27)</a>. Both
+<code>SectionKind.restParameters</code> <em>and</em> <code>SectionKind.restHeaders</code> /
+<code>SectionKind.restCookies</code> map to the same Vue component:
+</p>
+<pre><code>[SectionKind.restBody]: RestBody,
+[SectionKind.restParameters]: RestParameters,
+[SectionKind.restHeaders]: RestParameters,
+[SectionKind.restCookies]: RestParameters,
+[SectionKind.restEndpoint]: RestEndpoint,</code></pre>
+<p>
+(<code>restHeaders</code> and <code>restCookies</code> are docc-render-side constants for
+forward/defensive compatibility &mdash; grepping swift-docc's Swift sources turns up no code path
+that ever emits a <code>kind</code> string other than the literal <code>"restParameters"</code>;
+header- and cookie-sourced parameter tables are still wire-encoded as <code>kind: "restParameters"</code>
+with a different <code>source</code> value. See the data sheet for the exact enum mismatch this
+implies.) The matching prop-mapping table, a few lines below in the same file
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L106-L127"><code>propsFor(section)</code>, lines 106&ndash;127</a>), renames the wire field <code>items</code> to
+the component prop <code>parameters</code>:
+</p>
+<pre><code>[SectionKind.restParameters]: { parameters: items, title },</code></pre>
+<p>
+The component itself,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/RestParameters.vue#L1-L127"><code>src/components/DocumentationTopic/PrimaryContent/RestParameters.vue</code></a>, renders a
+<code>&lt;LinkableHeading&gt;</code> for the section <code>title</code> followed by a
+<code>&lt;ParametersTable&gt;</code>, delegating the per-row layout via named slots
+(<code>#symbol</code> for the name/type column, <code>#description</code> for the
+required/read-only/content/attribute column):
+</p>
+<pre><code>&lt;template&gt;
+  &lt;section&gt;
+    &lt;LinkableHeading :anchor="anchor"&gt;{{ title }}&lt;/LinkableHeading&gt;
+    &lt;ParametersTable :parameters="parameters" :changes="parameterChanges"&gt;
+      &lt;template #symbol="{ name, type, content, changes, deprecated }"&gt;
+        ...
+      &lt;template #description="{ name, type, content, required, attributes, changes, deprecated, readOnly }"&gt;
+        ...
+    &lt;/ParametersTable&gt;
+  &lt;/section&gt;
+&lt;/template&gt;</code></pre>
+<p>
+<code>&lt;ParametersTable&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParametersTable.vue#L1-L179"><code>ParametersTable.vue</code></a>, shared with the plain <code>parameters</code> kind's own
+consumer, <code>Parameters.vue</code>) is the actual grid: it iterates <code>parameters</code> and
+lays out each one as a <code>GridRow</code> with two <code>GridColumn</code>s (a right-aligned
+name/type column and a left-aligned description column), filling the two named slots from
+<code>RestParameters.vue</code> above. Per-parameter constraint metadata (<code>minimum</code>,
+<code>maximum</code>, <code>allowedValues</code>, etc.) is rendered by a further child,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParameterAttributes.vue#L1-L162"><code>ParameterAttributes.vue</code></a>, whose own doc comment (line 122&ndash;124) explicitly notes
+it is "usually [used] in <code>PropertyTable</code> or <code>RestParameters</code>."
+</p>
+<p>
+Finally, the on-this-page sidebar registers each <code>restParameters</code> section (along with
+its <code>restBody</code>/<code>restCookies</code>/<code>restEndpoint</code>/<code>restHeaders</code>/
+<code>restResponses</code>/<code>properties</code> siblings) as a level-2 entry keyed by its
+<code>title</code>, in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/onThisPageRegistrator.js#L77-L87"><code>src/mixins/onThisPageRegistrator.js</code> (lines 77&ndash;87)</a>:
+</p>
+<pre><code>case SectionKind.properties:
+case SectionKind.restBody:
+case SectionKind.restCookies:
+case SectionKind.restEndpoint:
+case SectionKind.restHeaders:
+case SectionKind.restParameters:
+case SectionKind.restResponses:
+  this.store.addOnThisPageSection({
+    title: section.title, anchor: anchorize(section.title), level: 2,
+  });
+  break;</code></pre>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: swift-docc's own test suite includes a full REST symbol RenderNode fixture,
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/rest-symbol.json</code>, exercised by
+<code>RESTSymbolsTests.swift</code>. It contains three separate <code>restParameters</code>
+sections &mdash; one each for <code>source: "path"</code>, <code>source: "query"</code>, and
+<code>source: "header"</code>. The path-parameter one (abridged: full fixture also includes a
+second query parameter and additional <code>typeDetails</code>) is:
+</p>
+<pre><code>{
+  "kind": "restParameters",
+  "title": "Path Parameters",
+  "source": "path",
+  "items": [
+    {
+      "name": "id",
+      "type": [
+        { "kind": "text", "text": "string" }
+      ],
+      "typeDetails": [
+        {},
+        { "baseType": "string", "arrayMode": true }
+      ],
+      "introducedVersion": "1.2",
+      "required": true,
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "The unique identifier for the artist." }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<p>
+(Source: <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/rest-symbol.json</code> in the
+pinned swift-docc checkout, read directly and re-printed verbatim above.)
+</p>
+<div class="mockup">
+  <div style="margin:0 0 10px;">Path Parameters</div>
+  <div style="display:flex; gap:16px; border-top:1px solid #444; padding-top:10px;">
+    <div style="flex:0 0 140px; text-align:right;">
+      <code style="font-weight:bold;">id</code><br>
+      <span style="opacity:0.8;">string</span>
+    </div>
+    <div style="flex:1;">
+      <em>(required)</em> The unique identifier for the artist.
+    </div>
+  </div>
+  <p><em>mockup: one <code>GridRow</code> per item &mdash; a right-aligned name/type column and a
+  left-aligned description column carrying the "(required)" flag, prose content, and any
+  attribute constraints.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/RESTParametersRenderSection</code>, cross-checked against the generated
+<code>Components.Schemas.RESTParametersRenderSection</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6394&ndash;6431+), and against the
+per-item schema <code>#/components/schemas/TypedProperty</code> (both in the same spec file).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"restParameters"</code> (single-case enum)</td>
+<td>Generated as <code>RESTParametersRenderSection.KindPayload</code>, one case,
+<code>.restParameters</code>. The discriminator used to select this schema out of
+<code>RenderSection</code>'s union.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Section heading, e.g. "Path Parameters", "Query Parameters", "HTTP Headers". Also used to
+build the on-this-page anchor (<code>anchorize(title)</code>) and, in swift-docc's own
+<code>HTTPParametersSectionTranslator.swift</code>, is generated as
+<code>"\(parameterSource.rawValue.capitalized) Parameters"</code>.</td>
+</tr>
+<tr>
+<td><code>items</code></td>
+<td>array of <code>TypedProperty</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Decoded onto the generated struct's <code>items</code> property; wired to the Vue
+<code>parameters</code> prop via <code>propsFor</code>'s <code>{ parameters: items, title }</code>
+mapping. Corresponds to the hand-written Swift model's <code>RESTParametersRenderSection.parameters:
+[RenderProperty]</code> (<code>CodingKeys.parameters = "items"</code>).</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"query" | "path" | "header"</code> in the vendored JSON schema (generated as
+<code>RESTParametersRenderSection.SourcePayload</code>, 3 cases)</td>
+<td><strong>Verified schema/model drift:</strong> swift-docc's hand-written Swift enum
+<code>RESTParameterSource</code> (<code>Sources/SwiftDocC/Model/Rendering/Symbol/RESTParametersRenderSection.swift</code>,
+lines 17&ndash;26) has a <em>fourth</em> case, <code>.cookie</code> ("An HTTP cookie sent with the
+request"), that is absent from <code>RenderNode.spec.json</code>'s <code>source</code> enum at
+the very same pinned commit (checked directly against
+<code>Sources/SwiftDocC/SwiftDocC.docc/Resources/RenderNode.spec.json</code>). This means the
+vendored JSON schema (and therefore DocCArchive's generated <code>SourcePayload</code> enum) would
+fail to decode a real archive containing a cookie-sourced parameters section unless
+<code>swift-openapi-generator</code>'s decode path tolerates unknown enum raw values &mdash; not
+verified here. This lines up with docc-render's own defensive <code>SectionKind.restCookies</code>
+constant (see section 1), which has no confirmed producer on the swift-docc side either.</td>
+</tr>
+<tr>
+<td colspan="5"><em><code>TypedProperty</code> (the shape of each entry in <code>items</code>):</em></td>
+</tr>
+<tr>
+<td><code>items[].name</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Parameter name, e.g. <code>id</code>, <code>l</code>, <code>X-TotalCount</code>. Rendered
+bold via <code>&lt;WordBreak tag="code"&gt;</code> in the <code>#symbol</code> slot.</td>
+</tr>
+<tr>
+<td><code>items[].type</code></td>
+<td>array of <code>DeclarationToken</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Type tokens (e.g. <code>string</code>, <code>[string]</code>); rendered by
+<code>PossiblyChangedType</code> in either the symbol or description slot, depending on whether
+<code>content</code> is empty (<code>shouldShiftType</code>).</td>
+</tr>
+<tr>
+<td><code>items[].typeDetails</code></td>
+<td>array of <code>TypeDetails</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Extra structured type info (e.g. <code>baseType</code>, <code>arrayMode</code>); not directly
+rendered by <code>RestParameters.vue</code>'s own template excerpts inspected here.</td>
+</tr>
+<tr>
+<td><code>items[].content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Prose description, rendered via a nested <code>&lt;ContentNode&gt;</code> in the
+<code>#description</code> slot.</td>
+</tr>
+<tr>
+<td><code>items[].attributes</code></td>
+<td>array of <code>Attribute</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Constraint metadata (<code>minimum</code>, <code>maximum</code>, <code>allowedValues</code>,
+etc.), rendered by <code>&lt;ParameterAttributes&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>items[].mimeType</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Not consumed by the symbol/description slots inspected in <code>RestParameters.vue</code>;
+more relevant to <code>restBody</code>'s multipart parts, which reuse the same
+<code>TypedProperty</code>/<code>RenderProperty</code> shape.</td>
+</tr>
+<tr>
+<td><code>items[].readOnly</code></td>
+<td>boolean</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Shown as a parenthetical "(read-only)" tag in the description slot, via
+<code>PossiblyChangedTextAttribute</code>.</td>
+</tr>
+<tr>
+<td><code>items[].required</code></td>
+<td>boolean</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Shown as a parenthetical "(required)" tag in the description slot.</td>
+</tr>
+<tr>
+<td><code>items[].deprecated</code></td>
+<td>boolean</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Strikes through the parameter name (<code>.deprecated</code> CSS class) and adds a
+"deprecated" <code>&lt;Badge&gt;</code> in the description slot.</td>
+</tr>
+<tr>
+<td><code>items[].introducedVersion</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>e.g. <code>"1.2"</code> in the fixture; not read by the slot templates inspected in
+<code>RestParameters.vue</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li><code>RestParameters.vue</code> root: a bare <code>&lt;section&gt;</code> (no class of its
+own) containing a <code>LinkableHeading</code> and the parameters table.</li>
+<li><code>ParametersTable.vue</code> root: <code>&lt;div class="parameters-table"&gt;</code>; each
+parameter is a <code>GridRow</code> rendered with class <code>"param"</code> (plus a
+<code>changed changed-{added|removed|...}</code> class when API-diffing is active), split into two
+<code>GridColumn</code>s carrying <code>class="param-symbol"</code> (name/type) and
+<code>class="param-content"</code> (description).</li>
+<li>Within the symbol slot, the name wrapper is <code>&lt;div class="param-name"&gt;</code> (with
+an additional <code>.deprecated</code> class when applicable); within the description slot, a
+deprecated badge gets <code>class="param-deprecated"</code>.</li>
+<li><code>ParameterAttributes.vue</code> root: <code>&lt;div class="parameter-attributes"&gt;</code>,
+containing one <code>ParameterMetaAttribute</code> per populated constraint kind (its own
+sub-component, not read in full here).</li>
+<li>SCSS: both <code>RestParameters.vue</code> and <code>ParametersTable.vue</code> ship scoped
+<code>&lt;style lang="scss"&gt;</code> blocks importing <code>docc-render/styles/_core.scss</code>.
+<code>ParametersTable.vue</code>'s block sets per-parameter spacing (<code>margin-top:
+var(--spacing-param)</code> between consecutive <code>.param</code> rows), a
+<code>change-highlight-target()</code> mixin invocation for diff highlighting, and responsive
+<code>@include breakpoint(small)</code> rules that switch <code>.param-symbol</code> from
+right-aligned to left-aligned and flatten the two-column layout on narrow viewports.
+<code>RestParameters.vue</code>'s own block only overrides font weight/strikethrough for
+<code>.param-name</code>/<code>.deprecated</code> and forces the first paragraph of
+<code>.content</code> to render <code>display: inline</code> so the "(required)" prefix text
+reads naturally ahead of the prose.</li>
+<li>CSS custom properties consumed: <code>--spacing-param</code> (inter-row spacing) and
+<code>--colors-grid</code> / <code>--color-grid</code> (border color, consumed one level up by
+the enclosing <code>.primary-content</code> block in <code>PrimaryContent.vue</code>, not by
+<code>RestParameters.vue</code> itself).</li>
+</ul>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML
+transformer returns a hardcoded comment and the Markdown transformer returns an empty string), so
+neither currently walks <code>primaryContentSections</code> at all &mdash; a <code>restParameters</code>
+section would flow through <code>parseRenderNode</code> into the generated
+<code>RESTParametersRenderSection</code> Swift type, but no transform yet turns it into HTML or
+Markdown output.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: <code>RestParameters.vue</code> and its children
+(<code>ParametersTable.vue</code>, <code>ParameterAttributes.vue</code>) render a static grid from
+props on mount &mdash; there is no client-side toggle, expand/collapse, tab switch, or any other
+piece of view state being held in Vue component <code>data()</code> for this kind. The only
+dynamic behaviors nearby are (1) responsive column reflow at the <code>breakpoint(small)</code>
+SCSS mixin, which is already pure CSS (a media query), and (2) the optional API-diff
+"changed/added/removed" highlighting classes, which are computed once from props
+(<code>changedClasses(key)</code>) rather than toggled by user interaction. Neither is a piece of
+interactive state a native HTML mechanism (<code>&lt;details&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, <code>&lt;dialog&gt;</code>, etc.) would need to replace, because there is no
+show/hide, open/closed, or selected/unselected state on this kind to begin with. Conclusion: this
+kind is a static data table with no interactive behavior to migrate.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: overview — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">node</p>
+<h1><code>overview</code></h1>
+<p class="wire-value">Wire value: <code>"overview"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>overview</code> is one of three <code>kind</code> values (<code>overview</code>,
+<code>project</code>, <code>article</code>) accepted by the <code>TutorialsPageRenderNode</code>
+schema &mdash; the top-level RenderNode kind emitted for a Tutorial <em>table of contents</em> page
+(what an author writes as a <code>@Tutorials</code> directive; see section 3). Unlike the
+block/inline dispatch table in <code>ContentNode.vue</code>, or the section-level dispatch tables
+used inside a page (e.g. <code>Tutorial.vue</code>'s <code>SectionComponents</code> map), there is
+no JS lookup table anywhere in swift-docc-render keyed on the literal string
+<code>node.kind === "overview"</code>. A real search of
+<code>src/components/</code> and <code>src/views/</code> for the literal <code>"overview"</code>
+token turns up plenty of hits, but they are all either the CSS custom-property namespace
+(<code>--color-tutorials-overview-*</code>) or the component/file name <code>TutorialsOverview</code>
+&mdash; never a <code>kind</code> string comparison.
+</p>
+<p>
+Instead, dispatch happens one layer up, at the Vue Router level, based on URL shape. In
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/routes.js#L32-L39"><code>routes.js</code></a>,
+the route <code>/tutorials/:id</code> (a tutorials-technology root URL, with no further path segments)
+is wired directly to the <code>TutorialsOverview</code> view component, while
+<code>/tutorials/:id/*</code> (any tutorial or tutorial-article page nested under it) goes to
+<code>Topic.vue</code> instead:
+</p>
+<pre><code>export const pagesRoutes = [
+  {
+    path: '/tutorials/:id',
+    name: 'tutorials-overview',
+    component: () => import(/* ... */ 'theme/views/TutorialsOverview.vue'),
+  },
+  {
+    path: '/tutorials/:id/*',
+    name: 'topic',
+    component: () => import(/* ... */ 'theme/views/Topic.vue'),
+  },
+  // ...
+];</code></pre>
+<p>
+The route-level view,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/TutorialsOverview.vue#L1-L88"><code>views/TutorialsOverview.vue</code></a>,
+fetches the RenderNode JSON for the current route and passes exactly three of its top-level fields
+(<code>metadata</code>, <code>references</code>, <code>sections</code>) straight through as props
+to the actual presentational component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview.vue#L1-L162"><code>components/TutorialsOverview.vue</code></a>
+(imported under the local name <code>Overview</code>):
+</p>
+<pre><code>&lt;template&gt;
+  &lt;Overview v-if="topicData" v-bind="overviewProps" :key="topicKey" /&gt;
+&lt;/template&gt;
+...
+overviewProps: ({ topicData: { metadata, references, sections } }) =&gt; ({
+  metadata, references, sections,
+}),</code></pre>
+<p>
+<code>components/TutorialsOverview.vue</code> partitions the top-level <code>sections</code> array
+by <em>section</em> kind (not the page's own <code>kind: "overview"</code>, which it never inspects)
+into a single hero section and everything else:
+</p>
+<pre><code>const SectionKind = { hero: 'hero', resources: 'resources', volume: 'volume' };
+...
+partitionedSections: ({ sections }) =&gt; sections.reduce(([heroes, others], section) =&gt; (
+  section.kind === SectionKind.hero
+    ? [heroes.concat(section), others]
+    : [heroes, others.concat(section)]
+), [[], []]),
+heroSection: ({ heroSections }) =&gt; heroSections[0],</code></pre>
+<p>
+Its template renders a dark-themed <code>Nav</code>, then, inside <code>main#app-main</code>, a
+<code>Hero</code> (see the dedicated <code>hero</code> section-kind page for that subtree) fed the
+first hero section plus <code>metadata.estimatedTime</code>, followed by a
+<code>LearningPath</code> that receives all of the non-hero sections:
+</p>
+<pre><code>&lt;div class="tutorials-overview"&gt;
+  &lt;Nav v-if="!isTargetIDE" :sections="otherSections" class="theme-dark"&gt;{{ title }}&lt;/Nav&gt;
+  &lt;main id="app-main" tabindex="0" class="main"&gt;
+    &lt;div class="radial-gradient"&gt;
+      &lt;Hero v-if="heroSection" :action="heroSection.action" :content="heroSection.content"
+            :estimatedTime="metadata.estimatedTime" :image="heroSection.image"
+            :title="heroSection.title" /&gt;
+    &lt;/div&gt;
+    &lt;LearningPath v-if="otherSections.length &gt; 0" :sections="otherSections" /&gt;
+  &lt;/main&gt;
+&lt;/div&gt;</code></pre>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/LearningPath.vue#L38-L104"><code>TutorialsOverview/LearningPath.vue</code></a>
+runs a second kind-keyed dispatch, this time a real lookup table, splitting its own
+<code>sections</code> prop into <code>volume</code>-kind items (rendered via a dedicated
+<code>Volume</code> component in a loop) and everything else (<code>resources</code>, dispatched
+through a <code>componentFor</code>/<code>propsFor</code> pair):
+</p>
+<pre><code>const SectionKind = { resources: 'resources', volume: 'volume' };
+...
+componentFor: ({ kind }) =&gt; ({
+  [SectionKind.resources]: Resources,
+  [SectionKind.volume]: Volume,
+}[kind]),</code></pre>
+<p>
+<code>Volume</code> is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/Volume.vue#L1-L26"><code>TutorialsOverview/Volume.vue</code></a>,
+which renders an optional <code>VolumeName</code> plus one <code>Chapter</code> per
+<code>chapters[]</code> entry (each chapter lists its <code>tutorials</code> topic references, looked
+up against the page's <code>references</code> map). In summary: the page-level
+<code>kind: "overview"</code> string is consumed entirely at the routing layer (URL shape decides
+that this JSON is a tutorials-overview page and therefore selects this view chain) rather than
+anywhere inside the Vue component tree via an explicit string comparison &mdash; the components
+below the route simply trust the shape of <code>sections</code>/<code>metadata</code> they were
+handed.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<p class="synthesized-note">
+Neither DocCArchive's own fixtures (<code>ExampleDocs.doccarchive</code>,
+<code>SampleLibrary.doccarchive</code> under <code>Tests/DocCArchiveTests/Fixtures/</code>) nor
+swift-docc's test suite (grepped for <code>"kind": "overview"</code> and its variants across
+<code>Tests/SwiftDocCTests/</code> and <code>Tests/DocCCommandLineTests/</code>) contain a full
+top-level RenderNode JSON literal for a <code>kind: "overview"</code> page. DocCArchive's fixture
+archives were generated from a plain library/article project with no <code>.tutorial</code>
+content, so they have no <code>data/tutorials/</code> directory at all &mdash; the string
+<code>"overview"</code> only turns up there inside minified bundle filenames/JS
+(<code>js/tutorials-overview.9144a669.js</code>, <code>css/tutorials-overview.9c2b2457.css</code>).
+swift-docc's tests reference <code>RenderNode.Kind.overview</code> as a Swift enum case
+(e.g. <code>ConvertActionTests.swift</code>) and <code>IndexingRecord.Kind.overview</code> (a
+different, unrelated enum used for full-text search records), but neither test file inlines the
+resulting RenderNode JSON. The example below was therefore hand-written to be schema-valid against
+the data sheet in section 3, shaped directly from the translator that produces it,
+<code>RenderNodeTranslator.visitTutorialTableOfContents(_:)</code> in swift-docc
+(<code>Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift</code>, lines 404&ndash;442 at
+the pinned commit).
+</p>
+<pre><code>{
+    "schemaVersion": { "major": 0, "minor": 3, "patch": 0 },
+    "kind": "overview",
+    "identifier": {
+        "url": "doc://org.swift.docc.example/tutorials/TechnologyX",
+        "interfaceLanguage": "swift"
+    },
+    "hierarchy": {
+        "reference": "doc://org.swift.docc.example/tutorials/TechnologyX",
+        "modules": []
+    },
+    "metadata": {
+        "category": "TechnologyX",
+        "categoryPathComponent": "TechnologyX"
+    },
+    "sections": [
+        {
+            "kind": "hero",
+            "title": "Introducing TechnologyX",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "inlineContent": [
+                        { "type": "text", "text": "Learn how to use TechnologyX." }
+                    ]
+                }
+            ]
+        },
+        {
+            "kind": "volume",
+            "name": "Getting Started",
+            "chapters": [
+                {
+                    "name": "Essentials",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "inlineContent": [
+                                { "type": "text", "text": "Start here." }
+                            ]
+                        }
+                    ],
+                    "tutorials": [
+                        "doc://org.swift.docc.example/tutorials/TechnologyX/Tutorial"
+                    ]
+                }
+            ]
+        },
+        {
+            "kind": "resources",
+            "tiles": [
+                {
+                    "identifier": "documentation",
+                    "title": "Documentation",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "inlineContent": [
+                                { "type": "text", "text": "Browse the API reference." }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "references": {}
+}</code></pre>
+<div class="mockup">
+  <div style="background:#111318; color:#f5f5f5; padding:0; border-radius:6px; overflow:hidden;">
+    <div style="padding:32px 24px; background:#1a1d23;">
+      <div style="margin:0 0 12px; font-size:1.8rem;">Introducing TechnologyX</div>
+      <p style="margin:0; opacity:0.85;">Learn how to use TechnologyX.</p>
+    </div>
+    <div style="padding:24px; display:flex; gap:16px;">
+      <div style="flex:1; background:#20242c; border-radius:8px; padding:16px;">
+        <p style="margin:0 0 8px; font-weight:600;">Getting Started</p>
+        <p style="margin:0 0 4px; font-size:0.9rem; opacity:0.9;">Essentials</p>
+        <p style="margin:0; font-size:0.8rem; opacity:0.7;">Start here.</p>
+      </div>
+      <div style="flex:1; background:#20242c; border-radius:8px; padding:16px;">
+        <p style="margin:0 0 8px; font-weight:600;">Documentation</p>
+        <p style="margin:0; font-size:0.8rem; opacity:0.7;">Browse the API reference.</p>
+      </div>
+    </div>
+  </div>
+  <p><em>mockup: dark hero band (title + abstract, from the <code>hero</code> section) above a
+  two-column learning path (a volume/chapter card at left, a resources tile at right) &mdash;
+  the actual page also renders a persistent dark nav bar and, for real content, chapter numbering
+  and thumbnail images not simulated here.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/TutorialsPageRenderNode</code> (lines 22&ndash;72), cross-checked
+against the generated <code>Components.Schemas.TutorialsPageRenderNode</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 2917&ndash;2984). This is the schema
+DocCArchive uses for all three <code>kind</code> values it groups together
+(<code>overview</code>/<code>project</code>/<code>article</code>) &mdash; the JSON Schema does not
+split them into separate discriminated types the way it does for, say, block content.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"overview"</code>, <code>"project"</code>, <code>"article"</code></td>
+<td>Generated as a three-case <code>KindPayload</code> enum on
+<code>TutorialsPageRenderNode</code>. <code>overview</code> is emitted only by
+<code>visitTutorialTableOfContents(_:)</code>; the sibling values cover tutorial-project and
+tutorial-article pages, which share this same schema object but render through a different
+Vue view chain (<code>Topic.vue</code>, not <code>TutorialsOverview.vue</code>).</td>
+</tr>
+<tr>
+<td><code>identifier</code></td>
+<td><code>ResolvedTopicReference</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The page's own topic reference URL and interface language.</td>
+</tr>
+<tr>
+<td><code>hierarchy</code></td>
+<td><code>Hierarchy</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Breadcrumb data; for an overview page this is normally just the page's own
+<code>reference</code> with empty <code>modules</code>, since an overview page is the technology
+root.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Generated as optional. Not populated by <code>visitTutorialTableOfContents</code>; the
+displayed page title instead comes from <code>metadata.title</code> / the hero section's own
+<code>title</code>.</td>
+</tr>
+<tr>
+<td><code>sections</code></td>
+<td>array of <code>RenderSection</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>For an overview page: exactly one <code>IntroRenderSection</code> (kind <code>hero</code>),
+then zero or more <code>VolumeRenderSection</code> (kind <code>volume</code>), then an optional
+trailing <code>ResourcesRenderSection</code> (kind <code>resources</code>) &mdash; matching the
+append order in <code>visitTutorialTableOfContents</code>.</td>
+</tr>
+<tr>
+<td><code>references</code></td>
+<td>map of string &rarr; <code>RenderReference</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Generated as an optional <code>additionalProperties</code>-keyed struct. Holds resolved
+topic/image/link references used by <code>sections</code> (e.g. each chapter's
+<code>tutorials</code> entries, image identifiers).</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>TutorialsMetadata</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Only two fields declared in the vendored schema: <code>category</code> (string) and
+<code>categoryPathComponent</code> (string). swift-docc's translator also sets
+<code>metadata.title</code>, <code>metadata.estimatedTime</code>, and <code>metadata.role</code>
+(<code>"overview"</code>, via <code>DocumentationContentRenderer.role(for:)</code> mapping
+<code>DocumentationNode.Kind.tutorialTableOfContents</code> &rarr;
+<code>RenderMetadata.Role.overview</code>) on the real <code>RenderMetadata</code> Swift type, none
+of which are declared on the narrower vendored <code>TutorialsMetadata</code> schema object used
+here &mdash; another gap between the wire schema DocCArchive vendors and swift-docc's fuller Swift
+model, similar in kind to the one documented on the <code>hero</code> section-kind page.
+<code>estimatedTime</code> is what <code>Hero.vue</code> actually reads for its metadata row.</td>
+</tr>
+<tr>
+<td><code>schemaVersion</code></td>
+<td><code>SchemaVersion</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Major/minor/patch version of the render JSON format itself.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, assembled from the components in section 1:</p>
+<ul>
+<li>Root: <code>div.tutorials-overview</code> (from <code>components/TutorialsOverview.vue</code>),
+always dark-themed regardless of the site-wide color-scheme setting.</li>
+<li><code>Nav</code> (class <code>theme-dark</code>) &mdash; the persistent top bar, titled from
+<code>metadata.category</code>, hidden when <code>isTargetIDE</code> is true (i.e. when rendered
+inside Xcode's built-in documentation viewer rather than a browser).</li>
+<li><code>main#app-main.main &gt; div.radial-gradient</code> &mdash; wraps the hero band; the class
+name names the CSS background effect applied behind it.</li>
+<li><code>Hero</code> subtree (see the <code>hero</code> section-kind reference page for its own
+internal DOM) &mdash; rendered only <code>v-if="heroSection"</code>.</li>
+<li><code>div.learning-path &gt; div.main-container &gt; div.primary-content-container &gt;
+div.content-sections-container</code> (from <code>LearningPath.vue</code>) &mdash; holds one
+<code>section.volume</code> per volume and one resources block per non-volume section, each
+wrapped in a shared <code>.content-section</code> class for consistent card spacing; also renders
+a sticky <code>div.secondary-content-container &gt; TutorialsNavigation</code> side rail (hidden
+below the <code>small</code> breakpoint and whenever <code>isTargetIDE</code> is true).</li>
+<li><code>section.volume</code> (from <code>Volume.vue</code>) &mdash; an optional
+<code>VolumeName</code> followed by one <code>Chapter</code> (class <code>tile</code>) per
+<code>chapters[]</code> entry.</li>
+</ul>
+<p>
+SCSS lives in each component's own scoped <code>&lt;style lang="scss"&gt;</code> block
+(<code>components/TutorialsOverview.vue</code> and
+<code>components/TutorialsOverview/LearningPath.vue</code>, both importing
+<code>docc-render/styles/_core.scss</code>). The compiled, versioned output ships in the archive
+as <code>css/tutorials-overview.9c2b2457.css</code> and
+<code>js/tutorials-overview.9144a669.js</code> (observed in DocCArchive's own
+<code>ExampleDocs.doccarchive</code>/<code>SampleLibrary.doccarchive</code> fixtures, confirming
+this is a separate webpack chunk from the symbol/article <code>topic</code> bundle). Key CSS custom
+properties consumed, defined per color scheme in
+<code>src/styles/core/colors/_light.scss</code> (lines 187&ndash;195):
+</p>
+<ul>
+<li><code>--color-tutorials-overview-background</code> / <code>--color-tutorials-overview-fill-secondary</code>
+&mdash; the <code>.radial-gradient</code> background.</li>
+<li><code>--color-tutorials-overview-fill</code> &mdash; <code>.learning-path</code>'s background
+(falls back to a SCSS <code>dark-color(fill)</code> mixin call if unset).</li>
+<li><code>--color-tutorials-overview-content</code>, <code>--color-tutorials-overview-content-alt</code>,
+<code>--color-tutorials-overview-eyebrow</code>, <code>--color-tutorials-overview-icon</code>,
+<code>--color-tutorials-overview-link</code> &mdash; text/icon/link colors used throughout the
+volume, chapter, and resources tile subcomponents.</li>
+<li><code>--color-tutorials-overview-navigation-link</code>,
+<code>-navigation-link-active</code>, <code>-navigation-link-hover</code> &mdash; the sticky
+side-rail <code>TutorialsNavigation</code> link states.</li>
+</ul>
+<p>
+<code>components/TutorialsOverview.vue</code> also forces the page <code>&lt;body&gt;</code>
+background to the dark fill color unconditionally via a global (non-scoped) style block using the
+relational <code>:has()</code> selector: <code>body:has(.tutorials-overview) { --color-text-background:
+#{dark-color(fill)}; }</code> &mdash; a real, already-shipping use of <code>:has()</code> in this
+codebase, notably not gated behind any interactivity.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML
+transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment and the Markdown
+transformer returns an empty string) &mdash; there is no kind-specific handling for
+<code>overview</code>/<code>TutorialsPageRenderNode</code> today. Given the field gap documented in
+section 3 (<code>metadata.title</code>/<code>estimatedTime</code>/<code>role</code> not present on
+the vendored <code>TutorialsMetadata</code> schema), a future implementation would also need to
+decode more than the generated type currently exposes to reproduce the hero metadata row
+swift-docc-render actually shows for this page kind.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: nothing in the <code>overview</code>-page-specific chain identified in section 1
+(<code>views/TutorialsOverview.vue</code> &rarr; <code>components/TutorialsOverview.vue</code>
+&rarr; <code>LearningPath.vue</code> &rarr; <code>Volume.vue</code>/<code>Chapter.vue</code>) holds
+any client-side interactive UI state of its own. Every one of those components is a pure
+props-in/template-out renderer: <code>partitionedSections</code> and
+<code>heroSection</code>/<code>otherSections</code> in <code>TutorialsOverview.vue</code>, and the
+analogous <code>volumes</code>/<code>otherSections</code> split in <code>LearningPath.vue</code>,
+are plain Vue <code>computed</code> properties derived once from the incoming <code>sections</code>
+prop &mdash; there is no <code>data()</code> boolean, no <code>v-show</code>/<code>v-if</code>
+toggle driven by a click handler, and no <code>:visible.sync</code> modal anywhere in this
+particular view chain (contrast with the <code>hero</code> section-kind page, where the nested
+<code>Hero.vue</code> component does hold a <code>callToActionModalVisible</code> flag for its
+"Watch intro video" modal &mdash; that state lives one level down, inside the hero section's own
+component, not in anything specific to the <code>overview</code> page kind itself). The only
+non-trivial runtime behavior directly attributable to this page kind is the router-level dispatch
+described in section 1 (URL-shape &rarr; component selection) and the sticky positioning of the
+side-rail navigation, both of which are either build/route-time decisions or plain CSS
+(<code>position: sticky</code> in <code>LearningPath.vue</code>'s SCSS, no JS involved). Because
+this kind is a static content-arrangement container with no stateful interaction of its own to
+replace, no native mechanism (<code>&lt;details&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>, container
+queries, anchor positioning, view transitions) is being proposed as a replacement here; the verdict
+is a plain "not applicable" for lack of any behavior to replace, not an unexplored opportunity.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

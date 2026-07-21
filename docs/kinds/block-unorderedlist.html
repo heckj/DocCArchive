@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: unorderedList — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>unorderedList</code></h1>
+<p class="wire-value">Wire value: <code>"unorderedList"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A grep of <code>src/components/</code> for the literal string <code>"unorderedList"</code> lands on the
+same single dispatch file every block/inline kind on this reference site is documented against:
+<code>src/components/ContentNode.vue</code>. Near the top of the file, the <code>BlockType</code> wire
+constants object declares <code>unorderedList: 'unorderedList'</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>).
+That constant is one arm of the <code>renderNode()</code> factory function's <code>switch (node.type)</code>
+dispatch table:
+</p>
+<pre><code>case BlockType.unorderedList: {
+  const isTaskList = list =&gt; TaskList.props.tasks.validator(list.items);
+  return isTaskList(node) ? (
+    createElement(TaskList, {
+      props: {
+        tasks: node.items,
+      },
+      scopedSlots: {
+        task: slotProps =&gt; renderChildren(slotProps.task.content),
+      },
+    })
+  ) : (
+    createElement('ul', {}, (
+      renderListItems(node.items)
+    ))
+  );
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L354-L370"><code>ContentNode.vue#L354-L370</code></a>.)
+Unlike <code>orderedList</code> (a simple <code>&lt;ol&gt;</code> with a <code>start</code> attribute, at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L297-L304"><code>ContentNode.vue#L297-L304</code></a>),
+<code>unorderedList</code> has a branch: it first checks whether the list is really a Markdown
+<em>task list</em> by delegating to the child component's own prop validator,
+<code>TaskList.props.tasks.validator</code>, which returns true if <strong>any</strong> item in
+<code>node.items</code> has a <code>checked</code> property at all
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TaskList.vue#L20-L39"><code>ContentNode/TaskList.vue#L20-L39</code></a>):
+</p>
+<pre><code>const hasCheckedProp = obj =&gt; Object.hasOwnProperty.call(obj, CHECKED_PROP);
+
+export default {
+  name: 'TaskList',
+  props: {
+    tasks: {
+      required: true,
+      type: Array,
+      // A task list is an unordered list that has at least one item with a
+      // boolean `checked` property
+      validator: list =&gt; list.some(hasCheckedProp),
+    },
+  },
+  methods: {
+    showCheckbox: hasCheckedProp,
+  },
+};</code></pre>
+<p>
+If that validator passes, the whole node is handed to <code>&lt;TaskList&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TaskList.vue#L11-L18"><code>ContentNode/TaskList.vue#L11-L18</code></a>),
+whose template renders a <code>&lt;ul class="tasklist"&gt;</code> and, for each task, a disabled
+<code>&lt;input type="checkbox"&gt;</code> bound to that item's <code>checked</code> value — but only for
+items that themselves carry the <code>checked</code> property (mixed task/non-task items in the same list
+are supported; only the ones with <code>checked</code> get a checkbox). Otherwise — the common case, a
+plain bulleted list with no <code>checked</code> field on any item — <code>renderNode()</code> falls
+through to the plain branch and calls the shared <code>renderListItems()</code> helper directly:
+</p>
+<pre><code>const renderListItems = items =&gt; items.map(item =&gt; (
+  createElement('li', {}, (
+    renderChildren(item.content)
+  ))
+));</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L126-L130"><code>ContentNode.vue#L126-L130</code></a>,
+shared with the <code>orderedList</code> branch.) Each item's <code>content</code> array — itself a nested
+array of <code>RenderBlockContent</code>, almost always one or more <code>paragraph</code>s — is recursed
+through <code>renderChildren()</code>/<code>renderNode()</code> to become the <code>&lt;li&gt;</code>'s
+children, which is how nested lists, code listings, or other block content inside a bullet point get
+rendered. The <code>type: 'unorderedList'</code> constant also appears in two generic content-tree-walking
+helpers in the same file, the <code>map()</code> mixin
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L576-L584"><code>ContentNode.vue#L576-L584</code></a>)
+and the <code>forEach()</code> mixin
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L629-L632"><code>ContentNode.vue#L629-L632</code></a>),
+both of which group <code>unorderedList</code> with <code>orderedList</code> since the two share the exact
+same <code>items[].content</code> shape — these are not separate rendering paths, just tree-traversal
+utilities used for other purposes (e.g. plain-text extraction).
+</p>
+<p>
+<code>ContentNode.vue</code> itself has no template and no <code>&lt;style&gt;</code> block — it is a
+render-function-only component, so the bare <code>&lt;ul&gt;</code> path contributes no CSS of its own
+beyond the element; only the task-list branch pulls in a component (<code>TaskList.vue</code>) that carries
+its own scoped stylesheet (see Section 4).
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/term-lists-3.json</code> in the
+swift-docc test suite (no <code>unorderedList</code> node was found in DocCArchive's own
+<code>ExampleDocs.doccarchive</code>/<code>SampleLibrary.doccarchive</code> fixtures), field
+<code>primaryContentSections[0].content[1]</code> — a plain, non-task bulleted list with a single item
+whose content spans multiple inline text runs.
+</p>
+<pre><code>{
+  "type": "unorderedList",
+  "items": [
+    {
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Not a term list, and" },
+            { "type": "text", "text": " " },
+            { "type": "text", "text": "spans multiple lines." }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<p class="synthesized-note">
+No fixture in either test suite exercises the <em>task-list</em> branch (an item with a <code>checked</code>
+boolean), so this second snippet illustrating that variant is hand-written and schema-valid but
+synthetic:
+</p>
+<pre><code>{
+  "type": "unorderedList",
+  "items": [
+    { "checked": true,  "content": [ { "type": "paragraph", "inlineContent": [ { "type": "text", "text": "Ship the schema reference" } ] } ] },
+    { "checked": false, "content": [ { "type": "paragraph", "inlineContent": [ { "type": "text", "text": "Write the CSS survey" } ] } ] }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <ul style="margin:0 0 0 20px; padding:0;">
+      <li>Not a term list, and spans multiple lines.</li>
+    </ul>
+    <p style="margin:16px 0 4px; font-size:0.85em; color:#666;">task-list variant (synthesized):</p>
+    <ul style="list-style:none; margin:0 0 0 8px; padding:0;">
+      <li style="margin-bottom:4px;"><input type="checkbox" disabled checked style="margin-right:6px;">Ship the schema reference</li>
+      <li><input type="checkbox" disabled style="margin-right:6px;">Write the CSS survey</li>
+    </ul>
+  </div>
+  <p><em>mockup: a plain <code>&lt;ul&gt;</code> of <code>&lt;li&gt;</code> elements for the ordinary case;
+  when at least one item carries <code>checked</code>, the whole list is instead rendered by
+  <code>TaskList.vue</code> as <code>&lt;ul class="tasklist"&gt;</code> with a disabled checkbox per
+  checked/unchecked item.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/UnorderedList</code> (lines 903&ndash;923), with the shared
+<code>#/components/schemas/ListItem</code> object (lines 924&ndash;940) it references; cross-checked
+against <code>Components.Schemas.UnorderedList</code> and <code>Components.Schemas.ListItem</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 4390&ndash;4438).
+<code>UnorderedList</code> is one arm of the <code>RenderBlockContent</code> discriminated union.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"unorderedList"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case
+unorderedList = "unorderedList" }</code>, decoded under the Swift property name <code>_type</code> via an
+explicit <code>CodingKeys</code> mapping (<code>case _type = "type"</code>).</td>
+</tr>
+<tr>
+<td><code>items</code></td>
+<td>array of <code>ListItem</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The list's bullet items, in document order. No minimum-length constraint in the schema (an empty array
+is technically valid wire data, though swift-docc's Markdown-to-RenderNode conversion would never emit one
+for an authored list).</td>
+</tr>
+<tr>
+<td><code>items[].content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>yes (on <code>ListItem</code>)</td>
+<td>&mdash;</td>
+<td>The block content inside one bullet — almost always a single <code>paragraph</code>, but can be
+anything block-level (a nested <code>unorderedList</code>/<code>orderedList</code>, a <code>codeListing</code>,
+etc.), enabling nested lists and multi-paragraph list items.</td>
+</tr>
+<tr>
+<td><code>items[].checked</code></td>
+<td>boolean</td>
+<td>no</td>
+<td>no default (absent = "not a task item")</td>
+<td>Presence — not truthiness — is what matters: <code>ContentNode.vue</code>'s task-list detection
+(<code>list.some(hasCheckedProp)</code>, via <code>Object.hasOwnProperty</code>) treats an item with
+<code>"checked": false</code> as still being a task item, distinct from an item that omits the key
+entirely. If <em>any</em> item in the list has this key, swift-docc-render renders the <strong>whole</strong>
+list as a task list, not just the flagged items.</td>
+</tr>
+</tbody>
+</table>
+<p>
+Unlike <code>OrderedList</code> — whose sibling schema object and generated Swift struct both carry a
+<code>start</code>/<code>startIndex</code> field defaulting to <code>1</code> — <code>UnorderedList</code>
+has no ordering/index field at all; this matches its decode-side implementation in swift-docc's
+Swift model (see below), which reads only <code>items</code> for this case.
+</p>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the
+enclosing Swift type is declared at
+<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift</code>: the enum case
+<code>case unorderedList(UnorderedList)</code> (line 51) and the nested struct
+<code>public struct UnorderedList: Equatable { public var items: [ListItem] }</code> (lines
+474&ndash;483). The shared <code>ListItem</code> struct (lines 588&ndash;599) declares
+<code>content: [RenderBlockContent]</code> and <code>checked: Bool?</code>, with a doc comment reading
+"If this list item is a task list item, whether the task should be checked off" — confirming the
+render-side "presence, not truthiness" semantics observed in <code>TaskList.vue</code>. The manual
+<code>Codable</code> conformance's decoder (around line 1076) decodes exactly
+<code>self = try .unorderedList(.init(items: container.decode([ListItem].self, forKey: .items)))</code> —
+no <code>start</code>/index field is read for this case, confirming the data-sheet field list above.
+Authoring-side, an <code>unorderedList</code> node is what swift-docc emits for a standard CommonMark
+bulleted list (lines beginning with <code>-</code>, <code>*</code>, or <code>+</code>); a task list is the
+GitHub-Flavored-Markdown-style checkbox extension, a bullet item beginning with <code>[ ]</code> or
+<code>[x]</code>, which is what populates the optional <code>checked</code> field on the corresponding
+<code>ListItem</code>.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for an <code>unorderedList</code> node, in context, has two shapes depending on the
+task-list branch taken in Section 1:
+</p>
+<ul>
+<li><strong>Plain list</strong> (no item has <code>checked</code>): a bare <code>ul</code> with no class,
+created at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L366-L369"><code>ContentNode.vue#L366-L369</code></a>,
+containing one <code>li</code> per item (from <code>renderListItems()</code>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L126-L130"><code>ContentNode.vue#L126-L130</code></a>).</li>
+<li><strong>Task list</strong> (at least one item has <code>checked</code>): <code>ul.tasklist</code>, the
+root element of <code>TaskList.vue</code>'s template
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TaskList.vue#L11-L18"><code>ContentNode/TaskList.vue#L11-L18</code></a>),
+containing one <code>li</code> per task, each with a disabled <code>input[type="checkbox"]</code> (present
+only for items that themselves carry the <code>checked</code> key) followed by the item's rendered content
+via a named scoped slot.</li>
+</ul>
+<p>
+SCSS: neither <code>ContentNode.vue</code> nor the plain-<code>ul</code> path has any component-scoped
+style — a plain bulleted list is styled entirely by global rules:
+</p>
+<ul>
+<li><code>src/styles/base/_reset.scss</code> (lines 26&ndash;52) zeroes the browser default
+<code>margin</code>/<code>padding</code> on <code>ul</code>, <code>ol</code>, and <code>li</code> along
+with every other block element.</li>
+<li><code>src/styles/base/_typography.scss</code> (lines 93&ndash;100) adds back
+<code>p, ul, ol { + * { margin-top: var(--spacing-stacked-margin-large); } }</code> — an
+<code>unorderedList</code> gets no margin of its own, but the block after it is pushed down.</li>
+<li><code>src/styles/base/_typography.scss</code> (lines 105&ndash;120) is the rule that actually indents
+bullets and de-indents nested lists:
+<code>ul, ol { margin-inline-start: em(20px); ul, ol { margin-top: 0; margin-bottom: 0; } nav &amp; {
+margin: 0; list-style: none; } }</code> — the <code>nav &amp;</code> clause strips list styling
+specifically for lists used in navigation chrome, not for content lists.</li>
+<li><code>src/styles/base/_typography.scss</code> (lines 123&ndash;125), <code>li li { font-size: 1em; }</code>,
+prevents compounding font-size shrink for nested lists inside other font-scaled containers.</li>
+</ul>
+<p>
+<code>TaskList.vue</code>'s scoped style block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TaskList.vue#L42-L63"><code>ContentNode/TaskList.vue#L42-L63</code></a>)
+overrides the above for the task-list case: it declares and consumes three local CSS custom properties,
+<code>--checkbox-width</code> (<code>1rem</code>), <code>--indent-width</code>
+(<code>calc(var(--checkbox-width) / 2)</code>), and <code>--content-margin</code>
+(defaults to <code>var(--indent-width)</code>, overridden to
+<code>calc(var(--checkbox-width) + var(--indent-width))</code> when a task's content is a lone
+<code>&lt;p&gt;</code>); sets <code>list-style-type: none</code> and a smaller
+<code>margin-left: var(--indent-width)</code> on <code>.tasklist</code> itself (replacing the default
+bullet-and-indent rules above); and makes a checkbox-adjacent paragraph <code>display: inline-block</code>
+so the checkbox and its label text sit on one line.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: for the plain-list branch, rendering is stateless — <code>renderNode()</code>
+maps the JSON node straight to a static <code>&lt;ul&gt;</code>/<code>&lt;li&gt;</code> tree at render
+time, no client-side interaction involved. For the task-list branch, <code>TaskList.vue</code> renders
+<code>&lt;input type="checkbox" disabled :checked="task.checked"&gt;</code> — the <code>disabled</code>
+attribute is set unconditionally in the template, so even this checkbox carries no interactive/toggle
+behavior at runtime; it exists purely to render a fixed, already-decided checked/unchecked glyph baked in
+from the RenderNode JSON at build time. There is no click handler, no <code>v-model</code>, no component
+<code>data()</code> tracking toggle state, and nothing a reader can check or uncheck in the rendered page.
+</p>
+<p>
+Concretely: none of the interactive-state mechanisms this survey looks for
+(<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio-input <code>:checked</code> plus a
+general sibling selector, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+<code>:has()</code>, container queries, CSS anchor positioning, view transitions) apply here, because a
+list — plain or task — is rendered once from static data and never mutates in the browser. The disabled
+checkbox in the task-list case is arguably the closest thing to "state" on this page, but it is inert
+markup, not a state-holding control (no CSS or JS ever reads or writes its <code>checked</code> DOM
+property after mount) — so there is nothing for a native mechanism to replace.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

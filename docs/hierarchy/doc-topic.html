@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page: Documentation Topic — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="index.html" class="active" aria-current="page">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">page</p>
+<h1>Documentation Topic</h1>
+<p class="wire-value">Route: <code>/documentation*</code> &rarr; <code>views/DocumentationTopic.vue</code></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#route-dispatch">1. Route &amp; dispatch</a> &middot; <a href="#chrome">2. Chrome</a> &middot; <a href="#hierarchy-tree">3. Hierarchy tree</a> &middot; <a href="#content-dispatch">4. Content dispatch</a> &middot; <a href="#cross-reference">5. Cross-reference</a></nav>
+<section id="route-dispatch"><h2>1. Route and component dispatch</h2>
+<p>
+The Vue Router entry point for every symbol/article page is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L70-L92"><code>src/views/DocumentationTopic.vue</code></a>
+(exported as <code>DocumentationTopicView</code>). Its template wraps a <code>CodeTheme</code>
+provider around a <code>DocumentationLayout</code>, and slots a <code>Topic</code> component
+(an alias for <code>theme/components/DocumentationTopic.vue</code>) into
+<code>DocumentationLayout</code>'s <code>#content</code> slot:
+</p>
+<pre><code>&lt;CodeTheme&gt;
+  &lt;DocumentationLayout v-if="topicData" v-bind="documentationLayoutProps"&gt;
+    &lt;template #nav-title="{ className }"&gt;...&lt;/template&gt;
+    &lt;template #content&gt;
+      &lt;Topic
+        v-bind="topicProps"
+        :key="topicKey"
+        ...
+        :hierarchyItems="hierarchyItems"
+      /&gt;
+    &lt;/template&gt;
+  &lt;/DocumentationLayout&gt;
+&lt;/CodeTheme&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L11-L43">lines 11-43</a>.)
+<code>beforeRouteEnter</code>/<code>beforeRouteUpdate</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L287-L322">lines 287-322</a>)
+fetch the page's raw RenderNode JSON and assign it to <code>topicData</code>; the view's own
+<code>topicProps</code> computed then calls <code>extractProps(this.topicData)</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L66">line 66</a>,
+destructured from <code>theme/components/DocumentationTopic.vue</code>'s own <code>methods</code>)
+to turn the wire JSON into the flat prop set the layout/content chain expects. Unlike the
+top-level tutorial/overview kinds, there is no per-kind lookup table here: both
+<code>kind: "symbol"</code> and <code>kind: "article"</code> RenderNodes flow through this exact
+same view/component chain (see <a href="../kinds/node-symbol.html">kinds/node-symbol.html</a> and
+<a href="../kinds/node-article.html">kinds/node-article.html</a> for how the two are
+distinguished downstream via <code>metadata.role</code>/<code>symbolKind</code> instead of
+<code>kind</code>).
+</p>
+<p>
+<code>DocumentationLayout</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationLayout.vue#L11-L81"><code>src/components/DocumentationLayout.vue</code></a>)
+is the actual owner of the page's chrome: it renders <code>Nav</code>
+(<code>DocumentationNav.vue</code>) unconditionally (when not an IDE target), then wraps
+<code>AdjustableSidebarWidth</code> around the routed content, feeding the sidebar's
+<code>#aside</code> slot with a <code>QuickNavigationModal</code> plus either a caller-provided
+<code>#navigator</code> slot or, by default, the <code>Navigator</code> component:
+</p>
+<pre><code>&lt;div class="documentation-layout"&gt;
+  &lt;Nav v-if="!isTargetIDE" ... :displaySidenav="enableNavigator" @toggle-sidenav="..."&gt;
+    &lt;template #title="{ className }"&gt;&lt;slot name="nav-title" :className="className" /&gt;&lt;/template&gt;
+  &lt;/Nav&gt;
+  &lt;AdjustableSidebarWidth v-bind="sidebarProps" v-on="sidebarListeners" class="full-width-container topic-wrapper"&gt;
+    &lt;PortalTarget name="modal-destination" multiple /&gt;
+    &lt;template #aside="{ scrollLockID, breakpoint }"&gt;
+      &lt;div class="documentation-layout-aside"&gt;
+        &lt;QuickNavigationModal v-if="enableQuickNavigation" ... /&gt;
+        &lt;transition name="delay-hiding"&gt;
+          &lt;slot name="navigator" ...&gt;
+            &lt;Navigator key="base-navigator" v-bind="{ ...navigatorProps, technologyProps }" ... /&gt;
+          &lt;/slot&gt;
+        &lt;/transition&gt;
+      &lt;/div&gt;
+    &lt;/template&gt;
+    &lt;slot name="content" /&gt;
+  &lt;/AdjustableSidebarWidth&gt;
+&lt;/div&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationLayout.vue#L11-L81">lines 11-81</a>.)
+The <code>#content</code> slot passed in from the view chain above is exactly the <code>Topic</code>
+component, so the routed <code>&lt;main&gt;</code> content sits as a sibling to the sidebar inside
+<code>AdjustableSidebarWidth</code>'s own <code>.content</code> wrapper &mdash; the schema-driven
+page is a <em>child of</em> the chrome, not the chrome's parent.
+</p>
+<p>
+<code>Topic</code> (<code>theme/components/DocumentationTopic.vue</code>) is the actual root of the
+schema-rendering tree, with template root
+<code>&lt;div class="doc-topic"&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L12-L15">lines 12-15</a>).
+Its direct children are a <code>&lt;main id="app-main"&gt;</code> wrapping a
+<code>DocumentationHero</code> (title/hierarchy/abstract/declarations chrome-and-content mix), a
+<code>.doc-content-wrapper</code> holding the primary content column plus an optional
+<code>OnThisPageStickyContainer</code>, and a trailing <code>BetaLegalText</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L11-L178">lines 11-178</a>).
+Section 3 below walks this full tree top to bottom.
+</p>
+<p>
+DocCArchive transform status: neither <code>MyHTMLTransformer</code> nor
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> has any
+kind-specific handling for <code>DocumentationRenderNode</code> today &mdash; both are stub
+placeholders (a hardcoded <code>&lt;!-- what? --&gt;</code> comment and an empty string,
+respectively), so a symbol/article RenderNode parsed via
+<code>Archive.parseRenderNode(dataPath:)</code> decodes correctly but produces no real output
+through DocCArchive's own transform layer yet.
+</p>
+</section>
+
+<section id="chrome"><h2>2. Page chrome (non-schema)</h2>
+<p>
+Everything in this section is UI shell built by swift-docc-render's own Vue components &mdash;
+none of it is driven by a field in the RenderNode JSON schema (it is driven by <em>which page
+type</em> is being rendered, and by the site-wide navigation index, not by this page's own wire
+data). <strong>The Documentation Topic page is the only one of the six top-level page kinds
+(Documentation Topic, Tutorial/Project, Tutorial Article, Tutorials Overview, Not Found, Server
+Error) that has a sidebar navigator and search</strong> &mdash; <code>DocumentationLayout.vue</code>
+is used exclusively by <code>views/DocumentationTopic.vue</code>, and no other top-level view
+renders <code>Navigator.vue</code>, <code>NavigatorCard.vue</code>,
+<code>QuickNavigationButton.vue</code>, or <code>QuickNavigationModal.vue</code>. This is a
+citable structural fact, not an inference: a grep for these four component names under
+<code>src/views/</code> and <code>src/components/</code> turns up their construction site only
+inside <code>DocumentationLayout.vue</code>.
+</p>
+
+<h3><code>DocumentationNav.vue</code></h3>
+<p>
+<strong>Role:</strong> the sticky top nav bar shown on every non-IDE page; on this page type it is
+additionally handed a "open sidenav" toggle button.
+<strong>Root DOM:</strong> renders through <code>NavBase.vue</code>'s <code>&lt;nav class="nav" ...&gt;</code>,
+itself wrapped with an outer class of <code>documentation-nav</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/DocumentationNav.vue#L11-L22">lines 11-22</a>).
+<strong>CSS behavior:</strong> <code>position: sticky; top: 0;</code> on <code>.nav</code>
+(<code>NavBase.vue</code>, <code>$nav-height</code> tall), with a background/border that fades in
+via <code>nav--is-sticking</code>/<code>nav--is-open</code> state classes toggled by an
+<code>IntersectionObserver</code> (<code>onIntersect</code> mixin) and by manual open/close.
+<strong>Actions/links:</strong> when <code>displaySidenav</code> is true (this page type sets it
+to <code>enableNavigator</code>), a <code>.sidenav-toggle</code> button in the
+<code>#pre-title</code> slot emits <code>toggle-sidenav</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/DocumentationNav.vue#L23-L39">lines 23-39</a>),
+which <code>DocumentationLayout.vue</code>'s <code>handleToggleSidenav</code> uses to flip either
+the mobile-visible or large-viewport-hidden sidebar state; a collapsible hamburger menu tray
+(<code>NavMenuItems</code>) optionally holds a Swift/Objective-C <code>LanguageToggle</code>.
+</p>
+
+<h3><code>AdjustableSidebarWidth.vue</code></h3>
+<p>
+<strong>Role:</strong> generic two-pane shell (an <code>&lt;aside&gt;</code> plus a
+<code>.content</code> region) that <code>DocumentationLayout.vue</code> uses to host the
+navigator next to the routed page content.
+<strong>Root DOM:</strong> <code>&lt;div class="adjustable-sidebar-width"&gt;</code>, with
+<code>.sidebar &gt; .aside</code> (the resizable pane, slotted as <code>#aside</code>) and
+<code>.content</code> (the default slot, i.e. the <code>Topic</code> tree)
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/AdjustableSidebarWidth.vue#L11-L56">lines 11-56</a>.)
+<strong>CSS/JS behavior:</strong> resizable &mdash; a <code>.resize-handle</code> element starts a
+drag (<code>startDrag</code>/<code>handleDrag</code>) that live-sets <code>width</code> in
+component <code>data()</code>, clamped between a responsive min/max percent of the viewport
+width and persisted to <code>localStorage</code> under the key <code>sidebar</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/AdjustableSidebarWidth.vue#L70-L102">lines 70-102</a>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/AdjustableSidebarWidth.vue#L323-L332">324-332</a>).
+Collapsible on large viewports via the <code>hiddenOnLarge</code> prop/<code>hide-on-large</code>
+class (persisted under <code>navigator-hidden-large</code> in <code>DocumentationLayout.vue</code>),
+and slides in as a full-width mobile overlay below the <code>medium</code> breakpoint
+(<code>show-on-mobile</code> class, <code>transform: translateX(...)</code> transition).
+<strong>Actions:</strong> drag the resize handle to resize; the nav's sidenav-toggle
+button (above) or dragging past a threshold toggles <code>hiddenOnLarge</code>/mobile visibility.
+</p>
+
+<h3><code>Navigator.vue</code> / <code>NavigatorCard.vue</code></h3>
+<p>
+<strong>Role:</strong> the sidebar's tree-view of the current technology's symbol/article index,
+letting a reader jump directly to any other page in the same module without reloading the nav
+chrome.
+<strong>Root DOM:</strong> <code>Navigator.vue</code> renders
+<code>&lt;nav class="navigator"&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Navigator.vue#L11-L47">lines 11-47</a>),
+delegating its body to <code>NavigatorCard.vue</code>'s <code>BaseNavigatorCard</code>-wrapped
+<code>.card-body</code>, which contains a <code>Reference</code>-based
+<code>.technology-title</code> link (jumps to the technology root page) followed by a virtualized
+<code>DynamicScroller</code> list of <code>NavigatorCardItem</code> rows
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Navigator/NavigatorCard.vue#L26-L96">lines 26-96</a>).
+<strong>Behavior:</strong> each row is expand/collapse-able (<code>toggle</code>/<code>toggleFullTree</code>
+methods track an <code>openNodes</code> map, persisted to <code>sessionStorage</code> under
+<code>navigator.state</code>), the currently-active page's row is auto-scrolled into view and
+highlighted (<code>activeUID</code>/<code>activePathMap</code>), and the whole list can be
+filtered live (see <code>FilterInput</code> below) or by "Hide Deprecated"/API-diff tags.
+<strong>Actions/links:</strong> click any row to navigate (emits <code>navigate</code> with the
+row's path); Alt/Option-click a parent row's technology title or a row's own disclosure toggle to
+expand/collapse its entire subtree at once (<code>toggleAllNodes</code>/<code>toggleFullTree</code>);
+arrow keys and Alt+Up/Down move focus between rows.
+</p>
+
+<h3><code>QuickNavigationButton.vue</code> + <code>QuickNavigationModal.vue</code> + <code>FilterInput.vue</code> (search UI)</h3>
+<p>
+<strong>Role:</strong> a fuzzy "jump to any symbol" command-palette, opened either by clicking the
+small <code>/</code> button docked at the end of the sidebar's filter row, or by the
+<code>/</code> or <code>Cmd+Shift+O</code> keyboard shortcuts registered globally on
+<code>DocumentationLayout.vue</code> while it is mounted
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationLayout.vue#L222-L231">lines 222-231</a>).
+<strong>Root DOM:</strong> <code>QuickNavigationButton.vue</code> is a single
+<code>&lt;button class="quick-navigation-open"&gt;/&lt;/button&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Navigator/QuickNavigationButton.vue#L11-L19">lines 11-19</a>),
+slotted into <code>NavigatorCard.vue</code>'s filter row. <code>QuickNavigationModal.vue</code> is
+a <code>GenericModal</code>(<code>isFullscreen</code>) hosting a <code>.quick-navigation</code>
+container: a <code>FilterInput</code> search box up top and a live
+<code>.quick-navigation__match-list</code> of <code>Reference</code> rows below, each rendering a
+<code>TopicTypeIcon</code>, fuzzy-highlighted title, and breadcrumb path, plus a side-by-side
+preview pane (<code>QuickNavigationPreview</code>) of the selected result's rendered content
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Navigator/QuickNavigationModal.vue#L11-L133">lines 11-133</a>).
+<code>FilterInput.vue</code> itself is the shared search-input widget also used by the sidebar's
+own filter (below): <code>&lt;div class="filter" role="search"&gt;</code> wrapping an
+<code>&lt;input&gt;</code>, an optional list of removable/suggested filter tags, and a clear
+button
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Filter/FilterInput.vue#L11-L124">lines 11-124</a>).
+<strong>Behavior:</strong> input is debounced 250ms before fuzzy-matching every symbol title in the
+technology's flattened index (<code>constructFuzzyRegex</code>/<code>fuzzyMatch</code>,
+capped at 20 results, LRU-cached preview fetches per match).
+<strong>Actions/links:</strong> "open search modal" (click the <code>/</code> button, or press
+<code>/</code>/<code>Cmd+Shift+O</code> outside of a text input); type to filter; Up/Down arrow to
+move the highlighted match; Enter to navigate to the highlighted match and close the modal.
+</p>
+
+<h3><code>Hierarchy.vue</code> (breadcrumb)</h3>
+<p>
+<strong>Role:</strong> the technology &rsaquo; parent &rsaquo; parent &rsaquo; current-page
+breadcrumb trail rendered just above the page title, inside the hero.
+<strong>Root DOM:</strong> a <code>NavMenuItems</code>-based
+<code>&lt;ul class="hierarchy"&gt;</code> of <code>HierarchyItem</code> entries
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/Hero/Hierarchy.vue#L11-L58">lines 11-58</a>),
+imported into <code>DocumentationTopic.vue</code> as plain <code>Hierarchy</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L215">line 215</a>).
+It reads its parent-topic <em>titles/URLs</em> from the RenderNode's <code>hierarchy</code> field
+(resolved through <code>references</code> up in the view layer), so its <em>content</em> is
+schema-derived even though the crumb-trail widget itself is chrome.
+<strong>CSS behavior:</strong> responsively collapsing &mdash; beyond a content-width threshold up
+to <code>MaxVisibleLinks</code> (3) intermediate crumbs show inline; narrower viewports collapse
+the middle crumbs into a <code>HierarchyCollapsedItems</code> dropdown, and below the
+<code>small</code> breakpoint the current-page title itself folds into that same collapsible list
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/Hero/Hierarchy.vue#L136-L162">lines 136-162</a>).
+<strong>Actions/links:</strong> each non-current crumb is a link to that ancestor page; deprecated
+or beta symbols show a trailing <code>Badge</code> next to the current-page crumb.
+</p>
+
+<h3><code>OnThisPageNav.vue</code></h3>
+<p>
+<strong>Role:</strong> the right-hand-rail "On this page" table of contents, listing the page's own
+top-level (and second-level) headings.
+<strong>Root DOM:</strong> <code>&lt;div class="OnThisPageNav"&gt;&lt;ul class="items"&gt;</code> of
+router-link items
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/OnThisPageNav.vue#L10-L30">lines 10-30</a>),
+wrapped by <code>OnThisPageStickyContainer.vue</code>'s <code>&lt;div class="OnThisPageStickyContainer"&gt;</code>.
+<strong>CSS behavior:</strong> the container is <code>position: sticky</code> (offset below the
+top nav) and only shown above the <code>small</code> breakpoint and above a
+1050px content-width threshold (<code>enableOnThisPageNav</code>/<code>isOnThisPageNavVisible</code>
+in <code>DocumentationTopic.vue</code>); <code>OnThisPageNav.vue</code> itself is only mounted at
+all once the store has more than two registered sections
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L167-L171">lines 167-171</a>).
+A scroll listener highlights the currently-in-view heading by adding an <code>active</code> class
+to its list item (<code>onScroll</code>/<code>checkIsActive</code>).
+<strong>Actions/links:</strong> "jump to on-page anchor" &mdash; clicking an entry is a plain
+in-page <code>router-link</code> to <code>#anchor</code>, which also triggers
+<code>handleFocusAndScroll</code> to move keyboard focus to the target heading.
+</p>
+</section>
+
+<section id="hierarchy-tree"><h2>3. DOM hierarchy: root &rarr; chrome &rarr; content &rarr; leaves</h2>
+<p>
+The tree below follows the actual component nesting from <code>DocumentationLayout.vue</code>
+down through <code>DocumentationTopic.vue</code> into representative primary-content sections and
+their block/inline leaves. <span class="tag chrome">CHROME</span> entries are non-schema UI;
+<span class="tag node">NODE</span>/<span class="tag section">SECTION</span>/<span class="tag block">BLOCK</span>/<span class="tag inline">INLINE</span>/<span class="tag reference">REFERENCE</span>
+entries are schema-backed kinds and link to their <code>kinds/*.html</code> page where one exists.
+Depth is illustrative, not exhaustive &mdash; see section 5 for the complete kind list.
+</p>
+<ul class="hierarchy-tree">
+<li><span class="tag chrome">CHROME</span> <code>div.documentation-layout</code> &mdash; root of <code>DocumentationLayout.vue</code>
+  <ul>
+    <li><span class="tag chrome">CHROME</span> <code>nav.nav.documentation-nav</code> &mdash; top sticky nav bar (<code>DocumentationNav.vue</code> via <code>NavBase.vue</code>)
+      <ul><li><span class="tag chrome">CHROME</span> <code>button.sidenav-toggle</code> &mdash; opens/closes the sidebar navigator <span class="note">only rendered when the navigator is enabled</span></li></ul>
+    </li>
+    <li><span class="tag chrome">CHROME</span> <code>div.adjustable-sidebar-width.topic-wrapper</code> &mdash; resizable two-pane shell (<code>AdjustableSidebarWidth.vue</code>)
+      <ul>
+        <li><span class="tag chrome">CHROME</span> <code>div.sidebar &gt; div.aside</code> &mdash; the resizable/collapsible sidebar pane
+          <ul>
+            <li><span class="tag chrome">CHROME</span> <code>div.documentation-layout-aside</code>
+              <ul>
+                <li><span class="tag chrome">CHROME</span> <code>GenericModal.quick-navigation</code> &mdash; Quick Navigation search modal (<code>QuickNavigationModal.vue</code>), hidden until opened
+                  <ul><li><span class="tag chrome">CHROME</span> <code>div.filter[role=search]</code> &mdash; search input (<code>FilterInput.vue</code>)</li></ul>
+                </li>
+                <li><span class="tag chrome">CHROME</span> <code>nav.navigator</code> &mdash; sidebar symbol tree (<code>Navigator.vue</code> &rarr; <code>NavigatorCard.vue</code>)
+                  <ul>
+                    <li><span class="tag chrome">CHROME</span> <code>a.technology-title</code> &mdash; link to the technology root page</li>
+                    <li><span class="tag chrome">CHROME</span> <code>div.scroller</code> &mdash; virtualized list of <code>NavigatorCardItem</code> rows (one per symbol/article in the index)</li>
+                    <li><span class="tag chrome">CHROME</span> <code>div.filter[role=search]</code> + <code>button.quick-navigation-open</code> &mdash; in-sidebar filter plus the <code>/</code> Quick Navigation trigger</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li><span class="tag chrome">CHROME</span> <code>div.content</code> &mdash; the routed page content region
+          <ul>
+            <li><span class="tag node">NODE</span> <code>div.doc-topic</code> &mdash; root of <code>DocumentationTopic.vue</code>; backs a <a href="../kinds/node-symbol.html"><code>symbol</code></a> or <a href="../kinds/node-article.html"><code>article</code></a> <code>DocumentationRenderNode</code>
+              <ul>
+                <li><span class="tag chrome">CHROME</span> <code>main#app-main</code>
+                  <ul>
+                    <li><span class="tag chrome">CHROME</span> <code>div.documentation-hero</code> &mdash; hero/title chrome (<code>DocumentationHero.vue</code>)
+                      <ul>
+                        <li><span class="tag chrome">CHROME</span> <code>ul.hierarchy</code> &mdash; breadcrumb trail (<code>Hierarchy.vue</code>) <span class="note">content sourced from the node's <code>hierarchy</code> field</span></li>
+                        <li><span class="tag chrome">CHROME</span> <code>Title</code> component &mdash; page title text (from <code>metadata.title</code>) plus <code>roleHeading</code> eyebrow</li>
+                        <li><span class="tag chrome">CHROME</span> <code>Abstract</code> component &mdash; wraps the node's <code>abstract</code> array
+                          <ul><li><span class="tag inline">INLINE</span> <a href="../kinds/inline-text.html"><code>text</code></a> &mdash; e.g. &quot;A short summary of this symbol.&quot;</li></ul>
+                        </li>
+                        <li><span class="tag section">SECTION</span> <code>div.declarations-container &gt; Declaration</code> &mdash; <a href="../kinds/section-declarations.html"><code>declarations</code></a> primary-content section, pulled up into the hero <span class="note">symbol pages only</span>
+                          <ul><li><span class="tag inline">INLINE</span> <code>DeclarationToken</code> stream (keyword/identifier/typeIdentifier text runs)</li></ul>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+                <li><span class="tag chrome">CHROME</span> <code>div.doc-content-wrapper</code>
+                  <ul>
+                    <li><span class="tag chrome">CHROME</span> <code>div.doc-content</code> &mdash; primary content column
+                      <ul>
+                        <li><span class="tag chrome">CHROME</span> <code>div.container &gt; PrimaryContent</code> &mdash; dispatches each <code>primaryContentSections</code> entry by <code>kind</code>
+                          <ul>
+                            <li><span class="tag section">SECTION</span> <a href="../kinds/section-parameters.html"><code>parameters</code></a> &mdash; <code>Parameters.vue</code> definition list <span class="note">symbol pages</span></li>
+                            <li><span class="tag section">SECTION</span> <a href="../kinds/section-content.html"><code>content</code></a> &mdash; Discussion/Overview prose, dispatched to <code>ContentNode.vue</code>
+                              <ul>
+                                <li><span class="tag block">BLOCK</span> <a href="../kinds/block-heading.html"><code>heading</code></a> &mdash; e.g. &quot;Overview&quot;</li>
+                                <li><span class="tag block">BLOCK</span> <a href="../kinds/block-paragraph.html"><code>paragraph</code></a>
+                                  <ul>
+                                    <li><span class="tag inline">INLINE</span> <a href="../kinds/inline-text.html"><code>text</code></a> &mdash; plain prose run</li>
+                                    <li><span class="tag inline">INLINE</span> <a href="../kinds/inline-codevoice.html"><code>codeVoice</code></a> &mdash; e.g. <code>someMethod()</code></li>
+                                    <li><span class="tag inline">INLINE</span> <a href="../kinds/inline-reference.html"><code>reference</code></a> &mdash; cross-link to another symbol, resolved via <a href="../kinds/reference-topic.html"><code>topic</code></a> reference
+                                      <ul><li><span class="tag reference">REFERENCE</span> <a href="../kinds/reference-topic.html"><code>topic</code></a> &mdash; entry in the node's <code>references</code> map that the inline <code>reference</code> node's <code>identifier</code> points to</li></ul>
+                                    </li>
+                                  </ul>
+                                </li>
+                                <li><span class="tag block">BLOCK</span> <a href="../kinds/block-codelisting.html"><code>codeListing</code></a> &mdash; fenced example code</li>
+                                <li><span class="tag block">BLOCK</span> <a href="../kinds/block-aside.html"><code>aside</code></a> &mdash; Note/Tip/Warning callout <span class="note">wraps further nested block content</span></li>
+                              </ul>
+                            </li>
+                            <li><span class="tag section">SECTION</span> <a href="../kinds/section-relationships.html"><code>relationships</code></a> &mdash; conforms-to/inherits-from lists <span class="note">symbol pages, via <code>relationshipsSections</code></span></li>
+                          </ul>
+                        </li>
+                        <li><span class="tag chrome">CHROME</span> <code>Topics</code> &mdash; &quot;Topics&quot; curated-links section, delegates to <code>TopicsTable.vue</code>
+                          <ul>
+                            <li><span class="tag section">SECTION</span> <a href="../kinds/section-taskgroup.html"><code>taskGroup</code></a> &mdash; one titled cluster from <code>topicSections</code>
+                              <ul>
+                                <li><span class="tag reference">REFERENCE</span> <a href="../kinds/reference-topic.html"><code>topic</code></a> &mdash; a linked child page, one per entry in the group's <code>identifiers</code> array</li>
+                              </ul>
+                            </li>
+                          </ul>
+                        </li>
+                        <li><span class="tag chrome">CHROME</span> <code>DefaultImplementations</code> &mdash; reuses the <a href="../kinds/section-taskgroup.html"><code>taskGroup</code></a> shape via <code>defaultImplementationsSections</code> <span class="note">protocol requirement symbol pages</span></li>
+                        <li><span class="tag chrome">CHROME</span> <code>SeeAlso</code> &mdash; reuses the <a href="../kinds/section-taskgroup.html"><code>taskGroup</code></a> shape via <code>seeAlsoSections</code></li>
+                      </ul>
+                    </li>
+                    <li><span class="tag chrome">CHROME</span> <code>OnThisPageStickyContainer &gt; OnThisPageNav</code> &mdash; right-rail page TOC <span class="note">only when &gt; 2 registered headings and viewport is wide enough</span></li>
+                  </ul>
+                </li>
+                <li><span class="tag chrome">CHROME</span> <code>BetaLegalText</code> &mdash; footer legal notice, shown only when any platform is marked beta</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</li>
+</ul>
+</section>
+
+<section id="content-dispatch"><h2>4. RenderNode content dispatch (schema-driven)</h2>
+<p>
+Which section kinds are reachable depends heavily on whether the page's underlying
+<code>DocumentationRenderNode</code> is a <a href="../kinds/node-symbol.html"><code>symbol</code></a>
+(<code>metadata.role === "symbol"</code>-family) or an
+<a href="../kinds/node-article.html"><code>article</code></a>
+(<code>metadata.role === "article"</code>) &mdash; the template is shared, but symbol pages
+populate many more of the optional, conditionally-rendered fields. An article's
+<code>primaryContentSections</code> is typically just a single
+<a href="../kinds/section-content.html"><code>content</code></a> section holding the article's
+Markdown body; a symbol's <code>primaryContentSections</code> commonly starts with
+<a href="../kinds/section-declarations.html"><code>declarations</code></a> (pulled into the hero)
+and can additionally include <a href="../kinds/section-parameters.html"><code>parameters</code></a>,
+<a href="../kinds/section-relationships.html"><code>relationships</code></a> (as
+<code>relationshipsSections</code>, a sibling top-level field, not inside
+<code>primaryContentSections</code>), REST-specific sections, dictionary/property-list sections,
+and <a href="../kinds/section-mentions.html"><code>mentions</code></a>.
+</p>
+<table>
+<thead><tr><th>Kind</th><th>Tier</th><th>Symbol pages</th><th>Article pages</th></tr></thead>
+<tbody>
+<tr><td><a href="../kinds/section-declarations.html">declarations</a></td><td>section</td><td>yes (hero)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-content.html">content</a></td><td>section</td><td>yes (Discussion/Overview)</td><td>yes (article body)</td></tr>
+<tr><td><a href="../kinds/section-parameters.html">parameters</a></td><td>section</td><td>yes</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-attributes.html">attributes</a></td><td>section</td><td>yes (constrained-value symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-possiblevalues.html">possibleValues</a></td><td>section</td><td>yes (plist-key symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-plistdetails.html">plistDetails</a></td><td>section</td><td>yes (plist-key symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-properties.html">properties</a></td><td>section</td><td>yes (dictionary symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-restendpoint.html">restEndpoint</a></td><td>section</td><td>yes (REST symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-restparameters.html">restParameters</a></td><td>section</td><td>yes (REST symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-restbody.html">restBody</a></td><td>section</td><td>yes (REST symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-restresponses.html">restResponses</a></td><td>section</td><td>yes (REST symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-mentions.html">mentions</a></td><td>section</td><td>yes (non-module symbols)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-relationships.html">relationships</a></td><td>section</td><td>yes (<code>relationshipsSections</code>)</td><td>no</td></tr>
+<tr><td><a href="../kinds/section-taskgroup.html">taskGroup</a></td><td>section</td><td>yes (<code>topicSections</code>/<code>seeAlsoSections</code>/<code>defaultImplementationsSections</code>)</td><td>yes (<code>topicSections</code>/<code>seeAlsoSections</code>)</td></tr>
+<tr><td><a href="../kinds/block-heading.html">heading</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-paragraph.html">paragraph</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-aside.html">aside</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-codelisting.html">codeListing</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-orderedlist.html">orderedList</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-unorderedlist.html">unorderedList</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-table.html">table</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-termlist.html">termList</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-row.html">row</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-small.html">small</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-tabnavigator.html">tabNavigator</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-links.html">links</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-video.html">video</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-dictionaryexample.html">dictionaryExample</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/block-endpointexample.html">endpointExample</a></td><td>block</td><td>yes (REST content)</td><td>yes (REST content)</td></tr>
+<tr><td><a href="../kinds/block-thematicbreak.html">thematicBreak</a></td><td>block</td><td>yes</td><td>yes</td></tr>
+<tr><td>all 11 <a href="../index.html">inline kinds</a></td><td>inline</td><td>yes (inside any block/abstract/heading)</td><td>yes (inside any block/abstract/heading)</td></tr>
+<tr><td>most <a href="../index.html">reference kinds</a> (<code>topic</code>, <code>section</code>, <code>image</code>, <code>video</code>, <code>file</code>, <code>link</code>, <code>download</code>, <code>externalLocation</code>, <code>unresolvable</code>)</td><td>reference</td><td>yes</td><td>yes</td></tr>
+<tr><td><a href="../kinds/reference-xcoderequirement.html">xcodeRequirement</a>, <a href="../kinds/reference-filetype.html">fileType</a></td><td>reference</td><td>not observed on this page type (tutorial-only / unconstructed)</td><td>not observed on this page type</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="cross-reference"><h2>5. Kind cross-reference table</h2>
+<p>
+Every kind that can appear anywhere on a Documentation Topic page (symbol or article), for
+generating backlinks from each <code>kinds/*.html</code> page to this one.
+</p>
+<table>
+<tr><th>Kind</th><th>Tier</th><th>Kind file</th></tr>
+<tr><td>symbol</td><td>node</td><td><a href="../kinds/node-symbol.html">kinds/node-symbol.html</a></td></tr>
+<tr><td>article</td><td>node</td><td><a href="../kinds/node-article.html">kinds/node-article.html</a></td></tr>
+<tr><td>declarations</td><td>section</td><td><a href="../kinds/section-declarations.html">kinds/section-declarations.html</a></td></tr>
+<tr><td>content</td><td>section</td><td><a href="../kinds/section-content.html">kinds/section-content.html</a></td></tr>
+<tr><td>parameters</td><td>section</td><td><a href="../kinds/section-parameters.html">kinds/section-parameters.html</a></td></tr>
+<tr><td>attributes</td><td>section</td><td><a href="../kinds/section-attributes.html">kinds/section-attributes.html</a></td></tr>
+<tr><td>possibleValues</td><td>section</td><td><a href="../kinds/section-possiblevalues.html">kinds/section-possiblevalues.html</a></td></tr>
+<tr><td>plistDetails</td><td>section</td><td><a href="../kinds/section-plistdetails.html">kinds/section-plistdetails.html</a></td></tr>
+<tr><td>properties</td><td>section</td><td><a href="../kinds/section-properties.html">kinds/section-properties.html</a></td></tr>
+<tr><td>restEndpoint</td><td>section</td><td><a href="../kinds/section-restendpoint.html">kinds/section-restendpoint.html</a></td></tr>
+<tr><td>restParameters</td><td>section</td><td><a href="../kinds/section-restparameters.html">kinds/section-restparameters.html</a></td></tr>
+<tr><td>restBody</td><td>section</td><td><a href="../kinds/section-restbody.html">kinds/section-restbody.html</a></td></tr>
+<tr><td>restResponses</td><td>section</td><td><a href="../kinds/section-restresponses.html">kinds/section-restresponses.html</a></td></tr>
+<tr><td>mentions</td><td>section</td><td><a href="../kinds/section-mentions.html">kinds/section-mentions.html</a></td></tr>
+<tr><td>relationships</td><td>section</td><td><a href="../kinds/section-relationships.html">kinds/section-relationships.html</a></td></tr>
+<tr><td>taskGroup</td><td>section</td><td><a href="../kinds/section-taskgroup.html">kinds/section-taskgroup.html</a></td></tr>
+<tr><td>sampleDownload</td><td>section</td><td><a href="../kinds/section-sampledownload.html">kinds/section-sampledownload.html</a></td></tr>
+<tr><td>heading</td><td>block</td><td><a href="../kinds/block-heading.html">kinds/block-heading.html</a></td></tr>
+<tr><td>paragraph</td><td>block</td><td><a href="../kinds/block-paragraph.html">kinds/block-paragraph.html</a></td></tr>
+<tr><td>aside</td><td>block</td><td><a href="../kinds/block-aside.html">kinds/block-aside.html</a></td></tr>
+<tr><td>codeListing</td><td>block</td><td><a href="../kinds/block-codelisting.html">kinds/block-codelisting.html</a></td></tr>
+<tr><td>orderedList</td><td>block</td><td><a href="../kinds/block-orderedlist.html">kinds/block-orderedlist.html</a></td></tr>
+<tr><td>unorderedList</td><td>block</td><td><a href="../kinds/block-unorderedlist.html">kinds/block-unorderedlist.html</a></td></tr>
+<tr><td>table</td><td>block</td><td><a href="../kinds/block-table.html">kinds/block-table.html</a></td></tr>
+<tr><td>termList</td><td>block</td><td><a href="../kinds/block-termlist.html">kinds/block-termlist.html</a></td></tr>
+<tr><td>row</td><td>block</td><td><a href="../kinds/block-row.html">kinds/block-row.html</a></td></tr>
+<tr><td>small</td><td>block</td><td><a href="../kinds/block-small.html">kinds/block-small.html</a></td></tr>
+<tr><td>tabNavigator</td><td>block</td><td><a href="../kinds/block-tabnavigator.html">kinds/block-tabnavigator.html</a></td></tr>
+<tr><td>links</td><td>block</td><td><a href="../kinds/block-links.html">kinds/block-links.html</a></td></tr>
+<tr><td>video</td><td>block</td><td><a href="../kinds/block-video.html">kinds/block-video.html</a></td></tr>
+<tr><td>dictionaryExample</td><td>block</td><td><a href="../kinds/block-dictionaryexample.html">kinds/block-dictionaryexample.html</a></td></tr>
+<tr><td>endpointExample</td><td>block</td><td><a href="../kinds/block-endpointexample.html">kinds/block-endpointexample.html</a></td></tr>
+<tr><td>thematicBreak</td><td>block</td><td><a href="../kinds/block-thematicbreak.html">kinds/block-thematicbreak.html</a></td></tr>
+<tr><td>step</td><td>block</td><td><a href="../kinds/block-step.html">kinds/block-step.html</a></td></tr>
+<tr><td>codeVoice</td><td>inline</td><td><a href="../kinds/inline-codevoice.html">kinds/inline-codevoice.html</a></td></tr>
+<tr><td>emphasis</td><td>inline</td><td><a href="../kinds/inline-emphasis.html">kinds/inline-emphasis.html</a></td></tr>
+<tr><td>strong</td><td>inline</td><td><a href="../kinds/inline-strong.html">kinds/inline-strong.html</a></td></tr>
+<tr><td>image</td><td>inline</td><td><a href="../kinds/inline-image.html">kinds/inline-image.html</a></td></tr>
+<tr><td>reference</td><td>inline</td><td><a href="../kinds/inline-reference.html">kinds/inline-reference.html</a></td></tr>
+<tr><td>text</td><td>inline</td><td><a href="../kinds/inline-text.html">kinds/inline-text.html</a></td></tr>
+<tr><td>newTerm</td><td>inline</td><td><a href="../kinds/inline-newterm.html">kinds/inline-newterm.html</a></td></tr>
+<tr><td>inlineHead</td><td>inline</td><td><a href="../kinds/inline-inlinehead.html">kinds/inline-inlinehead.html</a></td></tr>
+<tr><td>subscript</td><td>inline</td><td><a href="../kinds/inline-subscript.html">kinds/inline-subscript.html</a></td></tr>
+<tr><td>superscript</td><td>inline</td><td><a href="../kinds/inline-superscript.html">kinds/inline-superscript.html</a></td></tr>
+<tr><td>strikethrough</td><td>inline</td><td><a href="../kinds/inline-strikethrough.html">kinds/inline-strikethrough.html</a></td></tr>
+<tr><td>image (reference)</td><td>reference</td><td><a href="../kinds/reference-image.html">kinds/reference-image.html</a></td></tr>
+<tr><td>video (reference)</td><td>reference</td><td><a href="../kinds/reference-video.html">kinds/reference-video.html</a></td></tr>
+<tr><td>file</td><td>reference</td><td><a href="../kinds/reference-file.html">kinds/reference-file.html</a></td></tr>
+<tr><td>topic</td><td>reference</td><td><a href="../kinds/reference-topic.html">kinds/reference-topic.html</a></td></tr>
+<tr><td>section (reference)</td><td>reference</td><td><a href="../kinds/reference-section.html">kinds/reference-section.html</a></td></tr>
+<tr><td>download</td><td>reference</td><td><a href="../kinds/reference-download.html">kinds/reference-download.html</a></td></tr>
+<tr><td>link</td><td>reference</td><td><a href="../kinds/reference-link.html">kinds/reference-link.html</a></td></tr>
+<tr><td>externalLocation</td><td>reference</td><td><a href="../kinds/reference-externallocation.html">kinds/reference-externallocation.html</a></td></tr>
+<tr><td>unresolvable</td><td>reference</td><td><a href="../kinds/reference-unresolvable.html">kinds/reference-unresolvable.html</a></td></tr>
+</table>
+</section>
+
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

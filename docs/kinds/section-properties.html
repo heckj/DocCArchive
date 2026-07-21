@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: properties — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>properties</code></h1>
+<p class="wire-value">Wire value: <code>"properties"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A <code>properties</code> primary-content section is a symbol-page section (like <code>declarations</code>
+or <code>parameters</code>), not a block/inline content kind, so it is not handled by
+<code>ContentNode.vue</code>'s <code>renderNode()</code> dispatch table. Its dispatch site is the
+section-kind lookup table in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L127"><code>DocumentationTopic/PrimaryContent.vue#L74-L127</code></a>,
+which maps the wire-format <code>SectionKind</code> constants
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L11-L26"><code>constants/PrimaryContentSection.js#L11-L26</code></a>,
+where <code>properties: 'properties'</code> is defined) to a component and a props object:
+</p>
+<pre><code>componentFor(section) {
+  return {
+    ...
+    [SectionKind.properties]: PropertyTable,
+    ...
+  }[section.kind];
+},
+propsFor(section) {
+  const { ..., items, kind, ..., title, ... } = section;
+  return {
+    ...
+    [SectionKind.properties]: { properties: items, title },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L80-L112"><code>PrimaryContent.vue#L80,L112</code></a>.)
+So a <code>properties</code> section's <code>items</code> array is renamed to the prop
+<code>properties</code> and handed, together with <code>title</code>, to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PropertyTable.vue"><code>PrimaryContent/PropertyTable.vue</code></a>.
+That component renders a <code>&lt;section&gt;</code> with a <code>LinkableHeading</code> for
+<code>title</code> (anchored via <code>anchorize(title)</code>), then delegates the actual row layout to
+the shared <code>ParametersTable</code> component — the same generic two-column "symbol / description"
+table used for the <code>parameters</code> section kind:
+</p>
+<pre><code>&lt;section&gt;
+  &lt;LinkableHeading :anchor="anchor"&gt;{{ title }}&lt;/LinkableHeading&gt;
+  &lt;ParametersTable :parameters="properties" :changes="propertyChanges" class="property-table"&gt;
+    &lt;template #symbol="{ name, type, content, changes, deprecated }"&gt;
+      &lt;div class="property-name" :class="{ deprecated: deprecated }"&gt;
+        &lt;WordBreak tag="code"&gt;{{ name }}&lt;/WordBreak&gt;
+      &lt;/div&gt;
+      &lt;PossiblyChangedType v-if="!shouldShiftType({name, content})" :type="type" :changes="changes.type" /&gt;
+    &lt;/template&gt;
+    &lt;template #description="{ name, type, attributes, content, required, changes, deprecated, readOnly }"&gt;
+      ...
+    &lt;/template&gt;
+  &lt;/ParametersTable&gt;
+&lt;/section&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PropertyTable.vue#L11-L62"><code>PropertyTable.vue#L11-L62</code></a>.)
+Per property row, the <code>symbol</code> slot renders the property's <code>name</code> (wrapped in
+<code>WordBreak</code> for long identifiers, struck through via CSS if <code>deprecated</code>) plus its
+declaration <code>type</code> tokens — unless <code>shouldShiftType()</code> decides the type belongs in
+the description column instead (this happens when the property has no <code>content</code> markup and
+does have a <code>name</code>, so the type isn't left stranded with nothing next to it —
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PropertyTable.vue#L100-L106"><code>PropertyTable.vue#L100-L106</code></a>).
+The <code>description</code> slot renders, in order: the shifted type (if applicable), a
+"Deprecated" <code>Badge</code>, a parenthesized "(Required)" / "(Read-Only)" text fragment driven by the
+boolean <code>required</code>/<code>readOnly</code> fields, the property's own <code>content</code>
+markup (via the ordinary <code>ContentNode</code> block-content renderer), and finally a
+<code>ParameterAttributes</code> block that renders the <code>attributes</code> array — each entry a
+tagged union keyed by an internal <code>kind</code> string (<code>default</code>, <code>minimum</code>,
+<code>minimumExclusive</code>, <code>maximum</code>, <code>maximumExclusive</code>,
+<code>minimumLength</code>, <code>maximumLength</code>, <code>allowedTypes</code>,
+<code>allowedValues</code>) rendered as "Label: value" lines
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParameterAttributes.vue#L11-L100"><code>ParameterAttributes.vue#L11-L100</code></a>).
+The actual grid layout (one row per property, a narrow "symbol" column and a wide "description" column)
+lives in the shared
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParametersTable.vue#L11-L27"><code>ParametersTable.vue#L11-L27</code></a>,
+which is not specific to <code>properties</code> — it is the same table body used by the
+<code>parameters</code>, <code>restParameters</code>, <code>restHeaders</code>, <code>restCookies</code>,
+and <code>restResponses</code> section kinds, all of which share this "list of named, typed things with
+attributes" shape.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+This example is adapted from the real assertions in swift-docc's
+<code>Tests/SwiftDocCTests/Model/SemaToRenderNodeDictionaryDataTests.swift::testDictionaryRenderNodeHasExpectedContent</code>
+(pinned commit <code>8b8d8268aa1</code>), which decodes the <code>DictionaryData.docc</code> test bundle's
+<code>Artist</code> dictionary symbol and asserts on the resulting <code>PropertiesRenderSection</code>
+(title <code>"Properties"</code>, four items: <code>age</code>, <code>genre</code>,
+<code>monthOfBirth</code>, <code>name</code>, with attributes such as <code>minimum</code>/<code>maximum</code>,
+<code>default</code>/<code>allowedValues</code>, and <code>allowedTypes</code> respectively). The test
+asserts on the decoded Swift model, not on a raw JSON fixture file, so the JSON below is reconstructed
+from those assertions plus the <code>PropertiesRenderSection</code>/<code>RenderAttribute</code>
+<code>Codable</code> implementations in
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Symbol/PropertiesRenderSection.swift"><code>Model/Rendering/Symbol/PropertiesRenderSection.swift</code></a>
+and
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Symbol/AttributesRenderSection.swift#L96-L119"><code>Model/Rendering/Symbol/AttributesRenderSection.swift#L96-L119</code></a>
+(the attribute's <code>Decodable init</code> shows the exact wire keys: <code>kind</code>, <code>title</code>,
+and either <code>value</code> or <code>values</code>).
+</p>
+<pre><code>{
+  "kind": "properties",
+  "title": "Properties",
+  "items": [
+    {
+      "name": "age",
+      "type": [{ "kind": "identifier", "text": "integer" }],
+      "deprecated": true,
+      "attributes": [
+        { "kind": "minimum", "title": "Minimum", "value": "0" },
+        { "kind": "maximum", "title": "Maximum", "value": "120" }
+      ]
+    },
+    {
+      "name": "genre",
+      "type": [{ "kind": "identifier", "text": "string" }],
+      "readOnly": true,
+      "attributes": [
+        { "kind": "default", "title": "Default value", "value": "Classic Rock" },
+        {
+          "kind": "allowedValues",
+          "title": "Possible Values",
+          "values": ["Classic Rock", "Folk", "null"]
+        }
+      ]
+    },
+    {
+      "name": "monthOfBirth",
+      "type": [{ "kind": "identifier", "text": "integer" }],
+      "typeDetails": [
+        { "baseType": "integer" },
+        { "baseType": "string" }
+      ],
+      "attributes": [
+        {
+          "kind": "allowedTypes",
+          "title": "Possible Types",
+          "values": [
+            [{ "kind": "identifier", "text": "integer" }],
+            [{ "kind": "identifier", "text": "string" }]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "name",
+      "type": [{ "kind": "identifier", "text": "string" }],
+      "required": true
+    }
+  ]
+}</code></pre>
+<p>A mockup of the resulting <code>PropertyTable</code>/<code>ParametersTable</code> rendering:</p>
+<div class="mockup">
+<section>
+<div id="properties" style="margin-top:0">Properties</div>
+<div style="display:grid;grid-template-columns:1fr 3fr;gap:.5rem 1rem;font-size:.9rem">
+<div style="text-align:right;text-decoration:line-through"><code>age</code></div>
+<div>integer &mdash; <em>Minimum:</em> <code>0</code> &nbsp; <em>Maximum:</em> <code>120</code></div>
+<div style="text-align:right"><code>genre</code> <span style="font-size:.75rem;color:#666">(Read-Only)</span></div>
+<div>string &mdash; <em>Default value:</em> <code>Classic Rock</code> &nbsp; <em>Possible Values:</em> <code>Classic Rock, Folk, null</code></div>
+<div style="text-align:right"><code>monthOfBirth</code></div>
+<div><em>Possible Types:</em> <code>integer</code>, <code>string</code></div>
+<div style="text-align:right"><code>name</code></div>
+<div>string <span style="font-size:.75rem;color:#666">(Required)</span></div>
+</div>
+</section>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Fields of <code>PropertiesSection</code> (wire object for a <code>properties</code> section), from
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> and the corresponding generated type
+<code>Components.Schemas.PropertiesSection</code> in <code>Sources/DocCArchive/generated/Types.swift</code>:
+</p>
+<table>
+<tr><th>field</th><th>type</th><th>required?</th><th>enum values / default</th><th>note</th></tr>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>["properties"]</code></td><td>Discriminator; always the literal <code>"properties"</code>.</td></tr>
+<tr><td><code>title</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Section heading text; for the dictionary-keys use case this is always the fixed string <code>"Properties"</code> (see <code>DictionaryKeysSection.title</code>).</td></tr>
+<tr><td><code>items</code></td><td>array of <code>TypedProperty</code></td><td>no (schema does not list it under <code>required</code>; generated Swift type is <code>[TypedProperty]?</code>)</td><td>&mdash;</td><td>swift-docc's authoring-side <code>PropertiesRenderSection.items</code> is non-optional <code>[RenderProperty]</code> and the translator only emits the section when the filtered key list is non-empty — so in practice this is always present and non-empty on the wire, even though the vendored schema marks it optional.</td></tr>
+</table>
+<p>Fields of <code>TypedProperty</code> (one entry in <code>items</code>):</p>
+<table>
+<tr><th>field</th><th>type</th><th>required?</th><th>enum values / default</th><th>note</th></tr>
+<tr><td><code>name</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>The dictionary key's name.</td></tr>
+<tr><td><code>type</code></td><td>array of <code>DeclarationToken</code></td><td>yes</td><td>&mdash;</td><td>Encoded/decoded under wire key <code>type</code>; the generated Swift property is named <code>_type</code> because <code>type</code> is a reserved word in the generated context.</td></tr>
+<tr><td><code>typeDetails</code></td><td>array of <code>TypeDetails</code></td><td>no</td><td>&mdash;</td><td>Each entry has optional <code>baseType</code> (string) and <code>arrayMode</code> (bool); used when a property's value can be one of several base types (e.g. <code>monthOfBirth</code> being either an integer or a string).</td></tr>
+<tr><td><code>content</code></td><td>array of <code>RenderBlockContent</code></td><td>no</td><td>&mdash;</td><td>Free-form documentation markup describing the property.</td></tr>
+<tr><td><code>attributes</code></td><td>array of <code>Attribute</code> (oneOf <code>StringAttribute</code> / <code>ArrayAttribute</code> / <code>TypesAttribute</code>)</td><td>no</td><td>discriminated by inner <code>kind</code></td><td><code>StringAttribute.kind</code> enum in the vendored spec is <code>["default","minimum","minimumExclusive","maximum","maximumExclusive"]</code> — note <code>minimumLength</code>/<code>maximumLength</code> exist in swift-docc's current Swift <code>RenderAttribute.Kind</code> enum but are <strong>not</strong> present in this vendored spec's <code>StringAttribute.kind</code> enum (vendored at swift-docc commit <code>5915e66</code>, "6.3-nightly", per <code>Sources/DocCArchive/VendorVersion.swift</code> — older/different from this page's pinned <code>8b8d8268aa1</code>). <code>ArrayAttribute.kind</code> is <code>["allowedValues"]</code> with a <code>values: [string]</code> field. <code>TypesAttribute.kind</code> is <code>["allowedTypes"]</code> with a <code>values: [[DeclarationToken]]</code> field.</td></tr>
+<tr><td><code>mimeType</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Present on the swift-docc Swift model too (<code>RenderProperty.mimeType</code>); not exercised in the dictionary-keys example above.</td></tr>
+<tr><td><code>readOnly</code></td><td>boolean</td><td>no</td><td>swift-docc default <code>false</code> when set programmatically; absent on the wire when not applicable</td><td>&mdash;</td></tr>
+<tr><td><code>required</code></td><td>boolean</td><td>no</td><td>swift-docc default <code>false</code></td><td>Drives the "(Required)" text in <code>PropertyTable.vue</code>.</td></tr>
+<tr><td><code>deprecated</code></td><td>boolean</td><td>no</td><td>swift-docc default <code>false</code></td><td>Drives the strikethrough name + "Deprecated" badge in <code>PropertyTable.vue</code>.</td></tr>
+<tr><td><code>introducedVersion</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Not consumed by <code>PropertyTable.vue</code>/<code>ParameterAttributes.vue</code> as of the pinned swift-docc-render commit — present on the wire but currently unused by this renderer's UI.</td></tr>
+</table>
+<p>
+<strong>DocCArchive transform status:</strong> not yet implemented. <code>Sources/DocCArchive/DocCArchive.swift</code>
+defines <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code> as stub placeholders
+(<code>MyHTMLTransformer.convert</code> returns a hardcoded HTML comment, <code>MyMarkdownTransformer.convert</code>
+returns an empty string), so a <code>properties</code> section decoded into
+<code>Components.Schemas.PropertiesSection</code> would parse correctly today but is not yet walked or
+rendered by either transformer.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li><strong>Root element:</strong> a plain <code>&lt;section&gt;</code> (no dedicated class) from
+<code>PropertyTable.vue</code>'s template, containing a <code>LinkableHeading</code> (renders
+<code>&lt;h2 id="{anchor}"&gt;</code> by default, where <code>anchor</code> is
+<code>anchorize(title)</code> — for the dictionary-keys case, that's the slug for the string
+<code>"Properties"</code>) followed by the table body.</li>
+<li><strong>Table body:</strong> <code>ParametersTable.vue</code> renders a
+<code>&lt;div class="parameters-table property-table"&gt;</code> (the <code>property-table</code> class is
+added by <code>PropertyTable.vue</code> when it instantiates <code>&lt;ParametersTable
+class="property-table"&gt;</code>), containing one <code>Row</code> (<code>GridRow</code>) per property with
+class <code>param</code>, each split into two <code>Column</code> (<code>GridColumn</code>) elements:
+<code>param-symbol</code> (name + optionally the type) and <code>param-content</code> (description slot).</li>
+<li><strong>Property name:</strong> <code>&lt;div class="property-name"&gt;</code> (with modifier class
+<code>deprecated</code> when applicable) wrapping a <code>&lt;code&gt;</code> via
+<code>WordBreak</code>.</li>
+<li><strong>Deprecated badge:</strong> <code>&lt;Badge variant="deprecated" class="property-deprecated"&gt;</code>.</li>
+<li><strong>Attributes list:</strong> <code>&lt;div class="parameter-attributes"&gt;</code> from
+<code>ParameterAttributes.vue</code>, one child per present attribute kind, each produced by
+<code>ParameterMetaAttribute.vue</code>.</li>
+<li><strong>SCSS files involved:</strong>
+<code>src/components/DocumentationTopic/PrimaryContent/PropertyTable.vue</code> (scoped styles for
+<code>.property-name</code>, <code>.property-deprecated</code>, and the inline <code>.content</code>
+display-inline hack that lets "(Required)" prefix the first paragraph of prose),
+<code>src/components/DocumentationTopic/PrimaryContent/ParametersTable.vue</code> (scoped styles for
+<code>.parameters-table</code>, <code>.param</code>, <code>.param-symbol</code>,
+<code>.param-content</code>, and the API-diff <code>changed</code>/<code>changed-added</code>/
+<code>changed-removed</code> highlighting), and
+<code>src/components/DocumentationTopic/PrimaryContent.vue</code> (scoped <code>.primary-content</code>
+wrapper spacing shared by every section kind in the sidebar-content column).</li>
+<li><strong>CSS custom properties consumed:</strong> <code>--spacing-param</code> (row-to-row gap between
+<code>.param</code> elements, defined as <code>rem(28px)</code> in
+<code>src/styles/base/_typography.scss</code>), <code>--color-link</code> (used by
+<code>.type-identifier-link</code> inside <code>.param-symbol</code>), and
+<code>--colors-grid</code>/<code>--color-grid</code> plus <code>--content-table-title-border-width</code>
+consumed by the shared <code>.primary-content.with-border::before</code> rule in
+<code>PrimaryContent.vue</code>.</li>
+</ul>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+The current JS/Vue behavior in play here is entirely static markup generation: <code>PropertyTable.vue</code>
+and <code>ParametersTable.vue</code> just map a data array into a fixed two-column grid of rows with no
+component-local reactive state, no <code>v-show</code>/<code>v-if</code> toggling driven by user
+interaction, and no click handlers that change what's visible after the initial render (the only
+conditionals — <code>shouldShiftType()</code>, <code>shouldRender()</code> in
+<code>ParameterAttributes.vue</code>, and the <code>deprecated</code>/<code>required</code>/
+<code>readOnly</code> booleans — are all evaluated once from the RenderNode JSON at render time, not
+re-evaluated in response to any runtime event). The one piece of interactivity, the
+<code>LinkableHeading</code> deep-link icon and its <code>router-link</code>, is just an anchor navigation
+affordance identical to any other in-page heading link on the site and is already served by a plain
+<code>&lt;a href="#properties"&gt;</code> — nothing here needs a client-state-holding mechanism like
+<code>&lt;details&gt;</code>, a <code>:checked</code> radio trick, or <code>:target</code> to replace,
+because there is no interactive show/hide/tab/switch behavior in this render section to begin with.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

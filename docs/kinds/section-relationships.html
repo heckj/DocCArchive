@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: relationships — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>relationships</code></h1>
+<p class="wire-value">Wire value: <code>"relationships"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>relationships</code> is a symbol-page section kind: a <code>RelationshipsGroupSection</code>
+(wire schema name) / <code>RelationshipsRenderSection</code> (swift-docc Swift type name) is one
+entry in the top-level RenderNode's <code>relationshipsSections</code> array. Unlike the
+block/inline content kinds dispatched through <code>ContentNode.vue</code>'s <code>renderNode()</code>
+lookup table, this is a section-tier kind: it is not looked up by a string-keyed dispatch table at
+all. <code>relationshipsSections</code> is passed straight through as a typed prop from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L150-L154"><code>DocumentationTopic.vue</code></a>
+to a single fixed child component:
+</p>
+<pre><code>&lt;Relationships
+  v-if="relationshipsSections"
+  :sections="relationshipsSections"
+  :enableMinimized="enableMinimized"
+/&gt;</code></pre>
+<p>
+That child is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/Relationships.vue#L11-L69"><code>DocumentationTopic/Relationships.vue</code></a>.
+Its template wraps a shared <code>ContentTable</code> (the same collapsible-heading wrapper used by
+Topics/Default Implementations/See Also) around one <code>ContentTableSection</code> per relationship
+group, using the group's <code>title</code> (e.g. &quot;Conforms To&quot;) as the sub-heading:
+</p>
+<pre><code>&lt;ContentTable :anchor="contentSectionData.anchor" :title="$t(contentSectionData.title)" :enableMinimized="enableMinimized"&gt;
+  &lt;Section v-for="section in sectionsWithSymbols" :key="section.type" :title="section.title" :anchor="section.anchor"&gt;
+    &lt;List :symbols="section.symbols" :type="section.type" /&gt;
+  &lt;/Section&gt;
+&lt;/ContentTable&gt;</code></pre>
+<p>
+The component's own <code>sectionsWithSymbols</code> computed property is the only real logic here:
+for each incoming group it resolves every entry in <code>identifiers</code> against the page-wide
+<code>references</code> map (via the <code>referencesProvider</code> mixin), dropping any identifier
+that fails to resolve, and hands the resulting resolved-symbol array to
+<code>List</code> &mdash; aliased to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/RelationshipsList.vue#L11-L33"><code>RelationshipsList.vue</code></a>.
+<code>RelationshipsList</code> renders a <code>ul.relationships-list</code> of <code>li.relationships-item</code>,
+each showing either a <code>Reference</code> link (if the resolved symbol has a <code>url</code>) or
+plain <code>code</code> text (via <code>WordBreak</code>) for unresolvable symbols, optionally followed
+by a <code>ConditionalConstraints</code> node when the resolved reference carries generic-constraint
+information (e.g. &quot;Available when <code>Element</code> conforms to ...&quot;). The component also
+injects the app <code>store</code> to compute API-diff highlighting (<code>changeType</code>,
+<code>changed-*</code> classes) against <code>state.apiChanges</code>, and switches between an inline
+comma-separated layout (<code>.inline</code>, used when there are 3 or fewer symbols and none carry
+constraint info) and a one-per-line layout (<code>.column</code>) otherwise.
+</p>
+<p>
+The section's anchor/heading text come from a shared constants file, not from the payload itself:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/ContentSectionAnchors.js#L24-L28"><code>constants/ContentSectionAnchors.js</code></a>
+defines <code>MainContentSectionAnchors.relationships = { title: 'sections.relationships', anchor: 'relationships', level: 2 }</code>,
+which is also what registers the on-this-page nav entry (see
+<code>mixins/onThisPageRegistrator.js</code>, lines 101&ndash;102).
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Fixture source: <code>Tests/DocCArchiveTests/Fixtures/SampleLibrary.doccarchive/data/documentation/samplelibrary/sampleerror.json</code>
+(a real DocC-generated RenderNode in this repository's own test fixtures) &mdash; its
+<code>relationshipsSections</code> array, together with the matching entries pulled from that same
+file's top-level <code>references</code> map so the mockup below is faithful to what
+swift-docc-render would actually resolve.
+</p>
+<pre><code>{
+  "relationshipsSections": [
+    {
+      "kind": "relationships",
+      "title": "Conforms To",
+      "type": "conformsTo",
+      "identifiers": [
+        "doc://SampleLibrary/s5ErrorP",
+        "doc://SampleLibrary/s8SendableP",
+        "doc://SampleLibrary/s16SendableMetatypeP"
+      ]
+    }
+  ],
+  "references": {
+    "doc://SampleLibrary/s5ErrorP": {
+      "identifier": "doc://SampleLibrary/s5ErrorP",
+      "title": "Swift.Error",
+      "type": "unresolvable"
+    },
+    "doc://SampleLibrary/s8SendableP": {
+      "identifier": "doc://SampleLibrary/s8SendableP",
+      "title": "Swift.Sendable",
+      "type": "unresolvable"
+    },
+    "doc://SampleLibrary/s16SendableMetatypeP": {
+      "identifier": "doc://SampleLibrary/s16SendableMetatypeP",
+      "title": "Swift.SendableMetatype",
+      "type": "unresolvable"
+    }
+  }
+}</code></pre>
+<p>
+Note: all three referenced symbols in this fixture are external standard-library protocols with
+<code>"type": "unresolvable"</code> (no <code>url</code>), so <code>Relationships.vue</code>'s
+<code>sectionsWithSymbols</code> computed property still includes them (a reference object exists,
+it is just not a navigable link) and <code>RelationshipsList.vue</code> falls back to its
+<code>WordBreak</code>-wrapped <code>code</code> branch rather than a clickable <code>Reference</code>
+for each. With exactly 3 symbols and no <code>conformance</code> constraint data, this list also
+qualifies for the <code>.inline</code> (comma-separated) layout per <code>shouldDisplayInline</code>.
+</p>
+<div class="mockup">
+  <div style="border-top:1px solid #d2d2d7; padding-top:20px;">
+    <div style="font-size:1.375rem; margin:0 0 12px;">Relationships</div>
+    <div style="font-size:0.8125rem; text-transform:uppercase; letter-spacing:0.02em; color:#6e6e73; margin:0 0 8px;">Conforms To</div>
+    <ul style="list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap;">
+      <li style="font-family:ui-monospace, monospace; font-size:0.9rem;">Swift.Error<span>,&nbsp;</span></li>
+      <li style="font-family:ui-monospace, monospace; font-size:0.9rem;">Swift.Sendable<span>,&nbsp;</span></li>
+      <li style="font-family:ui-monospace, monospace; font-size:0.9rem;">Swift.SendableMetatype</li>
+    </ul>
+  </div>
+  <p><em>mockup: a "Relationships" content-table heading, a "Conforms To" sub-heading, and an
+  inline comma-separated list of the three (unresolvable, so plain-code rather than linked) conformed
+  protocols &mdash; approximating <code>.relationships-list.inline</code>.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/RelationshipsGroupSection</code> (also referenced by
+<code>DocumentationRenderNode/relationshipsSections</code>, an array of this schema), cross-checked
+against the generated <code>Components.Schemas.RelationshipsGroupSection</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6348&ndash;6393).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"relationships"</code> (single-case enum)</td>
+<td>Generated as a one-case <code>KindPayload</code> enum. Matches the hardcoded
+<code>let kind: RenderSectionKind = .relationships</code> in swift-docc's Swift model.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Human-readable group heading, e.g. &quot;Conforms To&quot;, &quot;Inherits From&quot;,
+&quot;Inherited By&quot;, &quot;Conforming Types&quot;. Used verbatim as the
+<code>ContentTableSection</code> sub-heading text.</td>
+</tr>
+<tr>
+<td><code>type</code> (Swift property <code>_type</code>, JSON key <code>type</code>)</td>
+<td>string</td>
+<td>yes</td>
+<td><code>"conformsTo"</code>, <code>"conformingTypes"</code>, <code>"inheritsFrom"</code>,
+<code>"inheritedBy"</code></td>
+<td>Machine-readable relationship kind. swift-docc-render uses this as the Vue <code>:key</code>
+for the <code>v-for</code> loop and to look up API-diff change data via
+<code>RelationshipChangeMapping</code> (only <code>conformsTo</code>/<code>inheritsFrom</code>/<code>inheritedBy</code>
+are mapped there &mdash; <code>conformingTypes</code> is not, so diff highlighting for that
+relationship type is not wired up in <code>RelationshipsList.vue</code>).</td>
+</tr>
+<tr>
+<td><code>identifiers</code></td>
+<td>array of string (<code>format: reference</code>)</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Each string is a <code>doc://</code> reference identifier resolved against the page's
+top-level <code>references</code> map. swift-docc's decoder additionally calls
+<code>decoder.registerReferences(identifiers)</code> during decode (see
+<code>RelationshipsRenderSection.init(from:)</code>) to make sure referenced symbols get pulled
+into the render context. Identifiers that fail to resolve against <code>references</code> are
+silently dropped by <code>Relationships.vue</code>'s <code>sectionsWithSymbols</code>, not shown as
+broken links.</td>
+</tr>
+</tbody>
+</table>
+<p>
+<strong>Note on the Swift struct site:</strong> no <code>swiftStructSite</code> was pre-supplied for
+this page, so <code>Sources/SwiftDocC/Model/Rendering/</code> was searched directly. The matching
+Swift model is
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Symbol/RelationshipsRenderSection.swift#L14-L45"><code>RelationshipsRenderSection.swift</code></a>,
+which matches the wire schema field-for-field (<code>kind</code>, <code>title</code>,
+<code>identifiers</code>, <code>type</code>) with no undocumented extra properties &mdash; unlike
+some other section kinds, there is no gap between the vendored JSON Schema and swift-docc's actual
+Swift type here.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, composed from three templates:</p>
+<ul>
+<li><code>Relationships.vue</code> renders a <code>ContentTable</code>, whose root is
+<code>section.contenttable.alt-light</code> containing <code>div.container</code> &gt;
+<code>LinkableHeading.title</code> (an <code>h2</code>-level heading carrying the
+<code>id="relationships"</code> in-page anchor) followed by the slot content.</li>
+<li>Each relationship group becomes a <code>ContentTableSection</code>:
+<code>div.contenttable-section</code> &gt; <code>div.section-title</code> (a
+<code>LinkableHeading</code> at heading level 3, class <code>contenttable-title</code>, anchored
+via <code>anchorize(title)</code> unless an explicit <code>anchor</code> is supplied) and
+<code>div.section-content</code> (which wraps the default slot, i.e. the list).</li>
+<li>The list itself, from <code>RelationshipsList.vue</code>, is <code>ul.relationships-list</code>
+with modifier classes <code>.inline</code> or <code>.column</code> (mutually exclusive, chosen by
+<code>shouldDisplayInline</code>) and, when API-diff data applies, <code>.changed.changed-{added|modified|deprecated}</code>.
+Each entry is <code>li.relationships-item</code>, containing either
+<code>Reference.link</code> (an <code>a</code>-like link component) or a plain
+<code>code</code> element (via <code>WordBreak</code>), optionally followed by
+<code>div.conditional-constraints</code> (from <code>ConditionalConstraints.vue</code>, itself a
+thin wrapper around the shared <code>ContentNode</code> renderer) when the resolved symbol carries
+generic constraint info.</li>
+</ul>
+<p>
+SCSS: <code>ContentTable.vue</code>'s own scoped block (importing
+<code>docc-render/styles/_core.scss</code>) drives the outer container spacing and heading style;
+<code>ContentTableSection.vue</code>'s scoped block drives the per-group heading/content padding
+(with a distinct small-breakpoint layout under <code>@include breakpoint(small)</code>); and
+<code>RelationshipsList.vue</code>'s own scoped block (lines 127&ndash;177) defines
+<code>.relationships-list</code>'s <code>.column</code>/<code>.inline</code>/<code>.changed</code>
+variants, including the comma-separator trick
+(<code>li:not(:last-child)::after { content: ",\00a0" }</code>) used for the inline layout.
+</p>
+<p>Key CSS custom properties consumed:</p>
+<ul>
+<li><code>--color-grid</code> &mdash; sets <code>border-top-color</code> on
+<code>ContentTable.vue</code>'s <code>.title</code> (the divider line above the "Relationships"
+heading).</li>
+<li><code>--content-table-title-border-width</code> &mdash; overridable border width for that same
+divider (defaults to <code>1px</code> when unset).</li>
+<li><code>--section-spacing-single-side</code> &mdash; a locally-scoped custom property (set from
+the SCSS variable <code>$section-spacing-single-side</code>, or overridden to <code>1.5em</code>
+when <code>enableMinimized</code> is set) controlling the vertical padding around the whole
+content-table block.</li>
+<li><code>--colors-secondary-label</code> / <code>--color-secondary-label</code> &mdash; used by
+<code>ConditionalConstraints.vue</code> to color the constraint-text <code>code</code> spans.</li>
+</ul>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift</code>) are still stub placeholders &mdash; the HTML
+transformer returns a hardcoded comment and the Markdown transformer returns an empty string, so
+there is no kind-specific handling of <code>relationshipsSections</code>/<code>RelationshipsGroupSection</code>
+in DocCArchive today.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: everything under <code>Relationships.vue</code> and
+<code>RelationshipsList.vue</code> is one-way, stateless prop-to-template rendering. The only
+non-trivial logic is derived, read-only computed state &mdash; <code>sectionsWithSymbols</code>
+resolves reference identifiers against a passed-in map, <code>changeType</code>/<code>classes</code>
+derive CSS classes from a diff-changes lookup, and <code>shouldDisplayInline</code> picks between
+two static layouts based on the item count and whether any item has constraint data. None of this
+is runtime user-driven interactivity (no click handlers, no toggled visibility, no open/closed
+state); it is all resolved once when the component's props/injected store are set, exactly like a
+server-side template would behave. There is consequently no client-side state-holding mechanism
+(no <code>v-show</code>/<code>v-if</code> toggle, no modal, no tab switch) for a native CSS
+mechanism such as <code>&lt;details&gt;</code>, a <code>:checked</code> radio hack, or
+<code>&lt;dialog&gt;</code> to replace. The verdict is <strong>not applicable</strong> because this
+kind has no interactive behavior to begin with &mdash; it is a fixed conditional list layout
+(inline-vs-column, chosen once from static input data) rendered by ordinary CSS class selectors,
+not a state machine.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

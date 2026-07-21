@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: fileType — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>fileType</code></h1>
+<p class="wire-value">Wire value: <code>"fileType"</code></p>
+<p class="appears-on">Not emitted on any page (see notes above).</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+This is an honest negative result: <strong>swift-docc-render does not consume the <code>fileType</code>
+reference kind at all.</strong> The <code>FileTypeRenderReference</code> object — a <code>references</code>
+dictionary entry with <code>type: "fileType"</code>, meant to carry a <code>displayName</code> and
+<code>iconBase64</code> icon for a class of file — has no matching Vue component, no
+<code>references[id].type === 'fileType'</code> branch, and no read of <code>displayName</code> or
+<code>iconBase64</code> anywhere under <code>src/components/</code> or <code>src/views/</code> at the pinned
+commit. A grep of the whole <code>src/</code> tree for <code>displayName</code>/<code>iconBase64</code>/
+<code>FileTypeRenderReference</code> returns nothing.
+</p>
+<p>
+There is a different, easily-confused piece of the schema that <em>does</em> get consumed: a plain string
+property also named <code>fileType</code> that lives on the <strong><code>codeListing</code> block</strong>
+(and on the unrelated <code>FileRenderReference</code>/<code>file</code> reference kind for a specific named
+file). In <code>components/ContentNode.vue</code>'s block-dispatch <code>render()</code> function, the
+<code>codeListing</code> case reads <code>node.fileType</code> and forwards it as a prop:
+</p>
+<pre><code>case BlockType.codeListing: {
+  ...
+  const props = {
+    syntax: node.syntax,
+    fileType: node.fileType,
+    content: node.code,
+    ...
+  };
+  return createElement(CodeListing, { props });
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L267-L281"><code>src/components/ContentNode.vue#L267-L281</code></a>).
+That string flows down through
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListing.vue#L18-L24"><code>CodeListing.vue#L18-L24</code></a>
+(as a prop on <code>CodeListingFilename</code>) to a three-line template in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListingFileIcon.vue#L11-L20"><code>CodeListingFileIcon.vue#L11-L20</code></a>:
+</p>
+<pre><code>&lt;SwiftFileIcon v-if="fileType === 'swift'" class="file-icon" /&gt;
+&lt;GenericFileIcon v-else class="file-icon" /&gt;</code></pre>
+<p>
+That is the entirety of "file type" handling in the render layer: a binary string comparison
+(<code>=== 'swift'</code>) picking between exactly two hardcoded SVG icon components. There is no
+generic file-type-to-icon lookup table, no use of a <code>displayName</code>, and no decoding of a
+Base64 icon anywhere — which is exactly what the <code>fileType</code> <em>reference kind</em> documented
+on this page would have supplied if it were wired up.
+</p>
+<p>
+Confirming this is not a search miss: swift-docc's own <code>CodableRenderReference</code> decode switch
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNode/CodableRenderReference.swift#L25-L46"><code>CodableRenderReference.swift#L25-L46</code></a>)
+only ever <em>decodes</em> a <code>FileTypeReference</code> when it encounters <code>type: "fileType"</code>
+in a references dictionary — grepping all of swift-docc's <code>Sources/</code> and <code>Tests/</code> for
+a call that <em>constructs</em> <code>FileTypeReference(...)</code> turns up nothing. The type exists purely
+so a decoder that receives externally-produced (or historical) RenderNode JSON containing this reference
+kind won't crash; nothing in the current swift-docc render-node generator emits one, and nothing in
+swift-docc-render reads one back out.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture containing a <code>"type": "fileType"</code> reference was found in
+<code>Tests/DocCArchiveTests/Fixtures/</code> (only compiled/bundled <code>.js</code> assets under
+<code>SampleLibrary.doccarchive/js/</code> and <code>ExampleDocs.doccarchive/js/</code> match the literal
+string "fileType", and those are minified swift-docc-render application bundles, not RenderNode JSON) nor in
+<code>swift-docc</code>'s <code>Tests/SwiftDocCTests/</code> tree. The following is hand-written directly
+from the required fields in the data sheet below.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "fileType",
+  "identifier": "filetype:swift-source",
+  "displayName": "Swift Source File",
+  "iconBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+}</code></pre>
+<p>
+Because nothing in swift-docc-render actually resolves this reference kind (section 1), there is no real
+rendered output to screenshot or reproduce faithfully. The mockup below shows what the schema's own fields
+imply the intended presentation would be — an icon decoded from <code>iconBase64</code> next to
+<code>displayName</code> — analogous to how <code>CodeListingFileIcon.vue</code> pairs an icon with a
+filename, but built here from data this kind provides that <code>CodeListingFileIcon.vue</code> does not
+actually use.
+</p>
+<div class="mockup">
+  <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid #ddd; border-radius:6px; font-family:-apple-system,sans-serif; font-size:0.85em; color:#333;">
+    <span style="display:inline-block; width:14px; height:18px; background:#f2a33c; border-radius:2px 4px 2px 2px; position:relative;"></span>
+    Swift Source File
+  </span>
+  <p style="font-size:0.75em; color:#999; margin-top:6px;">(speculative — this reference kind is not rendered by swift-docc-render; see section 1)</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema object: <code>#/components/schemas/FileTypeRenderReference</code> in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (lines 1694-1712), one of the
+<code>oneOf</code> variants of the <code>RenderReference</code> discriminated union
+(<code>RenderNode.spec.json</code> line 1503). Generated Swift:
+<code>Components.Schemas.FileTypeRenderReference</code>, a plain <code>Codable, Hashable, Sendable</code>
+struct at <code>Sources/DocCArchive/generated/Types.swift:2396-2426</code>, reachable as the
+<code>.FileTypeRenderReference</code> case of the generated <code>RenderReference</code> enum
+(<code>Types.swift:2123</code>, decode branch at line 2155, encode branch at line 2204). This corresponds
+to swift-docc's authoring-side <code>FileTypeReference</code> struct at
+<code>Sources/SwiftDocC/Model/Rendering/References/FileReference.swift:101-123</code>.
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"fileType"</code></td><td>Discriminator; generated as <code>_TypePayload</code> with the single case <code>.fileType</code>. Corresponds to the <code>.fileType</code> case of swift-docc's <code>RenderReferenceType</code> enum (<code>RenderReference.swift:29</code>).</td></tr>
+<tr><td><code>identifier</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Key under which this reference is stored in the RenderNode's top-level <code>references</code> dictionary; other content refers back to it by this identifier.</td></tr>
+<tr><td><code>displayName</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Human-readable name for the file type, e.g. "Swift Source File". Per swift-docc's doc comment, used "to display an icon for that file type alongside the content of that file" — but see section 1: no current renderer reads this field.</td></tr>
+<tr><td><code>iconBase64</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Base64-encoded icon image data. On the Swift side this decodes to <code>Foundation.Data</code> (<code>FileTypeReference.iconBase64: Data</code>, <code>FileReference.swift:111</code>); the generated wire type keeps it as a plain <code>Swift.String</code> since the OpenAPI schema declares no <code>format: byte</code>.</td></tr>
+</table>
+<p>
+Sibling schema worth distinguishing: <code>FileRenderReference</code>
+(<code>RenderNode.spec.json</code> lines 1642-1673 / <code>Types.swift:2310-2365</code>, <code>type</code>
+enum <code>"file"</code>) is a <em>different</em> reference kind that also happens to declare a required
+string field literally named <code>fileType</code> (a file extension/language id like <code>"swift"</code>,
+distinct from this page's <code>displayName</code>/<code>iconBase64</code> reference object). It is that
+sibling field — not this kind — which reaches <code>CodeListingFileIcon.vue</code> in section 1.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+None. Because no Vue component in swift-docc-render at the pinned commit reads
+<code>references[id].type === 'fileType'</code>, <code>displayName</code>, or <code>iconBase64</code>,
+there is no dedicated HTML element, CSS class, SCSS file, or CSS custom property associated with this
+reference kind to document. If a <code>fileType</code> reference is present in a RenderNode's
+<code>references</code> dictionary but nothing in the node graph resolves it by identifier, it is simply
+inert JSON that ships in the archive and is never turned into markup.
+</p>
+<p>
+The nearest analog with real markup — the <code>fileType</code> <em>string field</em> on
+<code>FileRenderReference</code>/<code>codeListing</code> discussed in section 1 — produces an
+<code>&lt;svg&gt;</code> from either <code>SwiftFileIcon.vue</code> or <code>GenericFileIcon.vue</code>
+inside a <code>&lt;span class="file-icon"&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeListingFileIcon.vue#L38-L47"><code>CodeListingFileIcon.vue#L38-L47</code></a>),
+scoped-SCSS-styled with a fixed <code>height: 24px</code> and margin — but that markup is driven entirely
+by the plain string comparison, never by an <code>iconBase64</code> payload or a <code>FileTypeRenderReference</code>
+lookup.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Not applicable, for a concrete reason: there is no JS/Vue behavior to replace. This reference kind has no
+consuming component, no data-binding, no conditional class, and no interactive or stateful behavior
+anywhere in swift-docc-render's source at the pinned commit (section 1) — it is schema-defined, decode-only
+dead weight inherited from swift-docc's <code>RenderReference</code> union, never constructed by the
+archive generator and never read by the renderer. A "modern CSS-only alternative" question presumes some
+existing runtime behavior (state toggled by JS, or a layout/interaction pattern) that a native selector or
+element could hold instead; since none exists here, there is nothing for <code>:has()</code>, radio-input
+tricks, <code>&lt;details&gt;</code>, or any other native mechanism to stand in for. If this kind were ever
+wired up as designed — an icon decoded from <code>iconBase64</code> shown next to a <code>displayName</code>
+label — that pairing would be static, server/build-time-resolvable markup (an <code>&lt;img>&lt;/img&gt;</code>
+or inline <code>&lt;svg&gt;</code> plus a text node) with no client-side state at all, so even a hypothetical
+future implementation would likely need zero JavaScript and zero CSS-only "workarounds" — plain HTML would
+suffice.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

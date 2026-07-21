@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: possibleValues — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>possibleValues</code></h1>
+<p class="wire-value">Wire value: <code>"possibleValues"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/</code> for the literal string <code>possibleValues</code> turns up a small, self-consistent
+cluster of files under <code>src/constants/</code> and <code>src/components/DocumentationTopic/</code>. The wire
+value is first named as a <code>SectionKind</code> constant in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L12-L27"><code>constants/PrimaryContentSection.js#L12-L27</code></a>
+(<code>possibleValues: 'possibleValues'</code>), then given a section heading/anchor in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/ContentSectionAnchors.js#L34-L57"><code>constants/ContentSectionAnchors.js#L34-L57</code></a>:
+</p>
+<pre><code>[SectionKind.possibleValues]: {
+  title: 'sections.possible-values',
+  anchor: 'possibleValues',
+  level: 2,
+},</code></pre>
+<p>
+That constant is consumed by the same primary-content dispatch table documented on the sibling
+<code>content</code>/<code>attributes</code>/<code>parameters</code> pages,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L73-L127"><code>DocumentationTopic/PrimaryContent.vue#L73-L127</code></a>.
+A section whose <code>kind</code> is <code>"possibleValues"</code> is mounted as the dedicated
+<code>PossibleValues</code> component, and only its <code>values</code> field is forwarded as a prop:
+</p>
+<pre><code>componentFor(section) {
+  return {
+    ...
+    [SectionKind.possibleValues]: PossibleValues,
+    ...
+  }[section.kind];
+},
+propsFor(section) {
+  ...
+  return {
+    ...
+    [SectionKind.possibleValues]: { values },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+The presentation itself lives entirely in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PossibleValues.vue#L11-L53"><code>DocumentationTopic/PrimaryContent/PossibleValues.vue#L11-L53</code></a>,
+a small single-file component with no local state:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;section&gt;
+    &lt;LinkableHeading :anchor="contentSectionData.anchor"&gt;
+      {{ $t(contentSectionData.title) }}
+    &lt;/LinkableHeading&gt;
+    &lt;dl class="datalist"&gt;
+      &lt;template v-for="value in values"&gt;
+        &lt;dt class="param-name" :key="`${value.name}:name`"&gt;
+          &lt;WordBreak tag="code"&gt;{{ value.name }}&lt;/WordBreak&gt;
+        &lt;/dt&gt;
+        &lt;dd v-if="value.content" class="value-content" :key="`${value.name}:content`"&gt;
+          &lt;ContentNode :content="value.content" /&gt;
+        &lt;/dd&gt;
+      &lt;/template&gt;
+    &lt;/dl&gt;
+  &lt;/section&gt;
+&lt;/template&gt;</code></pre>
+<p>
+So the component renders one heading (via the shared <code>LinkableHeading</code> component, using the
+localized string key <code>sections.possible-values</code> — <code>"Possible Values"</code> in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/lang/locales/en-US.json#L108"><code>lang/locales/en-US.json#L108</code></a> —
+rather than the JSON payload's own <code>title</code> string, which is never read by this component) followed by
+a single <code>&lt;dl&gt;</code> definition list: each value's <code>name</code> becomes a <code>&lt;dt&gt;</code>
+(wrapped in <code>WordBreak</code>, rendered as an inline <code>&lt;code&gt;</code>), and — only if that value
+carries a <code>content</code> array — a following <code>&lt;dd&gt;</code> delegates to the shared
+<code>ContentNode</code> component to render arbitrary block content. Values with no <code>content</code>
+produce a bare <code>&lt;dt&gt;</code> with no matching <code>&lt;dd&gt;</code> at all (the <code>v-if</code>
+guard), which is exactly the shape seen for the <code>"ppc"</code> and <code>"arm"</code> entries in the
+example fixture below. There is no click handling, toggling, or other interactive behavior anywhere in this
+component; it is a pure one-time template render driven by the <code>values</code> prop.
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: swift-docc's own rendering test fixture
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/plist-symbol.json</code> (lines 199&ndash;219), one entry
+of that RenderNode's <code>primaryContentSections</code> array for a documented property-list key. No JSON
+example of this section kind was found in DocCArchive's own <code>ExampleDocs.doccarchive</code> /
+<code>SampleLibrary.doccarchive</code> test fixtures (those archives don't document any property-list-style
+symbols), so this example is taken from swift-docc's test suite instead, per the sourcing priority order.
+</p>
+<pre><code>{
+    "title": "Possible Values",
+    "kind": "possibleValues",
+    "values": [
+        { "name": "ppc" },
+        {
+          "name": "i386",
+          "content": [
+            {
+              "type": "paragraph",
+              "inlineContent": [
+                { "type": "text", "text": "Any i386 type of processor" }
+              ]
+            }
+          ]
+        },
+        { "name": "arm" }
+    ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <div style="margin-top:0; font-size:1.3rem;">Possible Values</div>
+    <dl style="margin:0;">
+      <dt style="font-weight:600; font-family:monospace; padding-top:1rem;">ppc</dt>
+      <dt style="font-weight:600; font-family:monospace; padding-top:1rem;">i386</dt>
+      <dd style="margin:0 0 0 2rem;">Any i386 type of processor</dd>
+      <dt style="font-weight:600; font-family:monospace; padding-top:1rem;">arm</dt>
+    </dl>
+  </div>
+  <p><em>mockup: note that <code>"ppc"</code> and <code>"arm"</code> have no <code>content</code>, so they
+  render as bare terms with no description line beneath them — only <code>"i386"</code>, which supplies a
+  <code>content</code> array, gets a <code>&lt;dd&gt;</code> underneath it. The heading text shown here
+  ("Possible Values") actually comes from the client's own localized string table, not from the JSON
+  payload's <code>title</code> field, which this component never reads (see Section 1).</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/PossibleValuesSection</code> (lines 3012&ndash;3047), cross-checked against
+<code>Components.Schemas.PossibleValuesSection</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6713&ndash;6771). This is one arm of the
+<code>DocumentationPrimaryRenderSection</code> discriminated union (schema, around line 2537) that makes up a
+symbol RenderNode's <code>primaryContentSections</code> array.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"possibleValues"</code> (single-value enum)</td>
+<td>Generated as <code>KindPayload: String, Codable, Hashable, Sendable, CaseIterable { case possibleValues }</code>.
+On the swift-docc production side this is one member of the shared, larger <code>RenderSectionKind</code>
+Swift enum (<code>RenderSection.swift</code>, line 26) grouped there under the comment "Plist" alongside
+<code>details</code> and <code>attributes</code>.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Optional on the wire and in the generated <code>Swift.String?</code>. On the swift-docc production side,
+<code>PossibleValuesSectionTranslator</code> always supplies
+<code>PropertyListPossibleValuesSection.title</code> — the fixed string <code>"Possible Values"</code> — so
+in practice every RenderNode swift-docc emits has this field populated. Note swift-docc-render's own
+<code>PossibleValues.vue</code> component never reads this field at all; it renders its own localized heading
+string instead (Section 1), so this field is effectively inert for the primary consumer of the format.</td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td>array of <code>NamedValue</code> objects (<code>{ name, content? }</code>)</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Each item requires <code>name</code> (string) and has an optional <code>content</code> array of
+<code>RenderBlockContent</code>. Matches swift-docc's Swift-side
+<code>PossibleValuesRenderSection.NamedValue</code> struct (<code>name: String</code>,
+<code>content: [RenderBlockContent]?</code>) exactly — no schema/model mismatch for this section kind.</td>
+</tr>
+<tr>
+<td><code>values[].name</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The literal possible value, e.g. <code>"ppc"</code>. Authored on the Swift-side via a
+<code>- PossibleValue:</code> (singular) or <code>- PossibleValues:</code> (plural) Markdown list marker,
+consumed by <code>ListItemExtractor.swift</code> and validated against the symbol's actual declared
+possible-value set by <code>PropertyListPossibleValuesSection.Validator</code>, which emits the
+<code>org.swift.docc.DocumentedPossibleValueNotFound</code> diagnostic for names that don't match.</td>
+</tr>
+<tr>
+<td><code>values[].content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Arbitrary block content describing the value. Absent for self-explanatory values (matches
+<code>PossibleValuesRenderSection.NamedValue</code>'s doc comment: "Some values are self-explanatory in their
+context like '2' or 'Info.plist'").</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM, outer to inner, for a <code>possibleValues</code>-kind entry inside a symbol page's primary
+content list:
+</p>
+<ul>
+<li><code>div.primary-content</code> — the root element of
+<code>DocumentationTopic/PrimaryContent.vue</code>, shared with every other primary-content section kind
+(see the <code>content</code> kind's reference page for detail on this outer wrapper).</li>
+<li><code>&lt;section&gt;</code> — the root element of <code>PossibleValues.vue</code> itself
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PossibleValues.vue#L11-L27"><code>PossibleValues.vue#L11-L27</code></a>),
+with no distinguishing class of its own.</li>
+<li>Inside it, an <code>&lt;h2 id="possibleValues"&gt;</code> (the anchor id set by
+<code>LinkableHeading</code>'s <code>:id="anchor"</code> binding, using the constant
+<code>anchor: 'possibleValues'</code> from <code>ContentSectionAnchors.js</code>) wrapping a
+<code>router-link.header-anchor</code> deep-link icon, matching the anchor/heading pattern used by every
+other linkable section heading on the site.</li>
+<li><code>dl.datalist</code> — one definition list for the whole section
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PossibleValues.vue#L16-L25"><code>PossibleValues.vue#L16-L25</code></a>),
+containing one <code>dt.param-name &gt; code</code> per value name (via the shared <code>WordBreak</code>
+component) and, only for values that have a <code>content</code> array, a following
+<code>dd.value-content</code> whose children are whatever block components the nested
+<code>ContentNode</code> resolves the content array to (typically <code>&lt;p&gt;</code> paragraphs).</li>
+</ul>
+<p>
+SCSS: entirely inline in <code>PossibleValues.vue</code>'s own scoped style block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PossibleValues.vue#L54-L74"><code>PossibleValues.vue#L54-L74</code></a>),
+which imports the shared <code>docc-render/styles/_core.scss</code> only for its color/spacing tokens. The
+component defines its own local <code>$left-padding: 1rem</code> SCSS variable and uses it to indent both
+<code>dt</code> (one <code>$left-padding</code>) and <code>dd</code> (two <code>$left-padding</code>, i.e.
+2rem) from the list's left edge.
+</p>
+<p>
+CSS custom properties consumed: <code>--spacing-param</code>, used for <code>dt</code>'s
+<code>padding-top</code>. That property is defined once, globally, in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_typography.scss#L48"><code>styles/base/_typography.scss#L48</code></a>
+as <code>rem(28px)</code>, and is overridden per-page context in
+<code>DocumentationTopic.vue</code> (line 855) to equal <code>--spacing-stacked-margin-large</code>; the same
+custom property is reused verbatim by the sibling <code>Parameters.vue</code>,
+<code>ParametersTable.vue</code>, and <code>PropertyListKeyDetails.vue</code> components, so
+<code>possibleValues</code> visually lines up with those other definition-list-shaped sections.
+</p>
+<p>
+DocCArchive transform status: not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> (lines 242&ndash;253)
+are still stub placeholders — the HTML transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code>
+comment regardless of input, and the Markdown transformer returns an empty string — so there is no code path
+today that walks a <code>PossibleValuesSection</code>'s <code>values</code> array into HTML or Markdown
+output.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior in play: as shown in Section 1, <code>PossibleValues.vue</code> holds no component data,
+no computed toggle state, and no event handlers beyond the ordinary deep-link click handling shared by every
+<code>LinkableHeading</code> instance on the site (which merely scrolls to and focuses the target element —
+itself already just a same-page anchor jump, i.e. exactly what a plain <code>&lt;a href="#possibleValues"&gt;</code>
+does natively). The <code>v-if="value.content"</code> guard that decides whether a given value gets a
+<code>&lt;dd&gt;</code> at all is evaluated once, at render time, from data already present in the JSON
+payload — it is not a runtime UI toggle a user can invoke. There is consequently no interactive/stateful
+behavior on this section to replace: nothing here shows/hides, expands/collapses, or switches views in
+response to user input. A static server-rendered <code>&lt;section&gt;&lt;h2&gt;...&lt;/h2&gt;&lt;dl&gt;...&lt;/dl&gt;&lt;/section&gt;</code>
+with the same children would be behaviorally identical to what Vue mounts today. (Individual
+<code>RenderBlockContent</code> items nested inside a value's <code>content</code> array — e.g. a tab
+navigator or disclosure aside — may have their own genuinely interactive behavior, but that is scoped to
+those child kinds' own reference pages, not to the <code>possibleValues</code> section wrapper documented
+here.)
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

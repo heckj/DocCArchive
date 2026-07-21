@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: reference — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>reference</code></h1>
+<p class="wire-value">Wire value: <code>"reference"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'reference'</code> lands on
+<code>src/components/ContentNode.vue</code>'s wire-constant table, where the <code>InlineType</code> object
+maps the key to itself:
+</p>
+<pre><code>const InlineType = {
+  codeVoice: 'codeVoice',
+  emphasis: 'emphasis',
+  image: 'image',
+  inlineHead: 'inlineHead',
+  link: 'link',
+  newTerm: 'newTerm',
+  reference: 'reference',
+  strong: 'strong',
+  text: 'text',
+  superscript: 'superscript',
+  subscript: 'subscript',
+  strikethrough: 'strikethrough',
+};</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>.)
+That constant is matched inside the module-level <code>renderNode()</code> factory function
+(defined at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L121"><code>ContentNode.vue#L121</code></a>),
+in its <code>switch (node.type)</code> dispatch table, in the <code>InlineType.reference</code> arm:
+</p>
+<pre><code>case InlineType.reference: {
+  const reference = references[node.identifier];
+  if (!reference) return null;
+  const titleInlineContent = node.overridingTitleInlineContent
+    || reference.titleInlineContent;
+  const titlePlainText = node.overridingTitle || reference.title;
+  return createElement(Reference, {
+    props: {
+      url: reference.url,
+      kind: reference.kind,
+      role: reference.role,
+      isActive: node.isActive,
+      ideTitle: reference.ideTitle,
+      titleStyle: reference.titleStyle,
+      hasInlineFormatting: !!titleInlineContent,
+    },
+    class: 'inline-link',
+  }, (
+    titleInlineContent ? renderChildren(titleInlineContent) : titlePlainText
+  ));
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L467-L487"><code>ContentNode.vue#L467-L487</code></a>.)
+Unlike most other inline kinds, this one does <em>not</em> render its payload directly&mdash;the wire node
+only carries an opaque <code>identifier</code> (a <code>doc://</code> URI), <code>isActive</code>, and an
+optional title override. The actual <code>url</code>, <code>kind</code>, <code>role</code>, <code>title</code>,
+and styling hints are looked up from the top-level <code>references</code> dictionary (the RenderNode's
+<code>RenderReferenceMap</code>, injected via the <code>referencesProvider</code> mixin at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/referencesProvider.js"><code>src/mixins/referencesProvider.js</code></a>)
+keyed by that identifier. If no matching entry exists in <code>references</code>, the whole node silently
+renders as <code>null</code>&mdash;there is no fallback text or broken-link placeholder at this layer.
+</p>
+<p>
+The merged props are handed to a dedicated child component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue"><code>src/components/ContentNode/Reference.vue</code></a>,
+whose entire template just picks a concrete leaf component via a computed <code>refComponent</code>:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;component :is="refComponent" :url="urlWithParams" :is-active="isActiveComputed"&gt;
+    &lt;slot /&gt;
+  &lt;/component&gt;
+&lt;/template&gt;</code></pre>
+<pre><code>refComponent({ isInternal, isDisplaySymbol }) {
+  if (isInternal) {
+    return isDisplaySymbol ? ReferenceInternalSymbol : ReferenceInternal;
+  }
+  return isDisplaySymbol ? ReferenceExternalSymbol : ReferenceExternal;
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L12-L15"><code>Reference.vue#L12-L15</code></a>
+and
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L74-L79"><code>Reference.vue#L74-L79</code></a>.)
+<code>isInternal</code> is true when the URL starts with <code>/</code> or <code>#</code> and resolves via the
+Vue Router to something other than the "not found" route; <code>isDisplaySymbol</code> is true when the
+looked-up reference's <code>kind</code> is <code>symbol</code> (and it has no inline-formatted title override)
+so the link text should be rendered in code style. That gives four leaf components, all in
+<code>src/components/ContentNode/</code>: <code>ReferenceInternal</code> and <code>ReferenceExternal</code>
+render a Vue <code>&lt;router-link&gt;</code> or a plain <code>&lt;a&gt;</code> respectively (falling back to
+a bare <code>&lt;span&gt;</code> when <code>url</code> is empty or <code>isActive</code> is false);
+<code>ReferenceInternalSymbol</code> and <code>ReferenceExternalSymbol</code> wrap those same two in a
+<code>CodeVoice</code> component so the link text renders as inline code:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;ReferenceInternal v-bind="$props"&gt;
+    &lt;CodeVoice&gt;
+      &lt;slot /&gt;
+    &lt;/CodeVoice&gt;
+  &lt;/ReferenceInternal&gt;
+&lt;/template&gt;</code></pre>
+<p>
+(<code>ReferenceInternalSymbol.vue</code>, full file.) Separately, <code>ContentNode.vue</code> also reads the
+<code>reference</code> discriminator directly (not through the dispatch table) inside its
+<code>plaintext</code> computed property, again resolving the title via the <code>references</code> map:
+</p>
+<pre><code>if (node.type === InlineType.reference) {
+  const title = references[node.identifier]?.title ?? '';
+  return `${text}${title}`;
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L692-L695"><code>ContentNode.vue#L692-L695</code></a>.)
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+A real fixture was found in swift-docc's own test suite (not in DocCArchive's fixtures&mdash;grepping
+<code>Tests/DocCArchiveTests/Fixtures/</code> for <code>"type": "reference"</code> in both
+<code>ExampleDocs.doccarchive</code> and <code>SampleLibrary.doccarchive</code> only turned up the unrelated
+top-level <code>"references"</code> map key, never an actual inline <code>reference</code> node). The
+example below combines two real fixtures:
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/term-lists-1.json</code> (a bare inline reference
+inside a term list, with no title override) and
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/external-location-custom-url.json</code> (which
+demonstrates <code>overridingTitle</code> on a reference node used as a download action). The
+paragraph/reference pairing and the matching <code>references</code> entry shown here are assembled from
+those two real snippets, not fabricated from scratch.
+</p>
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    { "type": "text", "text": "See " },
+    {
+      "type": "reference",
+      "identifier": "doc://org.swift.docc.example/downloads/sample.zip",
+      "isActive": true,
+      "overridingTitle": "Download"
+    },
+    { "type": "text", "text": " for the full project." }
+  ]
+}</code></pre>
+<p>Matching entry in the RenderNode's top-level <code>references</code> map, keyed by the same identifier:</p>
+<pre><code>"references": {
+  "doc://org.swift.docc.example/downloads/sample.zip": {
+    "type": "file",
+    "identifier": "doc://org.swift.docc.example/downloads/sample.zip",
+    "url": "/downloads/sample.zip",
+    "title": "sample.zip"
+  }
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+    <p style="margin:0; font-size:15px; color:#1d1d1f;">
+      See <a href="#" style="color:#0068da; text-decoration:underline;">Download</a> for the full project.
+    </p>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<table>
+<thead>
+<tr><th>field</th><th>type</th><th>required?</th><th>enum values / default</th><th>note</th></tr>
+</thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>["reference"]</code></td><td>Discriminator; always the literal string <code>"reference"</code>.</td></tr>
+<tr><td><code>isActive</code></td><td>boolean</td><td>yes</td><td>&mdash;</td><td>Whether the reference should render as a live link. When <code>false</code>, DocC-Render's leaf components (<code>ReferenceInternal</code>/<code>ReferenceExternal</code>) fall back to a plain <code>&lt;span&gt;</code> instead of an <code>&lt;a&gt;</code>/<code>&lt;router-link&gt;</code>.</td></tr>
+<tr><td><code>identifier</code></td><td>string (<code>format: "reference"</code>)</td><td>yes</td><td>&mdash;</td><td>Key into the RenderNode's top-level <code>references</code> map (a <code>doc://</code> URI or similar opaque ID); this is where the actual <code>url</code>, <code>kind</code>, <code>role</code>, and default <code>title</code> live, not on this node.</td></tr>
+<tr><td><code>overridingTitle</code></td><td>string</td><td>no</td><td>no default (absent = use the resolved reference's own title)</td><td>Plain-text override for the link's display title, used e.g. when a symbol link is manually retitled.</td></tr>
+<tr><td><code>overridingTitleInlineContent</code></td><td>array of <code>RenderInlineContent</code></td><td>no</td><td>no default</td><td>Formatted-title override (e.g. containing a <code>codeVoice</code> span); takes precedence over <code>overridingTitle</code> for rendering, per swift-docc's decoder, which derives a plain-text <code>overridingTitle</code> from it when only the formatted form is present on the wire.</td></tr>
+</tbody>
+</table>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, the <code>Reference</code> schema
+object (line 1302), one of the eleven members of the <code>RenderInlineContent</code>
+<code>oneOf</code> discriminated union (line 1190). Cross-checked against the generated Swift type in
+<code>Sources/DocCArchive/generated/Types.swift</code>:
+</p>
+<pre><code>public struct Reference: Codable, Hashable, Sendable {
+  @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+    case reference = "reference"
+  }
+  public var _type: Components.Schemas.Reference._TypePayload
+  public var isActive: Swift.Bool
+  public var identifier: Swift.String
+  public var overridingTitle: Swift.String?
+  public var overridingTitleInlineContent: [Components.Schemas.RenderInlineContent]?
+  ...
+}</code></pre>
+<p>
+This struct is one case (<code>.Reference</code>) of the generated
+<code>Components.Schemas.RenderInlineContent</code> indirect enum in the same file (line 1535,
+<code>case Reference(Components.Schemas.Reference)</code>). Note the vendored JSON schema's
+<code>required</code> array (<code>type</code>, <code>isActive</code>, <code>identifier</code>) matches the
+generated struct's non-optional stored properties exactly&mdash;the two title fields are optional on both
+sides. On the authoring side, swift-docc's Swift model defines the equivalent case as
+<code>case reference(identifier: RenderReferenceIdentifier, isActive: Bool, overridingTitle: String?,
+overridingTitleInlineContent: [RenderInlineContent]?)</code> in <code>RenderInlineContent.swift</code>
+(<code>/Users/joeheck/src/swift-project/swift-docc/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift</code>,
+line 43), documented there simply as "A reference to another resource." (line 42). Its hand-written
+<code>Codable</code> decoder (lines 100&ndash;120 of the same file) is notably more permissive than the JSON
+schema: it accepts either a plain-text <code>overridingTitle</code>, a formatted
+<code>overridingTitleInlineContent</code>, both, or neither, and synthesizes the plain-text field from the
+formatted one when only the latter is present&mdash;logic the wire-format schema table above does not (and
+cannot) express, since JSON Schema only names the two fields as independently optional. No separate
+<code>swiftStructSite</code> exists upstream for this case; the wire-level struct only exists in this
+repo's OpenAPI-generated code. On the authoring side, this case is what DocC produces from Markdown
+documentation links&mdash;either symbol links (<code>``MyClass/myProperty``</code>) or general
+<code>doc:</code>-scheme links (<code>&lt;doc:MyArticle&gt;</code>)&mdash;per
+<code>Sources/SwiftDocC/SwiftDocC.docc/SwiftDocC/LinkResolution.md</code>; the retitling behavior
+(<code>overridingTitle</code>) corresponds to writing custom link text instead of using the target's
+own title.
+</p>
+<p>
+Within this repository, DocCArchive's own transform layer does not yet do anything specific with this
+kind: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift</code>) are still stub placeholders that operate on a whole
+<code>RenderNode</code> and return a hardcoded HTML comment or an empty string, respectively&mdash;neither
+one walks <code>RenderInlineContent</code> case-by-case yet, so <code>reference</code> nodes (and the
+<code>references</code> map lookups they depend on) are not yet resolved or rendered by this library.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+The rendered DOM depends on three independent booleans computed by <code>Reference.vue</code>
+(<code>isInternal</code>, <code>isActiveComputed</code>, and <code>isDisplaySymbol</code>), giving four
+possible shapes:
+</p>
+<ul>
+<li>Internal, active, non-symbol: <code>&lt;router-link class="inline-link" to="..."&gt;&hellip;&lt;/router-link&gt;</code> (renders as an <code>&lt;a&gt;</code> at runtime).</li>
+<li>External, active, non-symbol: <code>&lt;a class="inline-link" href="..."&gt;&hellip;&lt;/a&gt;</code>.</li>
+<li>Either, inactive (or no <code>url</code>): <code>&lt;span class="inline-link"&gt;&hellip;&lt;/span&gt;</code>.</li>
+<li>Symbol-kind reference (<code>kind === 'symbol'</code>, no inline title override): the above, with the slot content additionally wrapped in <code>CodeVoice</code>'s <code>&lt;code&gt;</code> element, e.g. <code>&lt;a class="inline-link" href="..."&gt;&lt;code&gt;MyClass.myProperty&lt;/code&gt;&lt;/a&gt;</code>.</li>
+</ul>
+<p>
+The <code>inline-link</code> class is applied at the dispatch site in <code>ContentNode.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L483"><code>ContentNode.vue#L483</code></a>),
+not inside <code>Reference.vue</code> itself. Its only styling rule lives in the shared typography partial:
+</p>
+<pre><code>a {
+  color: var(--colors-link, var(--color-link));
+
+  &amp;:link,
+  &amp;:visited {
+    text-decoration: none;
+  }
+
+  // Inline links need to be underline under WCAG 2.2 compliance
+  &amp;:hover, &amp;.inline-link {
+    @include underline-text;
+  }
+
+  &amp;:active {
+    text-decoration: none;
+  }
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_typography.scss#L131-L152"><code>src/styles/base/_typography.scss#L131-L152</code></a>.)
+So every <code>.inline-link</code> is always underlined (the comment explains this is an explicit WCAG 2.2
+choice, since color alone isn't a sufficient link affordance), regardless of hover state. The link color
+comes from the CSS custom property <code>--color-link</code>, defined in the color-theme partials
+<code>src/styles/core/colors/_light.scss</code> (line 101, <code>--color-link: var(--color-figure-blue)</code>)
+and its dark-mode counterpart. When the symbol-styled leaf components are used, the nested
+<code>CodeVoice</code> element additionally consumes <code>--color-inline-code-background</code>,
+<code>--inline-code-padding</code>, and <code>--inline-code-border-radius</code> as documented on the
+<a href="inline-codevoice.html"><code>codeVoice</code> kind page</a>. No SCSS partial targets
+<code>ReferenceInternal</code>, <code>ReferenceExternal</code>, or their <code>Symbol</code> variants by
+component name&mdash;all of their visual styling flows through the generic <code>a</code>/<code>.inline-link</code>
+rule above plus whatever <code>CodeVoice</code> contributes when wrapped.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior, precisely: <code>Reference.vue</code> holds no reactive component state of its own
+(no <code>data()</code>, no click handlers, no toggled visibility). Its only "logic" is a set of
+<em>computed</em>, one-shot decisions made from static props at render time&mdash;<code>isInternal</code>
+(string prefix check plus a synchronous Vue Router resolve), <code>isDisplaySymbol</code> (a comparison
+against the looked-up reference's <code>kind</code>/<code>role</code>), and <code>refComponent</code>
+(a plain lookup table over those two booleans that picks which of four leaf components to instantiate).
+The four leaf components (<code>ReferenceInternal</code>, <code>ReferenceExternal</code>, and their
+<code>Symbol</code> variants) are themselves purely presentational: each renders either a
+<code>&lt;router-link&gt;</code>/<code>&lt;a&gt;</code> or a <code>&lt;span&gt;</code> based on a
+<code>v-if="url &amp;&amp; isActive"</code> template condition&mdash;also evaluated once, from props, with
+no runtime interaction.
+</p>
+<p>
+There is nothing here that toggles, discloses, or changes state in response to user interaction after
+the initial render: no open/closed state, no tab/panel switching, no focus trap, no modal. The entire
+"behavior" is server/build-time-equivalent branching over static data (is this URL internal? is this
+reference a symbol? is it active?) that happens to be re-evaluated by Vue's reactivity system if props
+change, but nothing in normal DocC-Render usage changes these props after mount. Since there is no
+interactive or stateful behavior in this kind to replace, none of the listed native mechanisms
+(<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio-input <code>:checked</code> + sibling
+selectors, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>,
+container queries, CSS anchor positioning, view-transitions) apply&mdash;a plain <code>&lt;a href&gt;</code>
+(or <code>&lt;span&gt;</code> when inactive) already is the idiomatic, framework-free representation of
+what this node produces; there is no client-side state for a CSS mechanism to hold in its place.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

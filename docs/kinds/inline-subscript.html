@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: subscript — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>subscript</code></h1>
+<p class="wire-value">Wire value: <code>"subscript"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'subscript'</code> lands, as with
+every other block/inline content kind on this reference site, on
+<code>src/components/ContentNode.vue</code>'s wire-constant table. <code>subscript</code> is one of the
+entries in the <code>InlineType</code> map
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>):
+</p>
+<pre><code>const InlineType = {
+  codeVoice: 'codeVoice',
+  emphasis: 'emphasis',
+  image: 'image',
+  inlineHead: 'inlineHead',
+  link: 'link',
+  newTerm: 'newTerm',
+  reference: 'reference',
+  strong: 'strong',
+  text: 'text',
+  superscript: 'superscript',
+  subscript: 'subscript',
+  strikethrough: 'strikethrough',
+};</code></pre>
+<p>
+That constant is matched in the <code>renderNode()</code> factory function's <code>switch (node.type)</code>
+dispatch table. <code>subscript</code> gets its own case, immediately after the sibling
+<code>superscript</code> case:
+</p>
+<pre><code>case InlineType.superscript:
+  return createElement('sup', renderChildren(node.inlineContent));
+case InlineType.subscript:
+  return createElement('sub', renderChildren(node.inlineContent));
+case InlineType.strikethrough:
+  return createElement(StrikeThrough, renderChildren(node.inlineContent));</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L499-L504"><code>ContentNode.vue#L499-L504</code></a>.)
+Unlike <code>strikethrough</code> a line below it &mdash; which is delegated to a dedicated child
+component, <code>StrikeThrough.vue</code> &mdash; <code>subscript</code> (like <code>superscript</code>
+immediately above it) is turned directly into a bare native <code>&lt;sub&gt;</code> element via Vue's
+<code>createElement</code>, with no wrapper component and no <code>class</code>/<code>attrs</code>
+argument at all. The node's only payload field, <code>inlineContent</code> (an array of nested
+<code>RenderInlineContent</code> nodes), is recursively rendered through the same module-local
+<code>renderChildren</code> helper
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L122-L124"><code>ContentNode.vue#L122-L124</code></a>)
+used by every other inline/block wrapper kind, so arbitrary nesting (for example a <code>reference</code>
+link inside a <code>subscript</code>) is rendered correctly by recursion rather than any special-casing.
+The <code>type</code> discriminator itself is consumed only by the <code>switch</code> and never
+forwarded into the DOM.
+</p>
+<p>
+<code>ContentNode.vue</code> also has a tree-walking utility API (<code>map</code>, <code>forEach</code>,
+<code>reduce</code>) used elsewhere in the app to traverse a content tree without rendering it (for
+example, to build the plain-text abstract for search indexing or social-preview metadata). Both
+<code>map</code> and <code>forEach</code> explicitly list <code>InlineType.subscript</code> alongside
+<code>superscript</code>, <code>strikethrough</code>, <code>emphasis</code>, <code>strong</code>,
+<code>inlineHead</code>, and <code>newTerm</code> as "wrapper" kinds whose <code>inlineContent</code>
+array must be recursed into
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L564-L575"><code>ContentNode.vue#L564-L575</code></a>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L619-L628"><code>ContentNode.vue#L619-L628</code></a>).
+No other <code>.vue</code> file under <code>src/components/</code> or <code>src/views/</code> matches the
+literal string <code>'subscript'</code>; the <code>DocumentationTopic/ContentNode.vue</code> and
+<code>Article/ContentNode.vue</code> files that also exist in the tree handle unrelated section-level
+concerns (list indentation, spacing) and do not reference this inline kind.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture, from swift-docc's test suite:
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/subscript-superscript-elements.json</code>,
+pinned at swift-docc@8b8d8268aa. This is a full (trimmed) RenderNode whose
+<code>primaryContentSections</code> contains a <code>paragraph</code> with a <code>subscript</code> node
+next to its sibling <code>superscript</code>:
+</p>
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    {
+      "type": "text",
+      "text": "Use "
+    },
+    {
+      "type": "subscript",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "sub"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": " and "
+    },
+    {
+      "type": "superscript",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "sup"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": " to render attributed text."
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+<p>Use <sub>sub</sub> and <sup>sup</sup> to render attributed text.</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Field table for the <code>Subscript</code> schema object
+(<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, one of the members of the
+<code>RenderInlineContent</code> <code>oneOf</code> discriminator), cross-checked against the generated
+<code>Components.Schemas.Subscript</code> struct in <code>Sources/DocCArchive/generated/Types.swift</code>:
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"subscript"</code></td><td>Discriminator. Generated as <code>Subscript._TypePayload</code>, a <code>String</code>-backed <code>enum</code> with a single case. Because <code>subscript</code> is a reserved keyword in Swift, swift-openapi-generator emits it as <code>case _subscript = "subscript"</code> rather than a bare <code>case subscript</code> &mdash; the wire string is unaffected, only the generated Swift identifier is escaped with a leading underscore.</td></tr>
+<tr><td><code>inlineContent</code></td><td>array of <code>RenderInlineContent</code></td><td>yes</td><td>&mdash;</td><td>The nested inline-content children to be rendered subscripted; generated as <code>[Components.Schemas.RenderInlineContent]</code>. Can itself contain further <code>text</code>, <code>codeVoice</code>, <code>reference</code>, etc. nodes.</td></tr>
+</tbody>
+</table>
+<p>
+Note the asymmetry with swift-docc's authoring-side Swift model: the in-memory
+<code>RenderInlineContent</code> Swift enum case at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift#L52">RenderInlineContent.swift#L52</a>
+is <code>case &#96;subscript&#96;(inlineContent: [RenderInlineContent])</code> (backticked because
+<code>subscript</code> is also a Swift keyword at the call site, mirroring the generated type's
+<code>_subscript</code> escape for the same underlying reason). It always encodes with
+<code>type: "subscript"</code> via the private <code>InlineType</code> Codable helper enum at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift#L59-L61">RenderInlineContent.swift#L59-L61</a>.
+There is exactly one wire spelling, unlike <code>emphasis</code> (which also accepts the legacy alias
+<code>"italic"</code>).
+</p>
+<p>
+One honest gap worth flagging: the vendored <code>RenderNode.spec.json</code>'s
+<code>RenderInlineContent</code> <code>oneOf</code> list (line 1190) enumerates <code>Text</code>,
+<code>Emphasis</code>, <code>Strong</code>, <code>CodeVoice</code>, <code>Reference</code>,
+<code>Image</code>, <code>InlineHead</code>, <code>NewTerm</code>, <code>Superscript</code>,
+<code>Link</code>, and <code>Subscript</code> &mdash; eleven members &mdash; but is missing
+<code>Strikethrough</code>, even though swift-docc's own <code>RenderInlineContent</code> Swift enum has a
+<code>strikethrough</code> case and swift-docc-render's <code>ContentNode.vue</code> actively handles the
+wire value <code>"strikethrough"</code> (see section 1). This is a drift in the vendored JSON Schema
+relative to both ends of the pipeline, not a subscript-specific issue, but it is visible from this same
+schema object so it is noted here for anyone cross-referencing the discriminator list.
+</p>
+<p>
+What an author writes to produce this: unlike <code>emphasis</code>, <code>strong</code>, and
+<code>strikethrough</code>, there is <strong>no Markdown syntax in swift-docc's own compiler</strong> that
+produces a <code>subscript</code> node today. <code>RenderContentCompiler.swift</code>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift">RenderContentCompiler.swift</a>)
+has visitor methods for <code>visitEmphasis</code>, <code>visitStrong</code>, and
+<code>visitStrikethrough</code> that walk cmark's parsed Markdown tree, but no
+<code>visitSubscript</code> (or <code>visitSuperscript</code>) exists anywhere in that file or elsewhere
+in <code>Sources/SwiftDocC/</code>. The <code>.subscript(inlineContent:)</code> case has full
+<code>Codable</code>, <code>Equatable</code>, and plain-text-indexing support
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift#L127-L128">RenderInlineContent.swift#L127-L128</a>),
+so the render-tree model and swift-docc-render's presentation layer are both fully wired up for it &mdash;
+but as of this pinned commit, swift-docc's own Markdown-to-render-tree compiler has no code path that
+authors can trigger from a doc comment or <code>.md</code>/<code>.tutorial</code> article to emit it. The
+fixture used in section 2 above (<code>subscript-superscript-elements.json</code>) is a hand-built
+render-tree fixture used to test the render/decode round trip and the render-render (Vue) presentation, not
+a JSON file produced by running swift-docc's Markdown compiler over an authored article.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+The rendered output is a bare <code>&lt;sub&gt;...&lt;/sub&gt;</code> element with no <code>id</code>,
+<code>class</code>, or <code>data-*</code> attribute of its own &mdash; the
+<code>createElement('sub', renderChildren(node.inlineContent))</code> call at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L501-L502">ContentNode.vue#L501-L502</a>
+passes no <code>class</code>/<code>attrs</code> object at all, unlike sibling cases such as
+<code>InlineType.codeVoice</code> (which adds <code>class: 'inline-code'</code>) or
+<code>InlineType.reference</code> (which adds <code>class: 'inline-link'</code>) a few lines away in the
+same <code>switch</code>. Grepping <code>src/style/</code> (and the whole <code>src/</code> tree) for a
+bare <code>sub</code>/<code>sup</code> element selector or a class targeting this kind turns up nothing;
+there is no dedicated SCSS partial for either <code>subscript</code> or <code>superscript</code>, in
+contrast to <code>strikethrough</code>'s dedicated <code>StrikeThrough.vue</code> component (which does
+carry its own scoped style block). The subscripted appearance &mdash; lowered baseline and reduced font
+size &mdash; is therefore produced entirely by the browser's built-in user-agent styling for the
+<code>&lt;sub&gt;</code> element (<code>vertical-align: sub; font-size: smaller</code> in most engines),
+not by any DocC-render-authored CSS rule or custom property.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior, precisely: <code>subscript</code> nodes are rendered as a plain, static
+<code>&lt;sub&gt;</code> element via a one-line <code>createElement('sub', renderChildren(...))</code>
+call, with no Vue <code>data</code>, no props, no event handlers, and no client-side state of any kind
+attached to the element or its rendering path. There is nothing dynamic to reproduce: the "behavior" in
+play is simply the HTML semantics of <code>&lt;sub&gt;</code> combined with the browser's default
+subscript presentation, which is already the plain, non-JavaScript, non-interactive mechanism in use
+today. There is no toggleable, hidden, or otherwise stateful aspect of this kind for a native CSS
+mechanism (<code>&lt;details&gt;</code>, <code>:target</code>, the Popover API, <code>:has()</code>,
+etc.) to replace.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

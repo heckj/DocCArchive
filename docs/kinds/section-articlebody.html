@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: articleBody — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>articleBody</code></h1>
+<p class="wire-value">Wire value: <code>"articleBody"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A grep of <code>src/components/</code> for the literal string <code>"articleBody"</code> finds exactly
+one file:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L45-L50"><code>Article.vue#L45-L50</code></a>,
+which declares a <code>SectionKind</code> lookup object listing the four section kinds a <em>tutorial
+article</em> page can contain: <code>articleBody</code>, <code>callToAction</code>, <code>hero</code>,
+<code>assessments</code>. <code>Article.vue</code> is the top-level page component for the
+<code>article</code> topic kind, wired up from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/Topic.vue#L31-L40"><code>Topic.vue#L31-L40</code></a>
+(as distinct from <code>DocumentationTopic.vue</code>, which renders API/symbol reference pages and
+never sees an <code>articleBody</code> section at all — that kind belongs exclusively to the
+tutorial-flavored render tree).
+</p>
+<p>
+The dispatch itself happens in <code>Article.vue</code>'s <code>componentFor(section)</code> method:
+</p>
+<pre><code>componentFor(section) {
+  const { kind } = section;
+  return {
+    [SectionKind.articleBody]: Body,
+    [SectionKind.callToAction]: CallToAction,
+    [SectionKind.hero]: Hero,
+    [SectionKind.assessments]: Assessments,
+  }[kind];
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L113-L121"><code>Article.vue#L113-L121</code></a>.)
+The matching prop-extraction table only forwards the section's <code>content</code> field through to
+the <code>Body</code> component:
+</p>
+<pre><code>propsFor(section) {
+  const { abstract, action, anchor, assessments, backgroundImage, chapter, content,
+          estimatedTimeInMinutes, kind, media, projectFiles, title, video, xcodeRequirement } = section;
+  return {
+    [SectionKind.articleBody]: { content },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L125-L145"><code>Article.vue#L125-L145</code></a>.)
+So an <code>articleBody</code> section is rendered by
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/Body.vue#L11-L15"><code>Article/Body.vue#L11-L15</code></a>,
+a thin wrapper (<code>&lt;div class="body"&gt;&lt;BodyContent :content="content" /&gt;&lt;/div&gt;</code>)
+that forwards straight through to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/BodyContent.vue#L11-L21"><code>Article/BodyContent.vue#L11-L21</code></a>.
+<code>BodyContent.vue</code> does the real layout dispatch: it iterates the <code>content</code> array
+(each entry is a <em>layout</em> item, not a block-content node) and, keyed on that item's own
+<code>kind</code>, resolves it to one of three layout components:
+</p>
+<pre><code>const LayoutKind = { columns: 'columns', contentAndMedia: 'contentAndMedia', fullWidth: 'fullWidth' };
+componentFor(section) {
+  return {
+    [LayoutKind.columns]: Columns,
+    [LayoutKind.contentAndMedia]: ContentAndMedia,
+    [LayoutKind.fullWidth]: FullWidth,
+  }[section.kind];
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/BodyContent.vue#L28-L52"><code>BodyContent.vue#L28-L52</code></a>,
+components at <code>Article/Layouts/Columns.vue</code>, <code>Article/Layouts/ContentAndMedia.vue</code>,
+<code>Article/Layouts/FullWidth.vue</code>.) Each of those layout components ultimately hands its own
+prose content down into <code>ContentNode.vue</code>, the shared block/inline-content renderer, for the
+actual Markdown-derived HTML.
+</p>
+<p>
+On the swift-docc production side, this section is emitted by
+<code>RenderNodeTranslator.visitTutorialArticle(_:)</code>, which builds a
+<code>TutorialArticleSection(content: layouts)</code> and appends it to <code>node.sections</code>
+right after the intro/hero section:
+</p>
+<pre><code>let layouts = contentLayouts(article.content)
+let articleSection = TutorialArticleSection(content: layouts)
+node.sections.append(articleSection)</code></pre>
+<p>
+(swift-docc, <code>Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift</code>, around
+lines 970&ndash;974, inside <code>visitTutorialArticle(_:)</code>.) The Swift-side type that carries this
+payload is <code>TutorialArticleSection</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Tutorial Article/TutorialArticleSection.swift</code>) — this is
+the <code>swiftStructSite</code> that was not pinned in the task brief; it was located by searching
+<code>Sources/SwiftDocC/Model/Rendering/</code> for the enclosing type of the <code>.articleBody</code>
+case declared at the given <code>swiftCaseSite</code>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderSection.swift#L15-L17"><code>RenderSection.swift#L15-L17</code></a>).
+DocCArchive's generated type is named <code>ArticleBodyRenderSection</code> (an OpenAPI Generator name
+derived from the vendored JSON Schema's object key, not a name that appears anywhere in swift-docc's own
+Swift source — swift-docc calls the same wire shape <code>TutorialArticleSection</code>).
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture containing the literal string <code>"articleBody"</code> as a JSON <code>kind</code> value
+was found. DocCArchive's own test fixtures (<code>ExampleDocs.doccarchive</code>,
+<code>SampleLibrary.doccarchive</code>) contain only symbol/API documentation-topic pages, never a
+tutorial-format <code>article</code> page, so they contain no <code>RenderSection</code> payloads of any
+kind (a grep for <code>articleBody</code> in those archives' <code>data/</code> trees turns up nothing;
+the only hits anywhere under <code>Tests/DocCArchiveTests/Fixtures/</code> are inside the archives'
+bundled, minified <code>topic.c7f55345.js</code> runtime script, not RenderNode data). swift-docc's own
+test suite (<code>Tests/SwiftDocCTests/Model/SemaToRenderNodeTests.swift</code>) exercises this section
+by asserting against the decoded Swift value (<code>renderNode.sections[1] as? TutorialArticleSection</code>,
+asserting <code>content.count == 8</code>) rather than against a literal JSON fixture string, so there is
+no ready-made JSON blob to lift verbatim from that test either. The example below is therefore
+hand-written to match the vendored schema exactly.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "articleBody",
+  "content": [
+    {
+      "kind": "fullWidth",
+      "content": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Getting started",
+          "anchor": "getting-started"
+        },
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "This article walks through the basics of the framework." }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "contentAndMedia",
+      "media": "diagram.png",
+      "mediaPosition": "trailing",
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "The diagram to the right shows the overall data flow." }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <article style="background:#fff; border-radius:10px; padding:32px 40px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <div style="margin-top:0;">Getting started</div>
+    <p>This article walks through the basics of the framework.</p>
+    <div style="display:flex; gap:24px; align-items:center; margin-top:24px;">
+      <p style="flex:1; margin:0;">The diagram to the right shows the overall data flow.</p>
+      <div style="flex:1; background:#ddd; height:80px; border-radius:4px; display:flex; align-items:center; justify-content:center; color:#888; font-size:0.85rem;">diagram.png</div>
+    </div>
+  </article>
+  <p><em>mockup: the outer <code>article.body-content</code> element wraps one <code>fullWidth</code>
+  layout item (rendered as ordinary flowing prose) followed by one <code>contentAndMedia</code> layout
+  item (rendered as a two-column row, media on the trailing side per <code>mediaPosition</code>).</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/ArticleBodyRenderSection</code>, cross-checked against
+<code>Components.Schemas.ArticleBodyRenderSection</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 3145&ndash;3170).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"articleBody"</code> (single-value enum)</td>
+<td>Generated as <code>KindPayload: String, Codable, Hashable, Sendable, CaseIterable { case articleBody }</code>.
+On the swift-docc production side this is a hardcoded constant
+(<code>public let kind: RenderSectionKind = .articleBody</code>), never a value read from input.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>array of <code>RenderBlockContent</code> (per the vendored JSON Schema)</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The vendored schema types every item as a plain <code>RenderBlockContent</code> block, but this is
+a schema/model mismatch worth flagging: swift-docc's actual <code>TutorialArticleSection.content</code>
+is <code>[ContentLayout]</code> — a distinct three-case enum (<code>fullWidth</code>,
+<code>contentAndMedia</code>, <code>columns</code>) whose members are themselves keyed by a
+<code>kind</code>/<code>content</code> pair, only one of whose cases (<code>fullWidth</code>) directly
+holds an array of <code>RenderBlockContent</code>. The other two cases (<code>contentAndMedia</code>,
+<code>columns</code>) wrap <code>ContentAndMediaSection</code> value(s), which have their own
+<code>media</code>/<code>mediaPosition</code>/<code>content</code> fields not represented anywhere in
+the vendored <code>RenderBlockContent</code> schema. A DocCArchive consumer decoding real tutorial-article
+JSON with the generated <code>[Components.Schemas.RenderBlockContent]</code> type would therefore fail
+to decode (or silently misinterpret) any <code>contentAndMedia</code>/<code>columns</code> layout item —
+see Section 4.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM, outer to inner:
+</p>
+<ul>
+<li><code>div.body</code> — the root element of <code>Article/Body.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/Body.vue#L11-L15"><code>Body.vue#L11-L15</code></a>).
+Styled in the same file's <code>&lt;style scoped&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/Body.vue#L27-L62"><code>Body.vue#L27-L62</code></a>):
+background comes from the CSS custom property <code>--colors-text-background</code> falling back to
+<code>--color-article-body-background</code>, and the block is given a <code>border-radius: 10px</code>
+plus a negative <code>transform: translateY(...)</code> so it visually overlaps the section above it
+(the intro/hero), collapsing back to no transform/no radius at the <code>small</code> breakpoint.</li>
+<li><code>article.body-content</code> — the root element of <code>Article/BodyContent.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/BodyContent.vue#L11-L21"><code>BodyContent.vue#L11-L21</code></a>),
+padded via the <code>calculate-column-width()</code> SCSS function and <code>$article-stacked-margin-large</code>.</li>
+<li><code>.layout</code> — applied to each dynamically-resolved layout child
+(<code>Columns</code>/<code>ContentAndMedia</code>/<code>FullWidth</code>) via <code>class="layout"</code>
+on the <code>&lt;component :is="componentFor(section)"&gt;</code> tag itself
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/BodyContent.vue#L13-L19"><code>BodyContent.vue#L13-L19</code></a>);
+the sibling-combinator rule <code>.layout + * { margin-top: $article-stacked-margin-large; }</code>
+supplies consistent vertical spacing between successive layout items.</li>
+</ul>
+<p>
+SCSS files involved: <code>src/components/Article/Body.vue</code> (scoped style block),
+<code>src/components/Article/BodyContent.vue</code> (scoped style block), and the shared
+<code>src/styles/_core.scss</code> which both files <code>@import</code> for
+<code>$article-stacked-margin-large</code>/<code>$article-stacked-margin-small</code>
+(<code>src/styles/core/_vars.scss</code>, 40px/20px) and the <code>breakpoint()</code>/
+<code>breakpoint-content</code>/<code>calculate-column-width()</code> mixins.
+</p>
+<p>
+CSS custom properties consumed: <code>--colors-text-background</code> (theme override) falling back to
+<code>--color-article-body-background</code>, defined per color scheme in
+<code>src/styles/core/colors/_light.scss</code> (<code>var(--color-fill)</code>) and
+<code>src/styles/core/colors/_dark.scss</code> (<code>rgb(17, 17, 17)</code>). Note this same property
+is also consumed one level up, on <code>div.article</code> itself, at the <code>small</code> breakpoint
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L192-L202"><code>Article.vue#L192-L202</code></a>).
+</p>
+<p>
+DocCArchive transform status: not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub
+placeholders — the HTML transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment
+regardless of input, and the Markdown transformer returns an empty string — so there is no code path
+today that walks an <code>ArticleBodyRenderSection</code>'s <code>content</code> array into HTML or
+Markdown output, nor any code that would notice the schema/model content-type mismatch described in
+Section 3.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior in play: <code>Article.vue</code>'s <code>componentFor</code>/<code>propsFor</code>
+methods and <code>BodyContent.vue</code>'s equivalent layout dispatch (Section 1) are pure,
+one-time template-render lookups keyed on a static <code>kind</code> string already present in the
+render JSON at page-load time — there is no component-local mutable state, no click handler, no
+<code>v-show</code>/<code>v-if</code> toggle driven by user interaction, and no later change to which
+branch of the lookup table is active. The <code>translateY</code> overlap and border-radius collapse in
+<code>Body.vue</code>'s styles are pure CSS media-query (breakpoint) responses, not state held in JS.
+Because there is no interactive/stateful behavior here to replace — the entire "dispatch" is simply
+"pick a Vue component to mount once, based on data already known when the page renders" — none of
+<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>, container
+queries, CSS anchor positioning, or view-transitions has any state to hold on this page's behalf; a
+static server-rendered HTML document with the same DOM shape would be behaviorally identical.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

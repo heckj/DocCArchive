@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: mentions — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>mentions</code></h1>
+<p class="wire-value">Wire value: <code>"mentions"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>mentions</code> is one of the section kinds a symbol page's <code>primaryContentSections</code>
+array can contain (alongside <code>declarations</code>, <code>parameters</code>, <code>content</code>,
+<code>properties</code>, the REST sections, etc.). The dispatch table lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L127"><code>PrimaryContent.vue</code></a>,
+which keys a <code>componentFor(section)</code> lookup and a parallel <code>propsFor(section)</code>
+lookup off <code>section.kind</code>, using the <code>SectionKind</code> constant map defined in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L11-L26"><code>constants/PrimaryContentSection.js</code></a>:
+</p>
+<pre><code>componentFor(section) {
+  return {
+    ...
+    [SectionKind.mentions]: Mentions,
+  }[section.kind];
+},
+propsFor(section) {
+  const { ..., mentions } = section;
+  return {
+    ...
+    [SectionKind.mentions]: { mentions },
+  }[kind];
+},</code></pre>
+<p>
+For <code>kind: "mentions"</code>, only the <code>mentions</code> array is passed through as a
+prop, straight from the section object, to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/Mentions.vue#L11-L55"><code>Mentions.vue</code></a>
+(internal component name <code>MentionedIn</code>). That component's full template:
+</p>
+<pre><code>&lt;section v-if="topics.length" class="mentions"&gt;
+  &lt;LinkableHeading anchor="mentions"&gt;
+    {{$t('mentioned-in')}}
+  &lt;/LinkableHeading&gt;
+  &lt;Mention v-for="topic in topics"
+    :key="topic.identifier"
+    :url="topic.url"
+    :title="topic.title"
+    :role="topic.role"
+    :kind="topic.kind"
+  /&gt;
+&lt;/section&gt;</code></pre>
+<p>
+The heading text (<code>"Mentioned in"</code> in <code>en-US</code>, from
+<code>src/lang/locales/en-US.json</code> line 224) is rendered by the shared
+<code>LinkableHeading</code> component, giving the section a stable <code>#mentions</code>
+anchor and an on-this-page entry — the same anchor/registration mechanism is duplicated in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/onThisPageRegistrator.js#L58-L64"><code>onThisPageRegistrator.js</code></a>,
+which special-cases <code>SectionKind.mentions</code> to add a level-2 "Mentioned in" entry
+to the on-this-page nav.
+</p>
+<p>
+The key computed property is <code>topics()</code>: the raw <code>mentions</code> array on the
+wire is a list of <em>reference identifier strings</em>, not objects. <code>Mentions.vue</code>
+takes at most the first five entries (<code>.slice(0, 5)</code>) and resolves each one through
+the <code>referencesProvider</code> mixin's <code>this.references</code> map (the render node's
+top-level <code>references</code> dictionary) before handing the resolved
+<code>{ identifier, url, title, role, kind }</code> objects one at a time to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/Mention.vue#L10-L22"><code>Mention.vue</code></a>,
+which renders a single link row:
+</p>
+<pre><code>&lt;div class="link-block"&gt;
+  &lt;Reference :url="url" :role="role" :kind="kind" class="link"&gt;
+    &lt;TopicLinkBlockIcon class="mention-icon" :role="role" /&gt;
+    {{ title }}
+  &lt;/Reference&gt;
+&lt;/div&gt;</code></pre>
+<p>
+So the render-side pipeline for this kind is: raw string identifiers &rarr; array truncated to
+5 &rarr; each identifier looked up in <code>references</code> &rarr; rendered as an icon + link
+row via the generic <code>Reference</code>/<code>TopicLinkBlockIcon</code> components also used
+for ordinary topic links elsewhere in the UI. There is no bespoke mentions-specific link
+rendering; it reuses the standard "link block" presentation.
+</p>
+<p>
+One more consumer worth noting: <code>DocumentationTopic.vue</code>'s
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L593-L599"><code>primaryContentSectionsSanitized</code></a>
+computed property filters the <code>mentions</code> section out entirely when the current page's
+<code>symbolKind</code> is <code>module</code> — "Mentioned in" is suppressed on module-level
+pages even if the section is present in the JSON.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<p class="synthesized-note">
+No real JSON fixture was found. DocCArchive's own fixtures
+(<code>ExampleDocs.doccarchive</code>, <code>SampleLibrary.doccarchive</code>) only contain the
+literal string <code>"mentions"</code> inside the minified render-side JS bundle
+(<code>js/documentation-topic.048469da.js</code>) — the compiled Vue component code, not a data
+fixture — and neither archive's <code>data/documentation/*.json</code> files contain an actual
+<code>mentions</code> section (the feature depends on cross-references between articles and
+symbols that these fixtures don't happen to exercise). swift-docc's test suite has
+<code>Tests/SwiftDocCTests/Rendering/MentionsRenderSectionTests.swift</code>, which builds and
+asserts against a <code>MentionsRenderSection</code> Swift value programmatically, but does not
+include a literal JSON fixture either. The example below is hand-written to satisfy the vendored
+JSON Schema (<code>#/components/schemas/MentionsRenderSection</code>) exactly, using a plausible
+<code>references</code> entry of the kind <code>Mentions.vue</code> expects to resolve against.
+</p>
+<pre><code>{
+  "mentions": [
+    "doc://com.example.MentionedIn/documentation/MentionedIn/ArticleMentioningSymbol"
+  ]
+}</code></pre>
+<p>Paired reference entry (in the render node's top-level <code>references</code> map) that the identifier above resolves to:</p>
+<pre><code>{
+  "doc://com.example.MentionedIn/documentation/MentionedIn/ArticleMentioningSymbol": {
+    "identifier": "doc://com.example.MentionedIn/documentation/MentionedIn/ArticleMentioningSymbol",
+    "kind": "article",
+    "role": "article",
+    "title": "Working with MyClass",
+    "url": "/documentation/mentionedin/articlementioningsymbol",
+    "type": "topic"
+  }
+}</code></pre>
+<div class="mockup">
+  <p style="font-weight:600; border-bottom:1px solid var(--color-border); padding-bottom:4px;">Mentioned in</p>
+  <p style="display:flex; align-items:center; gap:6px;">
+    <span style="display:inline-block; width:14px; height:14px; border-radius:3px; background:var(--color-text-secondary);"></span>
+    <a href="#">Working with MyClass</a>
+  </p>
+  <p><em>mockup: one resolved "Mentioned in" link row, icon + title, per entry in <code>mentions</code> (capped at 5)</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/MentionsRenderSection</code> (lines 2547&ndash;2560), which is the
+first branch of the <code>DocumentationPrimaryRenderSection</code> discriminated union (lines
+2507&ndash;2546); cross-checked against the generated
+<code>Components.Schemas.MentionsRenderSection</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6030&ndash;6044).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mentions</code></td>
+<td>array of string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Generated as <code>[Swift.String]</code>. Each entry is a reference identifier string
+(a key into the render node's top-level <code>references</code> map), <strong>not</strong> an
+inline object — <code>Mentions.vue</code> resolves each string against
+<code>this.references</code> at render time.</td>
+</tr>
+</tbody>
+</table>
+<p>
+Notably, unlike its sibling schemas in the <code>DocumentationPrimaryRenderSection</code>
+union (e.g. <code>DeclarationsRenderSection</code>, which has a required
+<code>kind: "declarations"</code> discriminator property), the vendored
+<code>MentionsRenderSection</code> schema has <strong>no <code>kind</code> property at all</strong> —
+<code>mentions</code> is the sole field, required, with no other properties, and no discriminator
+key is emitted on the wire for this section. This matches swift-docc's Swift-side model
+(<code>Sources/SwiftDocC/Model/Rendering/Symbol/MentionsRenderSection.swift</code>,
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Symbol/MentionsRenderSection.swift#L13-L20">lines 13&ndash;20</a>),
+where <code>kind</code> is declared as a Swift-side default value
+(<code>public var kind: RenderSectionKind = .mentions</code>) used only for
+<em>decoding dispatch</em> (see
+<code>Sources/SwiftDocC/Model/Rendering/RenderNode/CodableContentSection.swift</code> lines
+39&ndash;71, which peeks at <code>kind</code> to decide which concrete type to decode into) —
+the property itself is not part of <code>MentionsRenderSection</code>'s own <code>Codable</code>
+conformance and is therefore absent from the encoded JSON, matching the vendored schema exactly.
+Because the JSON has no discriminator, the OpenAPI-generated
+<code>DocumentationPrimaryRenderSection</code> enum in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 5895&ndash;5921) must be decoded by
+trying each candidate case in turn (a <code>oneOf</code> decode loop) — <code>mentions</code> is
+tried first, so a plain <code>{"mentions": [...]}</code> object will always decode as
+<code>.MentionsRenderSection</code> before any other candidate is attempted.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, from <code>Mentions.vue</code> and <code>Mention.vue</code>'s templates:</p>
+<ul>
+<li><code>section.mentions</code> &mdash; root element, only rendered at all when
+<code>topics.length &gt; 0</code> (a <code>v-if</code> guard; an empty/absent
+<code>mentions</code> array renders nothing).</li>
+<li>Child: whatever root element <code>LinkableHeading</code> renders for the anchor
+<code>#mentions</code>, containing the localized "Mentioned in" string.</li>
+<li>Child (repeated, one per resolved mention, capped at 5): <code>div.link-block</code>, itself
+containing the shared <code>Reference</code> component (rendered with class <code>.link</code>)
+wrapping a <code>TopicLinkBlockIcon</code> (class <code>.mention-icon</code>) and the mention's
+title text.</li>
+</ul>
+<p>
+SCSS: <code>Mentions.vue</code> itself defines no <code>&lt;style&gt;</code> block — its only
+layout contribution is the generic section spacing supplied by the parent
+<code>PrimaryContent.vue</code>'s scoped <code>:deep()</code> rule
+(<code>margin-top</code>/<code>margin-bottom: $section-spacing-single-side</code> on every
+direct child). <code>Mention.vue</code> carries its own
+<code>&lt;style scoped lang="scss"&gt;</code> block (importing
+<code>docc-render/styles/_core.scss</code>) with the concrete rules:
+</p>
+<ul>
+<li><code>.link { display: flex; margin-bottom: 0.5rem; }</code> &mdash; lays the icon and title out horizontally.</li>
+<li><code>.link-block, .link { box-sizing: inherit; &amp;.changed { @include change-highlight-target(); box-sizing: border-box; } }</code> &mdash; hooks into DocC-Render's diff/"what's new" highlight styling when a mention entry is flagged as changed between doc versions.</li>
+<li><code>.mention-icon { margin-inline-end: 0.25rem; }</code> &mdash; spacing between the role/kind icon and the title text.</li>
+</ul>
+<p>
+No CSS custom properties (<code>--...</code>) are read directly in either
+<code>Mentions.vue</code> or <code>Mention.vue</code>; the icon and link colors come from the
+shared <code>Reference</code>/<code>TopicLinkBlockIcon</code> components' own styling, and the
+section-level border/spacing tokens (e.g. <code>--colors-grid</code>) are consumed one level up,
+by <code>PrimaryContent.vue</code>, for the shared top border above the whole primary-content
+column — not specific to <code>mentions</code>.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML
+transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment and the Markdown
+transformer returns an empty string) — neither has any kind-specific handling for
+<code>mentions</code> (or any other render section) today; a consumer would need to resolve each
+<code>mentions</code> string against the render node's <code>references</code> map itself, the
+same way <code>Mentions.vue</code> does, since DocCArchive's generated
+<code>MentionsRenderSection</code> type carries only the raw identifier strings.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: <code>Mentions.vue</code> has exactly one piece of conditional behavior —
+a <code>v-if="topics.length"</code> guard that omits the whole <code>&lt;section&gt;</code> when
+there are no resolvable mentions — and one data transform, a computed property that slices the
+incoming array to 5 entries and maps each identifier through a static <code>references</code>
+lookup performed once at render time. Neither is interactive: there is no click handler, no
+toggle, no post-mount state change, and no show/hide behavior driven by user action. The
+<code>v-if</code> is equivalent to a server/build-time conditional include, and the 5-item cap
+and reference resolution are plain data-shaping that happens before the template ever renders,
+not runtime UI state.
+</p>
+<p>
+Because there is no client-side state transition to reproduce, none of the stateful-CSS
+mechanisms (<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, checked radio + sibling
+selector, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>)
+apply here — they all exist to hold or toggle state in the DOM, and this section has none to
+hold. A static site generator emitting the DocC-Render markup can already reproduce the
+<code>v-if</code> behavior by simply not emitting the <code>&lt;section class="mentions"&gt;</code>
+element at all when the resolved mentions list is empty, and the 5-item cap and reference lookup
+are pure data preprocessing that any renderer (including a Swift-side DocCArchive transformer)
+would perform identically before emitting HTML — none of it depends on CSS or JavaScript running
+in the browser.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

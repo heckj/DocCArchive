@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept: variants and variantOverrides — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="../archive-structure.html">Archive Structure</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">concept</p>
+<h1><code>variants</code> &amp; <code>variantOverrides</code></h1>
+<p>Two related, top-level <code>RenderNode</code> fields that exist so one page's worth of authored
+content can serve more than one interface-language "flavor" (Swift and Objective-C, today) without
+DocC writing out two entirely separate files for every symbol. Fullest single-kind treatment prior
+to this page: the data sheet on <a href="../kinds/node-symbol.html"><code>node-symbol.html</code></a>,
+which lists both fields but doesn't explain the mechanism behind them.</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Worked example</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. Where else this shows up</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+The two fields do genuinely different jobs, and it's easy to conflate them because they sound alike.
+</p>
+<p>
+<strong><code>variants</code></strong> is a routing table, not a content mechanism. In
+<code>DocumentationTopic.vue</code>'s <code>extractProps(json)</code>, the array is reduced into a
+<code>languagePaths</code> map (keyed by <code>interfaceLanguage</code>) purely to pull out
+<code>swiftPath</code>/<code>objcPath</code>:
+</p>
+<pre><code>const languagePaths = variants.reduce((memo, variant) => (
+  variant.traits.reduce((_memo, trait) => (!trait.interfaceLanguage ? _memo : ({
+    ..._memo,
+    [trait.interfaceLanguage]: (_memo[trait.interfaceLanguage] || []).concat(variant.paths),
+  })), memo)
+), {});
+const {
+  [Language.objectiveC.key.api]: [objcPath] = [],
+  [Language.swift.key.api]: [swiftPath] = [],
+} = languagePaths;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L658-L667"><code>DocumentationTopic.vue#L658-L667</code></a>.)
+Those two paths are what powers the Swift/Objective-C picker in the page's language toggle — clicking
+it navigates the Vue Router to a different URL (<code>objcPath</code>), which triggers an entirely new
+route fetch. No content is transformed in place for this half of the mechanism.
+</p>
+<p>
+<strong><code>variantOverrides</code></strong> is the content-transforming half, and it exists because
+Objective-C variants are usually <em>mostly</em> identical to the Swift original (same abstract, same
+topic groups, same See Also) with only a few fields actually differing (declaration syntax, title,
+<code>identifier.interfaceLanguage</code>). Rather than duplicate the whole RenderNode, DocC emits one
+small <a href="https://datatracker.ietf.org/doc/html/rfc6902">RFC 6902 JSON Patch</a> per non-Swift
+trait and lets the consumer apply it on demand. swift-docc-render's own patch applier is a from-scratch
+reimplementation of the RFC 6902 op set in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/utils/json-patch.js"><code>src/utils/json-patch.js</code></a>
+(<code>add</code>/<code>copy</code>/<code>move</code>/<code>remove</code>/<code>replace</code>/<code>test</code>,
+lines 300-306) — a separate codebase from swift-docc's own Swift-side applier (Section 3).
+</p>
+<p>
+The trigger is a computed property, <code>objcOverrides</code>, in
+<code>src/views/DocumentationTopic.vue</code>:
+</p>
+<pre><code>objcOverrides: ({ topicData }) => {
+  const { variantOverrides = [] } = topicData || {};
+  const isObjcTrait = ({ interfaceLanguage }) => (
+    interfaceLanguage === Language.objectiveC.key.api
+  );
+  const hasObjcTrait = ({ traits }) => traits.some(isObjcTrait);
+  const objcVariant = variantOverrides.find(hasObjcTrait);
+  return objcVariant ? objcVariant.patch : null;
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L126-L136"><code>views/DocumentationTopic.vue#L126-L136</code></a>.)
+When the route's <code>?language=occ</code> query parameter is present — either on initial load
+(<code>beforeRouteEnter</code>) or on an in-place language switch that doesn't change the URL path
+(<code>beforeRouteUpdate</code>) — <code>applyObjcOverrides()</code> runs:
+</p>
+<pre><code>applyObjcOverrides() {
+  this.topicDataObjc = apply(clone(this.topicData), this.objcOverrides);
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L267-L269"><code>views/DocumentationTopic.vue#L267-L269</code></a>.)
+This clones the Swift-variant RenderNode already in memory and applies the Objective-C patch to it,
+client-side, with no additional network request — one fetched JSON file serves both language
+presentations. A <code>topicData</code> computed getter then prefers <code>topicDataObjc</code> when
+it's set, falling back to the original <code>topicDataDefault</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L136-L143"><code>views/DocumentationTopic.vue#L136-L143</code></a>).
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Worked example: one article, two languages</h2>
+<p>
+Real fixture: <code>Tests/SwiftDocCTests/Test Resources/Variant-render-node.json</code> in swift-docc's
+own test suite (not in DocCArchive's fixtures — neither <code>ExampleDocs</code> nor
+<code>SampleLibrary</code> emits an Objective-C variant, since both are Swift-only sample projects).
+Trimmed to the two fields this page is about:
+</p>
+<pre><code>{
+  "identifier": { "interfaceLanguage": "swift", "url": "doc://org.swift.docc/documentation/mykit/my-article" },
+  "metadata": { "title": "My Article", "role": "article", ... },
+  "variants": [
+    { "paths": ["documentation/mykit/my-article"], "traits": [{ "interfaceLanguage": "objc" }] },
+    { "paths": ["documentation/mykit/my-article"], "traits": [{ "interfaceLanguage": "swift" }] }
+  ],
+  "variantOverrides": [
+    {
+      "traits": [{ "interfaceLanguage": "objc" }],
+      "patch": [
+        { "op": "replace", "path": "/metadata/title", "value": "My Article in Objective-C" },
+        { "op": "replace", "path": "/identifier/interfaceLanguage", "value": "objc" }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+<p><em>Loaded plain (Swift, default): page title reads "My Article",
+<code>identifier.interfaceLanguage</code> is <code>"swift"</code>.</em></p>
+<p><em>Same JSON, with <code>?language=occ</code> in the URL:
+<code>applyObjcOverrides()</code> runs the two <code>replace</code> operations above against the
+in-memory clone — no second file fetched — and the page title becomes "My Article in Objective-C"
+with <code>identifier.interfaceLanguage</code> now <code>"objc"</code>. Everything else in the
+RenderNode (abstract, topic groups, references) is untouched, since the patch only names two
+pointers.</em></p>
+</div>
+<p>
+Both <code>paths</code> entries here happen to be identical (<code>documentation/mykit/my-article</code>)
+because this particular article has no separate Objective-C route — it's addressed by query
+parameter, not by URL path, which is why the language switch in Section 1 is described as
+"in-place" for this shape of content. A symbol with a genuinely different Objective-C URL (e.g.
+different casing or a category-style path) would instead show two different <code>paths</code>
+values per trait, and the switch would be a real Vue Router navigation to <code>objcPath</code>.
+</p>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>. <code>RenderNode.variants</code>
+(line 2173) is an array of <code>RenderNodeVariant</code> (line 2187: required <code>traits</code>,
+required <code>paths</code>); <code>RenderNode.variantOverrides</code> (line 2179) is an array of
+<code>VariantOverride</code> (line 2215: required <code>traits</code>, required <code>patch</code>).
+Both <code>traits</code> fields are arrays of <code>RenderNodeVariantTrait</code> (line 2208), currently
+a <code>oneOf</code> with a single member, <code>TraitInterfaceLanguage</code> (line 2294:
+<code>{ "interfaceLanguage": string }</code>) — the schema is explicitly future-proofed for more trait
+kinds (e.g. platform, availability) that don't exist on the wire yet.
+</p>
+<p>
+<code>VariantOverride.patch</code> resolves to the <code>JSONPatch</code> schema (line 2233): an array
+whose items are one of three shapes by required-field set — <code>{op: "add"|"test", path, value}</code>,
+<code>{op: "remove", path}</code>, or <code>{op: "move"|"copy", path, from}</code>. <strong>Notice
+what's missing:</strong> there is no fourth shape for <code>op: "replace"</code>, even though
+<code>replace</code> is by far the most common operation in practice — the real fixture above uses it
+twice, and swift-docc's own Swift-side <code>PatchOperation</code> enum
+(<code>Sources/SwiftDocC/Model/Rendering/Variants/PatchOperation.swift</code>) defines and encodes
+<code>replace</code> alongside <code>add</code>/<code>remove</code>. <code>replace</code> happens to
+need the same required fields (<code>op</code>, <code>path</code>, <code>value</code>) as the
+<code>add</code>/<code>test</code> branch, so a real <code>{"op": "replace", ...}</code> patch entry
+still validates against that branch's <code>properties</code> even though <code>"replace"</code> isn't
+listed in its <code>op</code> enum (<code>["add", "test"]</code>) — most JSON Schema validators treat an
+unlisted enum value as a hard failure, though, so this is a real, latent validation bug in the vendored
+spec, not merely a documentation gap. This is the same category of wire-schema/production-code
+divergence as the <code>aside</code> style enum discrepancy documented on
+<a href="../kinds/block-aside.html"><code>block-aside.html</code></a> — treat the schema's op enum as
+incomplete rather than authoritative for this one field.
+</p>
+<p>
+On the swift-docc production side, applying a <code>VariantOverride</code>'s patch is not something
+swift-docc-render's browser-side code shares with anyone — swift-docc ships its <em>own</em>, independent
+JSON Patch implementation for the same RFC, <code>JSONPatchApplier</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Variants/JSONPatchApplier.swift</code>), wrapped by
+<code>RenderNodeVariantOverridesApplier.applyVariantOverrides(in:for:)</code>. This Swift-side applier is
+used for exactly one purpose today: the <code>docc process-archive index</code> command, which rebuilds
+the LMDB navigator index (<code>index/navigator.index</code>/<code>index/data.mdb</code> — the files
+flagged as not-yet-parsed-by-DocCArchive on
+<a href="../archive-structure.html">Archive Structure</a> &sect;1) from an <em>already-built</em>
+<code>.doccarchive</code>. Because an archive on disk stores the Objective-C content as an override patch
+rather than a fully-expanded variant, the indexer has to run the same kind of patch-and-decode round trip
+the browser does, just in Swift instead of JS
+(<code>Sources/SwiftDocC/Indexing/Navigator/NavigatorIndex.swift</code>, lines 679-695 — the source
+comment there calls this code path "peculiar and very inefficient" and notes it exists only to keep
+<code>docc process-archive index</code> working).
+</p>
+</section>
+<section id="css-mapping"><h2>4. Where else this shows up</h2>
+<p>
+<code>variants</code> and/or <code>variantOverrides</code> appear on every top-level page-producing
+RenderNode kind — <a href="../kinds/node-symbol.html">symbol</a>,
+<a href="../kinds/node-article.html">article</a>,
+<a href="../kinds/node-tutorial.html">tutorial (project)</a>, and
+<a href="../kinds/node-overview.html">overview</a> — since the language-variant mechanism operates at
+the whole-page level, not per content block. They also surface inside the top-level
+<code>references</code> map's individual reference objects (e.g. a
+<a href="../kinds/reference-download.html">download</a> or
+<a href="../kinds/reference-image.html">image</a> reference can itself carry variant-specific data),
+and inside <code>linkable-entities.json</code> records (see
+<a href="../archive-structure.html">Archive Structure</a> &sect;6), which nest their own
+<code>variants</code> array for the same reason — a cross-archive link needs to resolve to the right
+language variant without opening the target archive.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+This is JSON-Patch application and client-side routing, not visual/interactive DOM state — there is no
+CSS mechanism that could apply a JSON Patch to a data structure or drive a router navigation. The one
+sliver of genuinely stateful UI behavior downstream of this mechanism, the Swift/Objective-C toggle
+control itself, is a standard navigation control (it changes the URL) rather than a
+show/hide-without-navigation widget, so it doesn't fit the "replace JS-driven visibility state with
+<code>:checked</code>/<code>:target</code>" framing this site's other Modern CSS sections use either.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

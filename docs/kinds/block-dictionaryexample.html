@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: dictionaryExample — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>dictionaryExample</code></h1>
+<p class="wire-value">Wire value: <code>"dictionaryExample"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>dictionaryExample</code> is one of the block-content kinds dispatched by the shared
+<code>renderNode()</code> function inside
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>components/ContentNode.vue</code></a>'s
+<code>BlockType</code> map (<code>dictionaryExample: 'dictionaryExample'</code>, line 47). The
+<code>switch (node.type)</code> case for it is:
+</p>
+<pre><code>case BlockType.dictionaryExample: {
+  const props = {
+    example: node.example,
+  };
+  return createElement(DictionaryExample, { props }, renderChildren(node.summary || []));
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L371-L376"><code>src/components/ContentNode.vue#L371-L376</code></a>).
+Two things stand out mechanically:
+</p>
+<ul>
+<li>
+Unlike <code>codeListing</code>, <code>image</code>, and <code>video</code>, this case does
+<em>not</em> inspect <code>node.metadata</code> and never routes through the shared
+<code>renderFigure</code> helper &mdash; a <code>dictionaryExample</code> node is always rendered as
+a plain <code>DictionaryExample</code> component, even if a <code>metadata.anchor</code> happened to
+be present on the node (the render node's own <code>metadata</code> field, if any, is simply not
+read here).
+</li>
+<li>
+<code>node.summary</code> (an optional array of <code>RenderBlockContent</code>) is recursively
+rendered via <code>renderChildren</code> and passed as the component's default <code>&lt;slot&gt;</code>
+content, while <code>node.example</code> (the <code>CodeExample</code> object) is passed through
+untouched as a prop &mdash; it is not walked or transformed by <code>ContentNode.vue</code> at all.
+</li>
+</ul>
+<p>
+The leaf component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/DictionaryExample.vue#L11-L19"><code>components/ContentNode/DictionaryExample.vue</code></a>,
+is a thin 36-line wrapper with no local styling of its own:
+</p>
+<pre><code>&lt;div class="DictionaryExample"&gt;
+  &lt;slot /&gt;
+  &lt;CollapsibleCodeListing
+    :content="example.content"
+    showLineNumbers
+  /&gt;
+&lt;/div&gt;</code></pre>
+<p>
+It renders the <code>summary</code> slot content first (typically an introductory paragraph), then
+delegates the actual code rendering entirely to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CollapsibleCodeListing.vue#L11-L30"><code>components/ContentNode/CollapsibleCodeListing.vue</code></a>,
+passing <code>example.content</code> (the <code>CodeExample.content</code> array of
+<code>{ collapsible, code }</code> chunks) straight through as that component's <code>content</code>
+prop, and hard-coding <code>showLineNumbers</code> to <code>true</code>. Note that
+<code>DictionaryExample.vue</code> does <em>not</em> pass a <code>collapsed</code> prop to
+<code>CollapsibleCodeListing</code>, so that prop is left at its Vue default (<code>undefined</code>,
+falsy) &mdash; every chunk starts visually expanded regardless of its own <code>collapsible</code>
+flag; <code>collapsible</code> only adds the <code>.collapsible</code> styling class (a distinct
+background/text color for those lines), it does not by itself collapse anything in this call site.
+</p>
+<p>
+<code>CollapsibleCodeListing.vue</code> in turn renders each <code>content</code> chunk as its own
+<code>&lt;div class="container-general"&gt;</code> inside a single
+<code>&lt;pre&gt;&lt;CodeBlock&gt;&hellip;&lt;/CodeBlock&gt;&lt;/pre&gt;</code>, with one
+<code>&lt;div class="code-line-container"&gt;</code> per source line, each holding an optional
+<code>&lt;div class="code-number"&gt;</code> gutter (shown because <code>showLineNumbers</code> is
+always <code>true</code> here) and a <code>&lt;div class="code-line"&gt;</code> with the raw line
+text
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CollapsibleCodeListing.vue#L11-L30"><code>CollapsibleCodeListing.vue#L11-L30</code></a>).
+This is a structurally different (and simpler) markup path than the plain <code>codeListing</code>
+kind's dedicated <code>CodeListing.vue</code>: there is no copy-to-clipboard button, no
+<code>wrap</code>/<code>lineAnnotations</code> support, and (per the vendored schema in section 3)
+no per-example <code>syntax</code>-driven client-side syntax highlighting call in this component
+&mdash; highlighting, if any, happens inside the shared <code>CodeBlock</code> child component that
+wraps the whole listing, not per line.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/plist-symbol.json</code> in
+the pinned swift-docc checkout, found inside the primary content section's content array (a plist
+key's documentation illustrating an example dictionary value).
+</p>
+<pre><code>{
+  "type": "dictionaryExample",
+  "summary": [
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "An example of a dictionary."
+        }
+      ]
+    }
+  ],
+  "example": {
+    "type": "file",
+    "content": [
+      {
+        "collapsible": false,
+        "code": [
+          "{",
+          "  \"name\" : \"Info.plist\"",
+          "}"
+        ]
+      }
+    ]
+  }
+}</code></pre>
+<p>
+Note this fixture's <code>example.type</code> field (<code>"file"</code>) reflects swift-docc's
+internal <code>CodeExample.type</code> property
+(<code>Sources/SwiftDocC/Model/Rendering/Symbol/RESTExampleRenderSection.swift:24</code>), which is
+described there as "an optional type for the example" but is <em>not</em> declared on the
+<code>CodeExample</code> object in the vendored wire schema (section 3) &mdash; per the generated
+Swift decoder, a strict decode of this exact JSON against
+<code>Components.Schemas.CodeExample</code> would simply ignore the extra <code>type</code> key.
+</p>
+<div class="mockup">
+  <div style="border:1px solid #ddd; border-radius:6px; padding:10px 14px;">
+    <p style="margin:0 0 8px 0;">An example of a dictionary.</p>
+    <div style="background:#1e1e24; color:#ddd; font-family:monospace; font-size:0.9em; border-radius:6px; padding:8px 0;">
+      <div style="display:flex; padding:0 12px;"><span style="width:1.5em; color:#888; user-select:none;">1</span><span>{</span></div>
+      <div style="display:flex; padding:0 12px;"><span style="width:1.5em; color:#888; user-select:none;">2</span><span>&nbsp;&nbsp;"name" : "Info.plist"</span></div>
+      <div style="display:flex; padding:0 12px;"><span style="width:1.5em; color:#888; user-select:none;">3</span><span>}</span></div>
+    </div>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema object: <code>#/components/schemas/DictionaryExample</code> in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json:1168-1189</code>, one of the variants
+referenced from the <code>RenderBlockContent</code> discriminated union at spec line 476-477. It in
+turn references <code>#/components/schemas/CodeExample</code> (spec line 1125-1141) and
+<code>#/components/schemas/CodeExampleContent</code> (spec line 1107-1124). Generated Swift:
+<code>Components.Schemas.DictionaryExample</code>, a <code>Codable, Hashable, Sendable</code> struct
+at <code>Sources/DocCArchive/generated/Types.swift:4769-4801</code>; its <code>example</code> field
+is typed <code>Components.Schemas.CodeExample</code> (<code>Types.swift:4707-4729</code>), whose
+<code>content</code> field is <code>[Components.Schemas.CodeExampleContent]</code>
+(<code>Types.swift:4684-4706</code>).
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"dictionaryExample"</code></td><td>Discriminator; generated as <code>_TypePayload</code> with the single case <code>.dictionaryExample</code>.</td></tr>
+<tr><td><code>summary</code></td><td>[RenderBlockContent]</td><td>no</td><td>&mdash;</td><td>Optional introductory content, rendered into the component's default slot ahead of the code listing.</td></tr>
+<tr><td><code>example</code></td><td>CodeExample</td><td>yes</td><td>&mdash;</td><td>The dictionary's sample code, passed straight through as the <code>example</code> prop.</td></tr>
+<tr><td><code>CodeExample.syntax</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Declared on the wire schema but not read anywhere in <code>DictionaryExample.vue</code> / <code>CollapsibleCodeListing.vue</code> &mdash; no per-language highlighting is driven by it in this render path.</td></tr>
+<tr><td><code>CodeExample.content</code></td><td>[CodeExampleContent]</td><td>yes</td><td>&mdash;</td><td>Bound directly to <code>CollapsibleCodeListing</code>'s <code>content</code> prop; one array element per visually-groupable chunk of lines.</td></tr>
+<tr><td><code>CodeExampleContent.collapsible</code></td><td>boolean</td><td>yes</td><td>&mdash;</td><td>Adds the <code>.collapsible</code> class to that chunk's container (a distinct background/text color). Does not itself hide the lines at this call site, since <code>DictionaryExample.vue</code> never passes a truthy <code>collapsed</code> prop (see section 1).</td></tr>
+<tr><td><code>CodeExampleContent.code</code></td><td>[string]</td><td>yes</td><td>&mdash;</td><td>The chunk's source lines, one array element per line (no embedded newlines).</td></tr>
+</table>
+<p>
+Note the schema does not declare a <code>metadata</code> property on <code>DictionaryExample</code>
+(unlike <code>CodeListing</code> or <code>EndpointExample</code>'s siblings), and, as shown in section
+1, <code>ContentNode.vue</code>'s render case for this kind does not check for one either.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift:242-254</code>) are still stub placeholders that operate
+on a whole <code>RenderNode</code> and return a hardcoded HTML comment / empty string respectively,
+so a <code>dictionaryExample</code> block encountered while walking a parsed archive would decode
+correctly into <code>Components.Schemas.DictionaryExample</code> but has no dedicated
+conversion logic in this repository today.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Root element: <code>&lt;div class="DictionaryExample"&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/DictionaryExample.vue#L11-L19"><code>DictionaryExample.vue#L12</code></a>).
+It has no scoped <code>&lt;style&gt;</code> block of its own &mdash; the file ends after its
+<code>&lt;script&gt;</code> section, so all visible styling comes from its children:
+</p>
+<ul>
+<li>The <code>summary</code> slot content renders as whatever block elements
+<code>renderChildren</code> produces for those <code>RenderBlockContent</code> nodes (typically a
+plain <code>&lt;p&gt;</code>).</li>
+<li><code>&lt;div class="collapsible-code-listing"&gt;</code> (optionally
+<code>.single-line</code> when the first chunk has exactly one code line) &mdash; the root of
+<code>CollapsibleCodeListing.vue</code>, styled by its own scoped SCSS
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CollapsibleCodeListing.vue#L58-L146"><code>CollapsibleCodeListing.vue#L58-L146</code></a>).</li>
+<li>Inside it, <code>&lt;pre&gt;&lt;CodeBlock&gt;</code> (the shared
+<code>components/CodeBlock.vue</code>) wraps one <code>&lt;div class="container-general"&gt;</code>
+per <code>CodeExampleContent</code> chunk, with modifier classes <code>collapsible</code>
+(that chunk's <code>collapsible</code> flag) and <code>collapsed</code> (only ever added when both
+<code>collapsible</code> is true <em>and</em> the component's own <code>collapsed</code> prop is
+true &mdash; never the case for <code>dictionaryExample</code>, see section 1).</li>
+<li>Each line is a <code>&lt;div class="code-line-container"&gt;</code> containing
+<code>&lt;div class="code-number"&gt;</code> (a CSS counter-driven line number, always present here
+since <code>showLineNumbers</code> is hard-coded true) and <code>&lt;div class="code-line"&gt;</code>
+with the plain line text.</li>
+</ul>
+<p>
+Notable SCSS/CSS from
+<code>CollapsibleCodeListing.vue</code>'s scoped <code>&lt;style lang="scss"&gt;</code> block
+(imports <code>docc-render/styles/_core.scss</code>): <code>$code-listing-with-numbers-padding</code>
+and <code>$code-number-padding</code> (spacing variables from
+<code>src/styles/core/_vars.scss</code>), and a <code>counter-reset: linenumbers</code> /
+<code>counter-increment: linenumbers</code> pair driving each <code>.code-number::before</code> via
+CSS <code>content: counter(linenumbers)</code> &mdash; the line numbers are generated CSS content,
+not template-interpolated text. CSS custom properties consumed at paint time:
+<code>--background</code> / <code>--color-code-background</code> (listing background),
+<code>--colors-grid</code> / <code>--color-grid</code> (border color),
+<code>--text</code> / <code>--color-code-plain</code> (default text color), and
+<code>--color-code-collapsible-background</code> / <code>--color-code-collapsible-text</code>
+(applied to chunks with <code>collapsible: true</code>).
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior, precisely: in the render path actually exercised by <code>dictionaryExample</code>
+nodes, there is no client-side interactive state at all. <code>DictionaryExample.vue</code> has no
+<code>data</code>, no event handlers, and no watchers; it statically composes a slot and one child
+component. <code>CollapsibleCodeListing.vue</code> likewise has no <code>data</code>, methods, or
+watchers of its own &mdash; its only dynamic behavior is the pure-template class binding
+<code>{ collapsible: content.collapsible === true, collapsed: content.collapsible === true &amp;&amp;
+collapsed }</code> on each chunk (line 19-20), and, as established in section 1, the
+<code>collapsed</code> prop this depends on is never actually passed a truthy value by
+<code>DictionaryExample.vue</code>, so in practice that class is dead code for this particular kind.
+The only genuinely dynamic piece anywhere nearby is the line-number gutter, and that is already
+implemented with a native CSS mechanism today (CSS counters via
+<code>counter-reset</code>/<code>counter-increment</code>/<code>content: counter(...)</code>), not
+JavaScript.
+</p>
+<p>
+There is therefore no interactive behavior here to replace with <code>&lt;details&gt;</code>,
+<code>:target</code>, the Popover API, <code>:has()</code>, or any other stateful CSS mechanism:
+this block-content kind renders a static, non-collapsing, non-toggling code listing. (Contrast with
+the sibling <code>codeListing</code> kind's copy-to-clipboard button and asynchronous syntax
+highlighter, neither of which is present in this component tree.) If a future revision of
+<code>DictionaryExample.vue</code> started passing a real <code>collapsed</code> prop through (so
+that <code>collapsible</code> chunks could be toggled open/closed by a reader), that specific
+show/hide toggle would be a textbook fit for a checkbox/radio-input + <code>:checked</code> +
+general-sibling-selector pattern, or a native <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>
+per chunk &mdash; but that would be speculating about code that does not exist in the pinned commit,
+so the verdict for the kind as it actually behaves today is "not applicable."
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

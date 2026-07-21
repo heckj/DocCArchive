@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page: Not Found (404) — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="index.html" class="active" aria-current="page">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">page</p>
+<h1>Not Found (404)</h1>
+<p class="wire-value">Route: fallback <code>*</code> &rarr; <code>views/NotFound.vue</code></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#route-dispatch">1. Route &amp; dispatch</a> &middot; <a href="#chrome">2. Chrome</a> &middot; <a href="#hierarchy-tree">3. Hierarchy tree</a></nav>
+<div class="synthesized-note">
+This page has no RenderNode-schema content at all &mdash; there is no <code>data/*.json</code> file
+behind it. <code>NotFound.vue</code> renders a single static, localized string
+(<code>$t('error.not-found')</code>, English value <code>"The page you're looking for can't be
+found."</code>) as an <code>&lt;h1&gt;</code> inside the shared <code>GenericError</code> component.
+No other props, no illustration, no links back into the site are rendered by the framework itself.
+</div>
+<section id="route-dispatch"><h2>1. Route and component dispatch</h2>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/routes.js#L19-L30"><code>src/routes.js</code></a>
+declares two <code>fallbackRoutes</code>, both using Vue Router's catch-all <code>path: '*'</code>.
+The first entry is this one:
+</p>
+<pre><code>{
+  path: '*',
+  name: notFoundRouteName,
+  component: NotFound,
+}</code></pre>
+<p>
+<code>notFoundRouteName</code> is the string constant <code>'not-found'</code>, defined in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/router.js#L11-L12"><code>src/constants/router.js</code></a>.
+Because this route is registered after the real page routes
+(<code>tutorials-overview</code>, <code>topic</code>, <code>documentation-topic</code>) in the
+combined route table (<code>[...pagesRoutes, ...fallbackRoutes]</code>), Vue Router only matches it
+when no other route pattern matches the current URL &mdash; i.e. this is a genuine, ordinarily
+reachable 404: any URL that doesn't start with <code>/tutorials/...</code> or
+<code>/documentation...</code> lands here.
+</p>
+<p>
+The matched component is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/NotFound.vue#L1-L37"><code>views/NotFound.vue</code></a>.
+Its template is just:
+</p>
+<pre><code>&lt;GenericError :message="$t('error.not-found')"&gt;
+  &lt;slot /&gt;
+&lt;/GenericError&gt;</code></pre>
+<p>
+The English locale string (<code>src/lang/locales/en-US.json</code>, under <code>error</code>) is
+<code>"not-found": "The page you're looking for can't be found."</code> &mdash; this is the entire
+user-visible message. The component also has a <code>created()</code> hook that calls
+<code>AppStore.setAllLocalesAreAvailable()</code> and route guards
+(<code>beforeRouteEnter</code>/<code>beforeRouteUpdate</code>) that call <code>updateLocale</code>;
+these affect the language switcher's available-locales state, not anything rendered on this page
+itself. <code>NotFound</code> accepts a default <code>&lt;slot /&gt;</code> but nothing in the
+codebase passes content into it, so in practice it is always empty.
+</p>
+</section>
+<section id="chrome"><h2>2. Page chrome</h2>
+<p>
+There is <strong>no chrome</strong> on this page: no top navigation bar, no sidebar, no search
+field, no breadcrumb. The entire page body is whatever
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/GenericError.vue#L11-L18"><code>components/GenericError.vue</code></a>
+renders:
+</p>
+<pre><code>&lt;div class="generic-error"&gt;
+  &lt;div class="container"&gt;
+    &lt;h1 class="title error-content"&gt;{{message || $t('error.unknown')}}&lt;/h1&gt;
+    &lt;slot /&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>
+For this page, <code>message</code> is always supplied (<code>$t('error.not-found')</code>), so the
+<code>$t('error.unknown')</code> fallback (<code>"An unknown error occurred."</code>) is never
+reached here &mdash; it only matters for <code>ServerError.vue</code>, which does not pass a
+<code>message</code> prop at all. There is no icon, no illustration, and no "go home" link; the
+<code>&lt;slot /&gt;</code> passed through from <code>NotFound.vue</code> is empty, so nothing
+renders below the heading.
+</p>
+<p>
+CSS (scoped in <code>GenericError.vue</code>, importing <code>docc-render/styles/_core.scss</code>):
+<code>.container</code> applies the shared <code>section-content</code> mixin (centers and caps the
+content width) plus <code>margin-top: 92px</code> / <code>margin-bottom: 140px</code> to vertically
+place the message roughly mid-page below where a header would otherwise sit.
+<code>.error-content</code> fixes the heading to a <code>502px</code> width (narrowing at the
+<code>medium</code>/<code>small</code> breakpoints to <code>420px</code>/<code>330px</code>) and
+centers it with <code>margin-left/right: auto</code>. <code>.title</code> centers the text
+(<code>text-align: center</code>) and applies the shared <code>headline</code> font-style mixin.
+Net effect: a single centered heading, vertically offset from the top of an otherwise blank page,
+with no other visual elements.
+</p>
+</section>
+<section id="hierarchy-tree"><h2>3. Full DOM tree</h2>
+<p>Every node below is page chrome &mdash; none of it is driven by RenderNode schema content:</p>
+<ul class="hierarchy-tree">
+<li><span class="tag chrome">CHROME</span><code>div.generic-error</code>
+  <ul>
+    <li><span class="tag chrome">CHROME</span><code>div.container</code>
+      <ul>
+        <li><span class="tag chrome">CHROME</span><code>h1.title.error-content</code>
+          <span class="note">text: "The page you're looking for can't be found." (<code>error.not-found</code>)</span></li>
+        <li><span class="tag chrome">CHROME</span><code>&lt;slot /&gt;</code>
+          <span class="note">always empty in practice &mdash; no caller passes slot content</span></li>
+      </ul>
+    </li>
+  </ul>
+</li>
+</ul>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

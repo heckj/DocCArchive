@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: links — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>links</code></h1>
+<p class="wire-value">Wire value: <code>"links"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'links'</code> lands, as with every
+other block/inline content kind on this reference site, on <code>src/components/ContentNode.vue</code>'s
+wire-constant table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>),
+whose <code>links</code> key holds <code>BlockType.links = 'links'</code>. That constant is matched in the
+<code>renderNode()</code> factory function's <code>switch (node.type)</code> dispatch table:
+</p>
+<pre><code>case BlockType.links: {
+  return createElement(LinksBlock, {
+    props: {
+      blockStyle: node.style,
+      identifiers: node.items,
+    },
+  });
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L421-L428"><code>ContentNode.vue#L421-L428</code></a>.)
+Both of the node's non-<code>type</code> wire fields are forwarded, renamed as props: <code>style</code>
+becomes <code>blockStyle</code>, and <code>items</code> (an array of reference identifier strings) becomes
+<code>identifiers</code>. The <code>type</code> discriminator itself is consumed only by the
+<code>switch</code>, never forwarded. <code>LinksBlock</code> is imported at the top of
+<code>ContentNode.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L31"><code>ContentNode.vue#L31</code></a>).
+</p>
+<p>
+<code>src/components/ContentNode/LinksBlock.vue</code> is a small dispatcher itself, branching purely on
+the <code>blockStyle</code> prop's value against the <code>list</code> constant from
+<code>TopicSectionsStyle</code>:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;div v-if="isListStyle" class="links-block"&gt;
+    &lt;TopicsLinkBlock
+      v-for="item in items"
+      :key="item.identifier"
+      :topic="item"
+      class="topic-link-block"
+    /&gt;
+  &lt;/div&gt;
+  &lt;TopicsLinkCardGrid
+    v-else
+    class="links-block"
+    :items="items"
+    :topic-style="blockStyle"
+  /&gt;
+&lt;/template&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/LinksBlock.vue#L10-L25"><code>LinksBlock.vue#L10-L25</code></a>.)
+Before either branch renders, the <code>identifiers</code> prop (an array of bare reference-identifier
+strings) is resolved to full reference objects via the shared <code>referencesProvider</code> mixin, which
+injects the render node's top-level <code>references</code> map:
+</p>
+<pre><code>items: ({ identifiers, references }) => identifiers.reduce((all, identifier) => (
+  references[identifier] ? all.concat(references[identifier]) : all
+), []),</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/LinksBlock.vue#L52-L54"><code>LinksBlock.vue#L52-L54</code></a>.)
+Identifiers that don't resolve in <code>references</code> are silently dropped rather than rendered as
+broken entries. If <code>blockStyle === 'list'</code>, each resolved item becomes a
+<code>TopicsLinkBlock</code> (the same "declaration + abstract" row component used in an on-page Topics
+section, imported async here specifically "to overcome potential infinite loops from importing ContentNode
+inside" per the source comment, since <code>TopicsLinkBlock.vue</code> itself renders abstracts through
+<code>ContentNode</code>). For the two grid styles (<code>compactGrid</code>, the prop default, and
+<code>detailedGrid</code>), <code>TopicsLinkCardGrid</code> takes over, rendering a <code>Pager</code>
+wrapping a <code>Row</code>/<code>Column</code> grid of <code>TopicsLinkCardGridItem</code> cards
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkCardGrid.vue#L11-L32"><code>TopicsLinkCardGrid.vue#L11-L32</code></a>).
+Notably, <code>LinksBlock.vue</code> never passes a <code>usePager</code> prop to
+<code>TopicsLinkCardGrid</code>, and that prop defaults to <code>false</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkCardGrid.vue#L70-L73"><code>TopicsLinkCardGrid.vue#L70-L73</code></a>), so for a <code>links</code> block
+<code>defaultPageSize</code> resolves to <code>items.length</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkCardGrid.vue#L77-L95"><code>TopicsLinkCardGrid.vue#L77-L95</code></a>) &mdash; i.e. every linked item is placed on a single page and the
+<code>Pager</code>'s paging controls have nothing to page through in this context, even though the
+<code>Pager</code> component itself is still mounted around the grid.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+No fixture containing a <code>"type": "links"</code> RenderNode node was found in
+<code>Tests/DocCArchiveTests/Fixtures/</code> (only unrelated matches inside bundled, minified DocC-render
+JS assets) nor as JSON in swift-docc's test suite. However,
+<code>Tests/SwiftDocCTests/Semantics/Reference/LinksTests.swift</code>'s
+<code>testLinkResolution()</code> does contain a genuine Swift-literal fixture &mdash; an expected
+<code>RenderBlockContent.links(RenderBlockContent.Links(style: .compactGrid, items: [...]))</code> value
+produced by compiling an authored <code>@Links(visualStyle: compactGrid) { ... }</code> directive against
+a real test bundle
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Tests/SwiftDocCTests/Semantics/Reference/LinksTests.swift#L187-L217">LinksTests.swift#L187-L217</a>). The example below is that fixture's second case, transcribed from the Swift literal into the
+equivalent wire JSON per the schema in Section 3 (exampleProvenance: fixture).
+</p>
+<pre><code>{
+  "type": "links",
+  "style": "compactGrid",
+  "items": [
+    "doc://org.swift.docc.example/documentation/MyKit/MyClass",
+    "doc://org.swift.docc.example/documentation/MyKit/MyClass/myFunction()",
+    "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorial",
+    "doc://org.swift.docc.example/documentation/Test-Bundle/article2"
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+      <div style="border:1px solid #d8d8d8; border-radius:8px; padding:14px; aspect-ratio:16/9; display:flex; flex-direction:column; justify-content:flex-end; background:#f5f5f7;">
+        <span style="font-size:0.75em; color:#6e6e73;">Class</span>
+        <strong style="font-size:0.95em;">MyClass</strong>
+      </div>
+      <div style="border:1px solid #d8d8d8; border-radius:8px; padding:14px; aspect-ratio:16/9; display:flex; flex-direction:column; justify-content:flex-end; background:#f5f5f7;">
+        <span style="font-size:0.75em; color:#6e6e73;">Instance Method</span>
+        <strong style="font-size:0.95em;">myFunction()</strong>
+      </div>
+      <div style="border:1px solid #d8d8d8; border-radius:8px; padding:14px; aspect-ratio:16/9; display:flex; flex-direction:column; justify-content:flex-end; background:#f5f5f7;">
+        <span style="font-size:0.75em; color:#6e6e73;">Tutorial</span>
+        <strong style="font-size:0.95em;">Test Tutorial</strong>
+      </div>
+    </div>
+  </div>
+  <p><em>mockup: <code>style: "compactGrid"</code> routes to <code>TopicsLinkCardGrid</code>, which lays
+  identifiers out as a <code>Row</code>/<code>Column</code> grid of <code>TopicsLinkCardGridItem</code>
+  cards (title + role/kind icon, no abstract text since <code>compact</code> defaults to true for this
+  style). A fourth, unresolved identifier would simply be omitted from the grid rather than shown as a
+  broken card, per the <code>items</code> computed property in Section 1. If <code>style</code> were
+  <code>"list"</code> instead, the same four identifiers would instead render as stacked
+  <code>TopicsLinkBlock</code> rows &mdash; the same row style used in an on-page Topics list, including
+  full declarations and abstracts.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Links</code> (lines 649&ndash;679), cross-checked against
+<code>Components.Schemas.Links</code> in <code>Sources/DocCArchive/generated/Types.swift</code> (lines
+4011&ndash;4049). <code>Links</code> is one arm of the <code>RenderBlockContent</code> discriminated
+union that makes up a <code>content</code> array anywhere block content is allowed.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"links"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case links =
+"links" }</code>, decoded/encoded under the Swift property name <code>_type</code> via an explicit
+<code>CodingKeys</code> mapping (<code>case _type = "type"</code>).</td>
+</tr>
+<tr>
+<td><code>style</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"list"</code> | <code>"compactGrid"</code> | <code>"detailedGrid"</code>; no wire-level default
+(the JSON schema marks it required)</td>
+<td>Generated as <code>StylePayload: String, Codable, Hashable, Sendable, CaseIterable</code> with those
+three cases. DocC-render's own <code>LinksBlock</code> prop declares a client-side default of
+<code>compactGrid</code> for the <code>blockStyle</code> prop, but that only matters if the component were
+mounted without a <code>style</code> value at all &mdash; the wire schema itself always requires the
+field.</td>
+</tr>
+<tr>
+<td><code>items</code></td>
+<td>array of string</td>
+<td>yes</td>
+<td>&mdash; (schema annotates each entry <code>format: "reference(TopicRenderReference)"</code>, informal
+documentation-only tagging, not a machine-enforced format)</td>
+<td>Generated as plain <code>[Swift.String]</code>. Each string is a reference identifier that must have a
+matching key in the enclosing RenderNode's top-level <code>references</code> map; DocC-render resolves
+these client-side (Section 1) and drops any identifier that fails to resolve, rather than erroring.</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the
+enclosing enum case is <code>case links(Links)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift</code>, line 76), documented as
+&ldquo;A collection of authored links that should be rendered in a similar style to links in an on-page
+Topics section.&rdquo; The nested struct is declared at the same file, lines 841&ndash;867:
+</p>
+<pre><code>public struct Links: Codable, Equatable {
+    public enum Style: String, Codable, Equatable {
+        case list
+        case compactGrid
+        case detailedGrid
+    }
+    public var style: Style
+    public var items: [String]
+    public init(style: RenderBlockContent.Links.Style, items: [String]) { ... }
+}</code></pre>
+<p>
+This matches the wire schema field-for-field (<code>style</code>, <code>items</code>). Authoring-side, a
+<code>links</code> node is what swift-docc emits for an authored <code>@Links(visualStyle:)</code>
+directive
+(<code>Sources/SwiftDocC/Semantics/Reference/Links.swift</code>, lines 37&ndash;139), which lets an author
+place a curated set of documentation links anywhere on a page &mdash; independent of the page-curation
+Topics graph &mdash; by writing a single bulleted list of doc links inside the directive body, e.g.:
+</p>
+<pre><code>@Links(visualStyle: compactGrid) {
+   - &lt;doc:get-started-preparing-sloth-food&gt;
+   - &lt;doc:feeding-your-sloth-in-winter&gt;
+   - &lt;doc:ordering-food-delivery&gt;
+}</code></pre>
+<p>
+The directive's <code>render(with:)</code> extracts links from the first unordered list in its body,
+resolves each destination to an absolute reference string, maps its own <code>VisualStyle</code> argument
+enum 1:1 onto <code>RenderBlockContent.Links.Style</code>, and emits a single
+<code>RenderBlockContent.links(...)</code> node &mdash; or emits nothing at all if no links resolved
+(<code>Sources/SwiftDocC/Semantics/Reference/Links.swift</code>, lines 104&ndash;139). A
+<code>HasExactlyOneUnorderedList</code> validation pass emits warning diagnostics (not hard errors) for
+missing/extraneous body content, and unresolved doc links individually emit
+<code>org.swift.docc.unresolvedTopicReference</code> warnings while being dropped from the emitted
+<code>items</code> array, as seen directly in the swift-docc test fixture used for Section 2's example.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>, lines
+242&ndash;254) are still stub placeholders that return a hardcoded HTML comment and an empty string
+respectively for an entire <code>RenderNode</code>, with no per-block-kind switch reached yet &mdash; so a
+<code>links</code> node parsed via <code>Components.Schemas.Links</code> is available on the decoded model
+today, but nothing in this repository currently converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>links</code> node, in context, depends on <code>style</code>:
+</p>
+<ul>
+<li><code>div.links-block</code> &mdash; the root element in both branches of <code>LinksBlock.vue</code>'s
+template (list branch: a plain wrapping <code>div</code>; grid branch: this class is added directly to the
+mounted <code>TopicsLinkCardGrid</code> root).</li>
+<li>List style (<code>style: "list"</code>): one <code>div.link-block.topic-link-block</code> per item,
+each rendered by <code>TopicsLinkBlock.vue</code> and containing an <code>a</code>/<code>router-link.link</code>,
+an optional <code>.abstract</code> block (rendered via a nested <code>ContentNode</code>), and optional
+<code>Badge</code> elements for deprecated/beta/tag status.</li>
+<li>Grid styles (<code>compactGrid</code>/<code>detailedGrid</code>): a <code>Pager</code> (classes
+<code>pager</code>, <code>TopicsLinkCardGrid</code>, plus the style name itself, e.g.
+<code>compactGrid</code>) wrapping a <code>Row</code>&gt;<code>Column</code> grid of
+<code>.reference-card-grid-item</code> cards (each a <code>Card</code> component with a
+<code>.card-cover</code> image or a <code>.reference-card-grid-item__image</code> role-icon fallback, plus
+an abstract <code>ContentNode</code> only when <code>compact</code> is false, i.e. only for
+<code>detailedGrid</code>).</li>
+</ul>
+<p>
+SCSS: <code>LinksBlock.vue</code> carries its own scoped <code>&lt;style&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/LinksBlock.vue#L59-L73"><code>LinksBlock.vue#L59-L73</code></a>), which only sets vertical stacking margins around the whole block
+(<code>--spacing-stacked-margin-xlarge</code>) and a 15px top margin between stacked
+<code>.topic-link-block</code> rows to match spacing used in the on-page Topics table. The bulk of the
+visual styling lives one level down, in the child components' own scoped stylesheets:
+<code>TopicsLinkBlock.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkBlock.vue#L214-L274"><code>TopicsLinkBlock.vue#L214-L274</code></a>) for the list style, and
+<code>TopicsLinkCardGridItem.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsLinkCardGridItem.vue#L79-L119"><code>TopicsLinkCardGridItem.vue#L79-L119</code></a>) for the grid styles.
+</p>
+<ul>
+<li><code>TopicsLinkBlock.vue</code>: <code>.abstract</code> and badges get
+<code>margin-inline-start: calc($topic-link-icon-spacing + $topic-link-icon-width)</code> to align with the
+title text past the role icon; <code>.link-block.has-inline-element</code> switches to a wrapping flex row
+when there's no abstract (so a bare link and its badge sit on one line); <code>.deprecated { text-decoration:
+line-through; }</code> strikes through deprecated link titles; a shared <code>change-highlight-target()</code>
+mixin (via the <code>.changed</code> class) drives the API-diff highlight background.</li>
+<li><code>TopicsLinkCardGridItem.vue</code>: <code>--card-cover-height: auto</code> plus
+<code>:deep(.card-cover) { aspect-ratio: 16/9; }</code> force every card image to a 16:9 box regardless of
+the source image's natural ratio; <code>:deep(.card-cover-wrap) { border: 1px solid
+var(--color-link-block-card-border); }</code> draws the card border from a theme custom property; the
+icon-fallback <code>&amp;__image</code> block centers a large (<code>font-size: 80px</code>) glyph on a
+<code>var(--color-fill-gray-quaternary)</code> background when no card image reference exists.</li>
+</ul>
+<p>
+CSS custom properties consumed across the two branches: <code>--spacing-stacked-margin-xlarge</code>
+(stacking margin around the whole <code>links-block</code>), <code>--color-link-block-card-border</code>
+(grid-card border color), and <code>--color-fill-gray-quaternary</code> (icon-fallback background); the
+list branch's icon-alignment spacing instead comes from Sass constants <code>$topic-link-icon-spacing</code>
+and <code>$topic-link-icon-width</code> compiled directly into the stylesheet rather than exposed as runtime
+custom properties.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: neither branch of a rendered <code>links</code> block holds any client-side
+interactive state of its own. The list style (<code>TopicsLinkBlock</code> rows) is static markup &mdash;
+a link, an optional abstract, optional badges &mdash; with no toggles, tabs, or hidden panels. The grid
+style mounts a <code>Pager</code> component, which does have real interactive/stateful behavior elsewhere
+in DocC-render (an internal <code>data()</code>-held current-page index swapped via click handlers on
+<code>Gutter</code> arrows and page indicators), but as established in Section 1, <code>LinksBlock.vue</code>
+never opts into that behavior: it omits the <code>usePager</code> prop, which defaults to <code>false</code>,
+so <code>defaultPageSize</code> resolves to <code>items.length</code> and every linked item is placed on
+the grid's single page. The <code>Pager</code>'s stateful paging machinery is therefore present in the
+component tree but inert for this particular kind &mdash; there is no multi-page state being held that a
+<code>links</code>-block-specific CSS mechanism would need to replace.
+</p>
+<p>
+The remaining visual behaviors &mdash; card hover/link-color treatment, the deprecated strikethrough, the
+API-changes highlight &mdash; are already plain CSS (class-driven styling and pseudo-classes, not JS state
+machines) in the child components read in Section 4. With no client-side state to hold and no toggled
+visibility to replace, there is no single native mechanism (<code>&lt;details&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, Popover API, etc.) that this page's audit can honestly point to as "replacing" behavior,
+because the <code>links</code> kind itself is stateless as rendered by DocC-render.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

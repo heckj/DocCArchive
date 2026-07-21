@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: parameters — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>parameters</code></h1>
+<p class="wire-value">Wire value: <code>"parameters"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+The dispatch happens in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L127"><code>PrimaryContent.vue</code></a>,
+which renders a symbol's array of primary-content sections. It keys a lookup table on <code>section.kind</code>
+via a <code>SectionKind</code> constant map (defined in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L12-L27"><code>constants/PrimaryContentSection.js</code></a>).
+For <code>SectionKind.parameters</code> it selects the <code>Parameters</code> component and passes through the
+section's <code>parameters</code> array as a prop:
+</p>
+<pre><code>componentFor(section) {
+  return {
+    ...
+    [SectionKind.parameters]: Parameters,
+    ...
+  }[section.kind];
+},
+propsFor(section) {
+  const { ..., parameters, ... } = section;
+  return {
+    ...
+    [SectionKind.parameters]: { parameters },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+The actual rendering happens in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/Parameters.vue#L11-L27"><code>Parameters.vue</code></a>.
+Its template root is a <code>&lt;section class="parameters"&gt;</code> containing a heading (via the shared
+<code>LinkableHeading</code> component, anchored to <code>"parameters"</code> per
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/ContentSectionAnchors.js#L47-L51"><code>ContentSectionAnchors.js</code></a>)
+followed by a definition list (<code>&lt;dl&gt;</code>) built by iterating the <code>parameters</code> array — one
+<code>&lt;dt class="param-name"&gt;</code> holding the parameter's <code>name</code> in a <code>&lt;code&gt;</code>
+element, paired with one <code>&lt;dd class="param-content"&gt;</code> that delegates the parameter's
+<code>content</code> (an array of standard <code>RenderBlockContent</code> blocks) to the generic
+<code>&lt;ContentNode&gt;</code> component for recursive block rendering:
+</p>
+<pre><code>&lt;section class="parameters"&gt;
+  &lt;LinkableHeading :anchor="contentSectionData.anchor"&gt;
+    {{ $t(contentSectionData.title) }}
+  &lt;/LinkableHeading&gt;
+  &lt;dl&gt;
+    &lt;template v-for="param in parameters"&gt;
+      &lt;dt class="param-name" :key="`${param.name}:name`"&gt;
+        &lt;code&gt;{{ param.name }}&lt;/code&gt;
+      &lt;/dt&gt;
+      &lt;dd class="param-content" :key="`${param.name}:content`"&gt;
+        &lt;ContentNode :content="param.content" /&gt;
+      &lt;/dd&gt;
+    &lt;/template&gt;
+  &lt;/dl&gt;
+&lt;/section&gt;</code></pre>
+<p>
+This is a plain, stateless <code>&lt;dl&gt;</code> — no click handlers, no toggling, no reactive local state.
+It is worth explicitly distinguishing this from a sibling component with a similar name:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParametersTable.vue#L11-L27"><code>ParametersTable.vue</code></a>
+is a grid-based table used for the REST-flavored kinds (<code>restParameters</code>, <code>restHeaders</code>,
+<code>restCookies</code>) via <code>RestParameters.vue</code>, not for the plain-symbol <code>parameters</code>
+kind documented on this page.
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture containing a rendered RenderNode with <code>"kind": "parameters"</code> was found in either
+<code>DocCArchive</code>'s test fixtures (<code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive</code> and
+<code>SampleLibrary.doccarchive</code> — their documented symbols don't happen to include a rendered Parameters
+section) or in <code>swift-docc</code>'s <code>Tests/SwiftDocCTests/</code> suite (matches there were either
+symbol-graph <em>input</em> files, i.e. the pre-render source data DocC consumes, or the unrelated
+<code>restParameters</code>/REST-flavored kind). The example below is therefore hand-written.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "parameters",
+  "title": "Parameters",
+  "parameters": [
+    {
+      "name": "path",
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            {
+              "type": "text",
+              "text": "The file system location to read from."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "encoding",
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            {
+              "type": "text",
+              "text": "The text encoding to assume when decoding the file's contents."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div id="mockup-parameters">Parameters</div>
+  <dl>
+    <dt class="param-name"><code>path</code></dt>
+    <dd class="param-content">The file system location to read from.</dd>
+    <dt class="param-name"><code>encoding</code></dt>
+    <dd class="param-content">The text encoding to assume when decoding the file's contents.</dd>
+  </dl>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Per <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object <code>ParametersRenderSection</code>
+(lines 2677&ndash;2698), which cross-checks against the generated
+<code>Components.Schemas.ParametersRenderSection</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6218&ndash;6250), plus the nested
+<code>DocumentationParameter</code> schema object (spec lines 2699&ndash;2716; generated type lines 6251&ndash;6268).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>["parameters"]</code> (single-value enum)</td><td>Discriminator value; matches <code>RenderSectionKind.parameters</code> in swift-docc's Swift model.</td></tr>
+<tr><td><code>title</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Not set by <code>ParametersSectionTranslator</code> in current swift-docc; the Vue component supplies its own localized heading text (<code>sections.parameters</code> &rarr; "Parameters") rather than reading this field.</td></tr>
+<tr><td><code>parameters</code></td><td>array of <code>DocumentationParameter</code></td><td>yes</td><td>&mdash;</td><td>One entry per named parameter, in signature order.</td></tr>
+<tr><td><code>DocumentationParameter.name</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>The parameter's local (non-external/non-argument-label) name, per swift-docc's <code>ParameterRenderSection.name</code>.</td></tr>
+<tr><td><code>DocumentationParameter.content</code></td><td>array of <code>RenderBlockContent</code></td><td>yes</td><td>&mdash;</td><td>Free-form block content (paragraphs, lists, code blocks, etc.) describing the parameter; can be an empty array if the author wrote no description.</td></tr>
+</tbody>
+</table>
+<p>
+Note on naming: the JSON Schema / generated Swift type name is <code>ParametersRenderSection</code>
+(as given for this page's <code>doccArchiveType</code>), while swift-docc's own Swift source
+(<code>Sources/SwiftDocC/Model/Rendering/Symbol/ParameterRenderSection.swift</code>, lines 12&ndash;21) defines
+an identically-named public struct <code>ParametersRenderSection: RenderSection, Equatable</code> with a
+<code>parameters: [ParameterRenderSection]</code> field — i.e. swift-docc's per-item type is called
+<code>ParameterRenderSection</code> (singular) where the vendored JSON Schema/generated Swift calls the
+equivalent per-item type <code>DocumentationParameter</code>. These are the same wire shape under two different
+Swift type names in the two codebases; the JSON on the wire is identical either way.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li><code>&lt;section class="parameters"&gt;</code> — root element, scoped styles in
+<code>Parameters.vue</code>'s <code>&lt;style scoped lang="scss"&gt;</code> block.</li>
+<li>Heading — rendered by the shared <code>LinkableHeading</code> component
+(<code>src/components/ContentNode/LinkableHeading.vue</code>) as an <code>&lt;h2&gt;</code> (per
+<code>ContentSectionAnchors.js</code>'s <code>level: 2</code> for <code>SectionKind.parameters</code>), with
+<code>id="parameters"</code> set from the <code>anchor</code> prop, enabling deep-linking such as
+<code>#parameters</code>.</li>
+<li><code>&lt;dl&gt;</code> — the parameter list; no dedicated class.</li>
+<li><code>&lt;dt class="param-name"&gt;</code> — wraps the parameter name in <code>&lt;code&gt;</code>; styled with
+<code>font-weight: $font-weight-semibold</code> and <code>padding-top: var(--spacing-param)</code> (collapsed to
+<code>0</code> for the first item).</li>
+<li><code>&lt;dd class="param-content"&gt;</code> — wraps a nested <code>&lt;ContentNode&gt;</code> tree; adds
+indentation (<code>padding-inline-start: 2rem</code>) and, via <code>:deep()</code>, bolds any nested
+<code>&lt;dt&gt;</code>/indents any nested <code>&lt;dd&gt;</code> that the block content itself introduces
+(e.g. a nested definition list inside a parameter's prose).</li>
+<li>Responsive behavior: at the <code>small</code> breakpoint (mixin <code>@include breakpoint(small)</code>,
+defined in the shared <code>_core.scss</code>), the inline-start padding on both <code>.param-name</code> and
+<code>.param-content</code> collapses to <code>0</code>, since the section no longer needs to reserve
+indentation room on narrow viewports.</li>
+<li>CSS custom property consumed: <code>--spacing-param</code>. It is declared once, globally, in
+<code>src/styles/base/_typography.scss</code> (<code>--spacing-param: #{rem(28px)}</code>), and is then
+overridden per-view in <code>DocumentationTopic.vue</code>'s root style block
+(<code>--spacing-param: var(--spacing-stacked-margin-large)</code>) so the vertical rhythm between parameter
+entries tracks the surrounding topic page's stacked-content spacing scale rather than a hardcoded pixel value.</li>
+<li>SCSS files involved: <code>Parameters.vue</code>'s own scoped block, the shared
+<code>docc-render/styles/_core.scss</code> import (for the breakpoint mixin and font-weight variable), and the
+two custom-property definition sites above.</li>
+</ul>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior: <code>Parameters.vue</code> holds no component-local reactive state and has no
+click/toggle/expand-collapse handlers of any kind — it is a straight, one-way <code>v-for</code> template
+render of a static array into a <code>&lt;dl&gt;</code>, with the only interactive element being the
+<code>LinkableHeading</code>'s in-page anchor link (a plain <code>&lt;router-link&gt;</code> href, not a
+JS-driven show/hide toggle). There is no analogue here to, say, a tab navigator's <code>currentTitle</code> plus
+<code>v-show</code> pattern.
+</p>
+<p>
+Because there is no interactive state to reproduce (no expand/collapse, no active/inactive selection, no
+show/hide), none of the native state-holding mechanisms (<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>,
+radio+<code>:checked</code>, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+<code>:has()</code>, container queries, CSS anchor positioning, view-transitions) have anything to hold or
+replace for this specific kind. The one piece of "state" on the page — which section is scrolled into view via
+its <code>#parameters</code> anchor — is already handled by plain browser URL-fragment navigation
+(<code>id="parameters"</code> + a normal link), which is itself already a native mechanism, not something
+DocC-render is reimplementing in JS.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

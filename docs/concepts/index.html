@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concepts — DocC RenderNode Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="../archive-structure.html">Archive Structure</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<h1>Cross-cutting concepts</h1>
+<p>The Kind Catalog documents each <code>RenderNode</code> schema kind in isolation, but four
+mechanisms cut across many kinds at once and are easy to miss if you only ever read one page at a
+time. Each page below explains one mechanism once, in full, with a worked example spanning more than
+one kind; the kind pages that touch it link back here rather than re-explaining it.</p>
+</header>
+<main>
+<ul class="kind-list">
+<li><a href="variants.html"><code>variants</code> &amp; <code>variantOverrides</code></a>
+<p>How one RenderNode serves both a Swift and an Objective-C presentation &mdash; a routing table for
+per-language paths plus a JSON-Patch mechanism for in-place content overrides.</p></li>
+<li><a href="references.html">The <code>references</code> map</a>
+<p>Why almost every link, image, and download node on the wire carries only an opaque identifier, and
+how that identifier resolves against one shared top-level dictionary.</p></li>
+<li><a href="assets.html">Asset variant resolution</a>
+<p>How a flat array of <code>{url, traits}</code> entries becomes light/dark, 1x/2x/3x
+<code>&lt;picture&gt;</code>/<code>srcset</code> markup for images, video sources, and hero
+backgrounds.</p></li>
+<li><a href="localization.html">Localization fallback (<code>$t()</code>)</a>
+<p>How DocC-generated chrome strings (aside labels, control button names) are looked up from locale
+files at render time, with English as the runtime fallback, rather than ever appearing on the
+wire.</p></li>
+</ul>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

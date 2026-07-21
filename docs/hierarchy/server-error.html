@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page: Server Error (500) — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="index.html" class="active" aria-current="page">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">page</p>
+<h1>Server Error (500)</h1>
+<p class="wire-value">Route: fallback <code>*</code> (unreachable by normal navigation) &rarr; <code>views/ServerError.vue</code></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#route-dispatch">1. Route &amp; dispatch</a> &middot; <a href="#chrome">2. Chrome</a> &middot; <a href="#hierarchy-tree">3. Hierarchy tree</a></nav>
+<div class="synthesized-note">
+This page has no RenderNode-schema content at all &mdash; there is no <code>data/*.json</code> file
+behind it, and unlike the 404 page, no real URL ever routes here during ordinary browsing.
+<code>ServerError.vue</code> renders a single static, localized string
+(<code>$t('error.unknown')</code>, English value <code>"An unknown error occurred."</code>) as an
+<code>&lt;h1&gt;</code> inside the same shared <code>GenericError</code> component used by
+<code>NotFound.vue</code>. No other props, no illustration, no links back into the site are
+rendered by the framework itself.
+</div>
+<section id="route-dispatch"><h2>1. Route and component dispatch</h2>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/routes.js#L19-L30"><code>src/routes.js</code></a>
+declares this as the second of two <code>fallbackRoutes</code>, both registered with Vue Router's
+catch-all <code>path: '*'</code>:
+</p>
+<pre><code>{
+  path: '*', // purposefully unreachable without a forced navigation
+  name: serverErrorRouteName,
+  component: ServerError,
+}</code></pre>
+<p>
+The source comment is explicit: this route is <strong>purposefully unreachable without a forced
+navigation</strong>. Because Vue Router resolves catch-all routes in registration order and this
+entry is listed second (after the <code>not-found</code> catch-all, which is itself listed after
+the real page routes), the <code>not-found</code> route's identical <code>path: '*'</code> pattern
+always wins the match first for any ordinary unmatched URL. <code>serverErrorRouteName</code> (the
+string constant <code>'server-error'</code>, from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/router.js#L13-L14"><code>src/constants/router.js</code></a>)
+can therefore only be reached by code that explicitly navigates to it by <em>name</em> (e.g.
+<code>router.push({ name: serverErrorRouteName })</code> from some runtime error-handling path), not
+by any URL a user could type or link to.
+</p>
+<p>
+The matched component is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/ServerError.vue#L1-L35"><code>views/ServerError.vue</code></a>.
+Its template is just:
+</p>
+<pre><code>&lt;GenericError /&gt;</code></pre>
+<p>
+Note the difference from <code>NotFound.vue</code>: no <code>message</code> prop is passed here, so
+<code>GenericError</code> falls back to its own default,
+<code>$t('error.unknown')</code> &mdash; English value <code>"An unknown error occurred."</code>
+(<code>src/lang/locales/en-US.json</code>, under <code>error</code>). The component otherwise has
+the identical shape as <code>NotFound.vue</code>: a <code>created()</code> hook calling
+<code>AppStore.setAllLocalesAreAvailable()</code> and the same
+<code>beforeRouteEnter</code>/<code>beforeRouteUpdate</code> locale-update guards, none of which
+affect what's rendered on the page itself. Unlike <code>NotFound.vue</code>, <code>ServerError.vue</code>
+does not declare a default <code>&lt;slot /&gt;</code> in its own template at all &mdash; it renders
+<code>&lt;GenericError /&gt;</code> with no children, so <code>GenericError</code>'s internal
+<code>&lt;slot /&gt;</code> is empty here too, just via a different mechanism (no slot content ever
+offered, rather than an empty slot being passed through).
+</p>
+</section>
+<section id="chrome"><h2>2. Page chrome</h2>
+<p>
+There is <strong>no chrome</strong> on this page: no top navigation bar, no sidebar, no search
+field, no breadcrumb. The entire page body is whatever
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/GenericError.vue#L11-L18"><code>components/GenericError.vue</code></a>
+renders &mdash; the exact same component <code>NotFound.vue</code> uses:
+</p>
+<pre><code>&lt;div class="generic-error"&gt;
+  &lt;div class="container"&gt;
+    &lt;h1 class="title error-content"&gt;{{message || $t('error.unknown')}}&lt;/h1&gt;
+    &lt;slot /&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>
+Here <code>message</code> is <code>undefined</code> (<code>ServerError.vue</code> passes no prop),
+so the template's <code>message || $t('error.unknown')</code> expression falls through to the
+default string. There is no icon, no illustration, and no "go home" link; the inner
+<code>&lt;slot /&gt;</code> receives nothing, so nothing renders below the heading.
+</p>
+<p>
+CSS is identical to the 404 page, since it is the same scoped stylesheet on the same shared
+component: <code>.container</code> applies the shared <code>section-content</code> mixin plus
+<code>margin-top: 92px</code> / <code>margin-bottom: 140px</code>; <code>.error-content</code> caps
+the heading to <code>502px</code> wide (narrowing at <code>medium</code>/<code>small</code>
+breakpoints), centered via <code>margin-left/right: auto</code>; <code>.title</code> centers the
+text and applies the shared <code>headline</code> font-style mixin. Net effect: a single centered
+heading, vertically offset from the top of an otherwise blank page.
+</p>
+</section>
+<section id="hierarchy-tree"><h2>3. Full DOM tree</h2>
+<p>Every node below is page chrome &mdash; none of it is driven by RenderNode schema content:</p>
+<ul class="hierarchy-tree">
+<li><span class="tag chrome">CHROME</span><code>div.generic-error</code>
+  <ul>
+    <li><span class="tag chrome">CHROME</span><code>div.container</code>
+      <ul>
+        <li><span class="tag chrome">CHROME</span><code>h1.title.error-content</code>
+          <span class="note">text: "An unknown error occurred." (<code>error.unknown</code>, the <code>GenericError</code> default &mdash; no <code>message</code> prop supplied)</span></li>
+        <li><span class="tag chrome">CHROME</span><code>&lt;slot /&gt;</code>
+          <span class="note">empty &mdash; <code>ServerError.vue</code> offers no slot content</span></li>
+      </ul>
+    </li>
+  </ul>
+</li>
+</ul>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

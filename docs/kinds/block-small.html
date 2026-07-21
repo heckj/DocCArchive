@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: small — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>small</code></h1>
+<p class="wire-value">Wire value: <code>"small"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'small'</code> lands on
+<code>src/components/ContentNode.vue</code>'s wire-constant table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>),
+whose <code>small</code> key holds <code>BlockType.small = 'small'</code>. That constant is matched in the
+<code>renderNode()</code> factory function's <code>switch (node.type)</code> dispatch table:
+</p>
+<pre><code>case BlockType.small: {
+  return createElement('p', {}, [
+    createElement(Small, {}, renderChildren(node.inlineContent)),
+  ]);
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L377-L381"><code>ContentNode.vue#L377-L381</code></a>.)
+Two things are notable in this one case arm. First, the dispatch wraps the delegated component in a plain
+HTML <code>&lt;p&gt;</code> element rather than handing the wrapper element to the child component itself —
+so a <code>small</code> block always produces a paragraph containing a <code>&lt;small&gt;</code>, not a bare
+<code>&lt;small&gt;</code>. Second, <code>node.inlineContent</code> is passed straight through
+<code>renderChildren(children)</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L122-L129"><code>ContentNode.vue#L122-L129</code></a>),
+the same generic inline-content-array-to-VNodes helper used by paragraphs, headings, and asides — <code>small</code>
+gets no bespoke inline handling, it just recurses into the standard <code>RenderInlineContent</code>
+dispatch (<code>codeVoice</code>, <code>emphasis</code>, <code>strong</code>, <code>text</code>, etc.).
+The delegation target, <code>Small</code>, is imported from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Small.vue"><code>src/components/ContentNode/Small.vue</code></a>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L25"><code>ContentNode.vue#L25</code></a>).
+</p>
+<p>
+<code>Small.vue</code> is the entire component, in full — there is no JS logic at all, only a template and a
+scoped style block:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;small&gt;
+    &lt;slot /&gt;
+  &lt;/small&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  name: 'Small',
+};
+&lt;/script&gt;
+
+&lt;style scoped lang='scss'&gt;
+@import 'docc-render/styles/_core.scss';
+
+small {
+  @include font-styles(body-reduced-tight);
+  color: var(--color-figure-gray);
+}
+&lt;/style&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Small.vue#L11-L30"><code>Small.vue#L11-L30</code></a>.)
+It renders the native HTML <code>&lt;small&gt;</code> element and forwards its default slot (the VNodes
+built by <code>renderChildren</code> in the caller) directly inside. There is no component state, no props,
+and no conditional logic of any kind — this is one of the simplest components in the codebase: a styled
+pass-through around the browser's own <code>&lt;small&gt;</code> tag.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No literal wire-format JSON fixture containing <code>"type": "small"</code> was found in either
+<code>Tests/DocCArchiveTests/Fixtures/</code> (the only hits there for the string <code>"small"</code> are
+inside bundled, minified <code>*.js</code> app assets — unrelated JS identifiers, not RenderNode data) or as
+a JSON fixture in <code>Tests/SwiftDocCTests/</code>. swift-docc's own test suite exercises this kind only via
+Swift-literal assertions in
+<code>Tests/SwiftDocCTests/Semantics/Reference/SmallTests.swift</code> (e.g. <code>testHasContent</code>,
+which asserts <code>@Small { This is my copyright text. }</code> lowers to
+<code>.small(RenderBlockContent.Small(inlineContent: [.text("This is my copyright text.")]))</code>). The JSON
+below is hand-written to match that documented shape and the schema in Section 3.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "small",
+  "inlineContent": [
+    { "type": "text", "text": "Licensed under Apache License v2.0 with Runtime Library Exception." }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <p style="margin:0;">You can create a sloth using the <code>init(name:color:power:)</code> initializer.</p>
+    <p style="margin:12px 0 0 0;">
+      <small style="font-size:0.82em; line-height:1.3; color:#6e6e73;">
+        Licensed under Apache License v2.0 with Runtime Library Exception.
+      </small>
+    </p>
+  </div>
+  <p><em>mockup: the <code>small</code> block renders as its own paragraph, visually set off from surrounding
+  body text only by a reduced font size and a muted gray color &mdash; no border, background, or icon is
+  added. The wrapping <code>&lt;p&gt;</code> (from the dispatch case, not from <code>Small.vue</code>) supplies
+  standard paragraph block spacing above/below.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Small</code> (lines 741&ndash;759), which is one arm of the
+<code>RenderBlockContent</code> discriminated union (referenced at spec line 447). Cross-checked against
+<code>Components.Schemas.Small</code> in <code>Sources/DocCArchive/generated/Types.swift</code>
+(lines 4150&ndash;4175).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"small"</code> (single-value enum)</td>
+<td>Generated as a nested <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case small
+= "small" }</code>, decoded/encoded under the Swift property name <code>_type</code> via an explicit
+<code>CodingKeys</code> entry (<code>case _type = "type"</code>) &mdash; this kind discriminates on a wire
+property literally named <code>type</code>, unlike some sibling block kinds (e.g. <code>Row</code>,
+<code>TabNavigator</code>) that use <code>kind</code> instead.</td>
+</tr>
+<tr>
+<td><code>inlineContent</code></td>
+<td>array of <code>RenderInlineContent</code></td>
+<td>yes</td>
+<td>&mdash; (no minimum-count constraint in the wire schema)</td>
+<td>Generated as <code>[Components.Schemas.RenderInlineContent]</code>. Only inline content is accepted here
+&mdash; there is no nested block-content array field, matching the authoring-side restriction described in
+Section 1's directive doc comment that <code>@Small</code> "does not support more structured markup".</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the enclosing
+enum case is <code>case small(Small)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift</code>, line 69, doc comment: "A
+paragraph of small print content that should be rendered in a small font"), and the nested struct is declared
+at the same file, lines 819&ndash;822:
+</p>
+<pre><code>/// Small is based on HTML's `&lt;small&gt;` tag and could contain content like legal,
+/// license, or copyright text.
+public struct Small: Codable, Equatable {
+    /// The inline content that should be rendered.
+    public var inlineContent: [RenderInlineContent]
+}</code></pre>
+<p>
+This matches the wire schema field-for-field (the Swift enum case name itself, <code>small</code>, supplies
+the discriminator on encode/decode instead of a stored property). The authoring-side semantic model,
+<code>Sources/SwiftDocC/Semantics/Reference/Small.swift</code>, is a separate type (a
+<code>Semantic</code>/<code>AutomaticDirectiveConvertible</code> directive, not the render type above) whose
+<code>content</code> property uses <code>@ChildMarkup(numberOfParagraphs: .oneOrMore)</code> (line 40), i.e.
+authoring requires at least one paragraph of Markdown inside <code>@Small { ... }</code>. Its
+<code>render(with:)</code> method (lines 64&ndash;80) is what actually produces the wire object shown above:
+it first renders the directive's child markup normally into ordinary <code>RenderBlockContent</code> values,
+then remaps every resulting <code>.paragraph(paragraph)</code> case into
+<code>.small(RenderBlockContent.Small(inlineContent: paragraph.inlineContent))</code>, discarding the
+paragraph wrapper and re-wrapping the same inline content as a <code>small</code> block. Any non-paragraph
+block produced inside the directive body (e.g. a nested <code>@Row</code>) is passed through unchanged rather
+than converted, which is also why swift-docc emits a
+<code>org.swift.docc.HasOnlyKnownDirectives</code> diagnostic warning for structured markup inside
+<code>@Small</code> (per <code>SmallTests.swift</code>'s <code>testEmitsWarningWhenContainsStructuredMarkup</code>)
+&mdash; the directive still renders such content, but not as a <code>small</code> block. An author produces
+this kind by writing:
+</p>
+<pre><code>@Small {
+    _Licensed under Apache License v2.0 with Runtime Library Exception._
+}</code></pre>
+<p>
+(directive doc comment, <code>Small.swift</code> lines 21&ndash;34; introduced in DocC version "5.8" per
+<code>introducedVersion</code>, line 36).
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>, lines 242&ndash;254)
+are still stub placeholders that return a hardcoded HTML comment and an empty string respectively for an
+entire <code>RenderNode</code>, with no per-block-kind switch reached yet &mdash; so a <code>small</code> node
+parsed via <code>Components.Schemas.Small</code> is available on the decoded model today, but nothing in this
+repository currently converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>small</code> node, in context:
+</p>
+<ul>
+<li><code>p</code> &mdash; a plain, unclassed paragraph element, added by the <code>ContentNode.vue</code>
+dispatch case itself (not by <code>Small.vue</code>), so a <code>small</code> block always sits inside its
+own paragraph-level box in the flow layout.</li>
+<li><code>small</code> &mdash; the native HTML element rendered by <code>Small.vue</code>'s template, with no
+extra class or id attribute; Vue's scoped-styles mechanism attaches its own generated
+<code>data-v-*</code> attribute to this element instead, and the component's SCSS block targets the bare
+<code>small</code> tag selector.</li>
+<li>Inline children of <code>inlineContent</code> nest inside the <code>&lt;small&gt;</code> exactly as they
+would inside a paragraph (e.g. <code>code.code-voice</code> for <code>codeVoice</code>, <code>em</code> for
+<code>emphasis</code>, <code>strong</code> for <code>strong</code>), since <code>renderChildren</code> is the
+same generic inline dispatcher used everywhere else.</li>
+</ul>
+<p>
+SCSS: <code>Small.vue</code> carries its own scoped <code>&lt;style&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Small.vue#L23-L30"><code>Small.vue#L23-L30</code></a>),
+which is the entirety of this kind's presentational styling:
+</p>
+<pre><code>small {
+  @include font-styles(body-reduced-tight);
+  color: var(--color-figure-gray);
+}</code></pre>
+<p>
+<code>font-styles(body-reduced-tight)</code> resolves to a font-size/line-height pair of <code>14px/18px</code>
+at the "large" breakpoint (there is no separate "small"-breakpoint override for this style key), defined in
+the shared typography map
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/core/typography/_font-styles.scss#L71-L73"><code>_font-styles.scss#L71-L73</code></a>).
+CSS custom property consumed: <code>--color-figure-gray</code>, defined per color scheme in
+<code>src/styles/core/colors/_light.scss</code> (line 26) and its dark-mode counterpart &mdash; the same
+token used for e.g. deprecated/experiment aside text, giving <code>small</code> print a muted-but-legible
+gray rather than pure black/white body text color.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: there is no interactive or stateful JS behavior to replace here.
+<code>Small.vue</code> has no <code>data()</code>, no props, no computed properties, no event handlers, and
+no conditional rendering &mdash; its <code>&lt;script&gt;</code> block is just
+<code>export default { name: 'Small' }</code>. The <code>ContentNode.vue</code> dispatch case for
+<code>BlockType.small</code> is likewise a single unconditional <code>createElement</code> call with no
+branching. The entire visual effect (smaller font, gray color) is already achieved with plain, static CSS
+applied to a plain, static HTML <code>&lt;small&gt;</code> element wrapped in a <code>&lt;p&gt;</code>.
+</p>
+<p>
+Since this kind is stateless and has no interactive behavior, animation, or conditional visibility to
+replace, none of the state-holding mechanisms this survey covers (<code>&lt;details&gt;</code>, radio +
+<code>:checked</code>, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>,
+container queries, anchor positioning, view transitions) apply &mdash; there is no state for them to hold.
+A hand-authored static page could reproduce this kind's output today with nothing more than
+<code>&lt;p&gt;&lt;small&gt;...&lt;/small&gt;&lt;/p&gt;</code> and a <code>small { font-size: ...; color:
+...; }</code> rule, which is exactly what swift-docc-render already emits.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

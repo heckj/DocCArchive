@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: xcodeRequirement — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>xcodeRequirement</code></h1>
+<p class="wire-value">Wire value: <code>"xcodeRequirement"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+An <code>xcodeRequirement</code> reference is one entry in a render node's top-level
+<code>references</code> dictionary. Grepping <code>src/components/</code> and
+<code>src/views/</code> for the literal string <code>xcodeRequirement</code> turns up no entry in
+<code>ContentNode.vue</code>'s generic block/inline dispatch table &mdash; this kind is never routed
+through that switch. Instead it is consumed directly, by prop, along a single fixed path used only for
+the tutorial-page hero: <code>Tutorial/Hero.vue</code> &rarr; <code>Tutorial/HeroMetadata.vue</code>.
+</p>
+<p>
+A tutorial's <code>hero</code>/<code>intro</code> render section carries an
+<code>xcodeRequirement</code> field that is itself just a plain string &mdash; the reference's
+<em>identifier</em>, not the resolved object. <code>Hero.vue</code> receives that identifier as a prop
+and resolves it against the shared <code>references</code> map (via the <code>referencesProvider</code>
+mixin) with a computed property:
+</p>
+<pre><code>xcodeRequirementData() {
+  return this.references[this.xcodeRequirement];
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Hero.vue#L154-L156"><code>Hero.vue#L154-L156</code></a>; the <code>xcodeRequirement</code> prop declaration is at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Hero.vue#L125-L128"><code>Hero.vue#L125-L128</code></a>.) The resolved object is then passed down to the
+<code>HeroMetadata</code> child (locally aliased <code>Metadata</code>) as its own
+<code>xcodeRequirement</code> prop:
+</p>
+<pre><code>&lt;Metadata
+  :projectFilesUrl="projectFilesUrl"
+  :estimatedTimeInMinutes="estimatedTimeInMinutes"
+  :xcodeRequirement="xcodeRequirementData"
+  class="metadata"
+/&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Hero.vue#L54-L59"><code>Hero.vue#L54-L59</code></a>.) <code>HeroMetadata.vue</code> is where the reference is finally
+rendered, as one of up to three metadata "chips" alongside estimated reading time and a project-files
+download link:
+</p>
+<pre><code>&lt;div class="item" v-if="xcodeRequirement"&gt;
+  &lt;XcodeIcon class="item-large-icon icon-inline" /&gt;
+  &lt;div class="content bottom"&gt;
+    &lt;span v-if="isTargetIDE"&gt;{{ xcodeRequirement.title }}&lt;/span&gt;
+    &lt;a v-else :href="xcodeRequirement.url" class="content-link"&gt;
+      {{ xcodeRequirement.title }}
+      &lt;InlineChevronRightIcon class="icon-inline small-icon xcode-icon" /&gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/HeroMetadata.vue#L52-L61"><code>HeroMetadata.vue#L52-L61</code></a>; prop declaration at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/HeroMetadata.vue#L87-L91"><code>HeroMetadata.vue#L87-L91</code></a>.) The whole chip is gated on the reference resolving at all
+(<code>v-if="xcodeRequirement"</code>); if the identifier didn't resolve in <code>references</code>, the
+chip and its <code>XcodeIcon</code> simply don't render. Presentation then branches on the injected
+<code>isTargetIDE</code> flag (<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/HeroMetadata.vue#L79"><code>HeroMetadata.vue#L79</code></a>, ultimately sourced from
+<code>process.env.VUE_APP_TARGET === 'ide'</code> in <code>App.vue</code>): when the page is being
+displayed inside Xcode's own documentation viewer, only the plain <code>title</code> text is shown (no
+link, since Xcode already has that Xcode version); on the public web, <code>title</code> is wrapped in an
+<code>&lt;a href="{url}"&gt;</code> pointing at the download URL, with a trailing chevron icon.
+</p>
+<p>
+The reference is also threaded through <code>Article.vue</code>'s generic section-prop plumbing
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L125-L161"><code>Article.vue#L125-L161</code></a>), which destructures <code>xcodeRequirement</code> off of any
+<code>hero</code>-kind section and forwards it into <code>Hero</code>'s props &mdash; this is plumbing,
+not a second consumption site; the actual rendering logic is entirely in <code>HeroMetadata.vue</code>
+above.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture containing a full <code>"type": "xcodeRequirement"</code> reference <em>object</em> was found.
+<code>Tests/DocCArchiveTests/Fixtures/</code>'s two <code>.doccarchive</code> archives only contain the
+substring <code>xcodeRequirement</code> inside minified, bundled DocC-render JS assets (e.g.
+<code>js/topic.c7f55345.js</code>), not in any <code>data/documentation/*.json</code> RenderNode &mdash;
+neither example project's tutorials declare an <code>@XcodeRequirement</code>. In
+<code>swift-docc</code>'s own test suite, <code>RenderSectionTests.swift</code> and
+<code>RenderNodeDataExtractorTests.swift</code> only exercise the hero <em>section's</em> plain-string
+<code>xcodeRequirement</code> field (e.g. <code>"xcodeRequirement" : "Xcode 10 beta"</code>) or assert
+against decoded Swift model properties (<code>xcodeRequirementReference.title</code>,
+<code>xcodeRequirementReference.url.absoluteString</code> in
+<code>SemaToRenderNodeTests.swift</code>) rather than embedding the literal resolved-reference JSON
+object as it would appear in a render node's <code>references</code> map. The example below is
+hand-written from the <code>XcodeRequirementRenderReference</code> schema (Section 3) and from the field
+values asserted in <code>SemaToRenderNodeTests.swift</code> (<code>title: "Xcode X.Y Beta Z"</code>,
+<code>url: "https://www.example.com/download"</code>).
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "sections": [
+    {
+      "kind": "hero",
+      "title": "Building a Great App",
+      "xcodeRequirement": "Xcode X.Y Beta Z",
+      "estimatedTimeInMinutes": 20
+    }
+  ],
+  "references": {
+    "Xcode X.Y Beta Z": {
+      "type": "xcodeRequirement",
+      "identifier": "Xcode X.Y Beta Z",
+      "title": "Xcode X.Y Beta Z",
+      "url": "https://www.example.com/download"
+    }
+  }
+}</code></pre>
+<div class="mockup">
+  <div style="display:flex; gap:24px; background:#1d1d1f; color:#f5f5f7; padding:20px 24px; border-radius:6px; font-family:-apple-system,sans-serif; align-items:flex-end;">
+    <div style="display:flex; flex-direction:column; align-items:center; border-right:1px solid #48484a; padding:0 20px;">
+      <div style="font-size:1.4em;">20<span style="font-size:0.6em; margin-left:2px;">min</span></div>
+      <div style="font-size:0.75em; color:#a1a1a6; margin-top:6px;">Estimated Time</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <div style="font-size:1.3em;">&#10023;</div>
+      <a href="#" style="display:flex; align-items:center; gap:3px; color:#2997ff; font-size:0.85em; text-decoration:none; margin-top:6px;">Xcode X.Y Beta Z &rsaquo;</a>
+    </div>
+  </div>
+  <p><em>mockup: rendered as the second metadata "chip" in the tutorial hero's bottom row, next to the
+  estimated-time chip. On the public web (<code>isTargetIDE</code> false) the title is a clickable link to
+  the download URL with a trailing chevron; inside Xcode's own doc viewer it would be plain,
+  non-clickable text.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/XcodeRequirementRenderReference</code> (lines 1718&ndash;1741), cross-checked
+against <code>Components.Schemas.XcodeRequirementRenderReference</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 2434&ndash;2472).
+<code>XcodeRequirementRenderReference</code> is one arm of the <code>AnyRenderReference</code>
+discriminated union (matched by its <code>type</code> field) that makes up the entries of a render
+node's top-level <code>references</code> dictionary.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"xcodeRequirement"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case xcodeRequirement = "xcodeRequirement" }</code>, coded under key <code>"type"</code>. In swift-docc's Swift model this is <code>RenderReferenceType.xcodeRequirement</code> (<code>RenderReference.swift:29</code>).</td>
+</tr>
+<tr>
+<td><code>identifier</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The dictionary key under which this reference is stored in the render node's <code>references</code> map. In swift-docc's translator this identifier is derived directly from the authored <code>title</code> string, not a separately-generated ID (<code>RenderNodeTranslator.swift:190-193</code>: <code>RenderReferenceIdentifier(requirement.title)</code>).</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Presentation-friendly label for the required Xcode version, e.g. <code>"Xcode 13"</code>. Displayed verbatim by <code>HeroMetadata.vue</code> regardless of <code>isTargetIDE</code>.</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Download URL for the required Xcode version. Typed as <code>Foundation.URL</code> in swift-docc's <code>XcodeRequirementReference</code> struct but downgraded to a plain JSON <code>string</code> (no <code>format: uri</code>) in the OpenAPI spec and generated as <code>Swift.String</code> in <code>Types.swift</code>. Used only as an <code>href</code> when <code>isTargetIDE</code> is false; otherwise unused.</td>
+</tr>
+</tbody>
+</table>
+<p>
+DocCArchive's own transform layer does not act on this kind at all today: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>) are still
+stub placeholders &mdash; the former returns a hardcoded HTML comment and the latter an empty string
+&mdash; and neither walks a render node's <code>references</code> dictionary at all, so a parsed
+<code>Components.Schemas.XcodeRequirementRenderReference</code> value has no conversion path written for
+it yet.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+The resolved reference renders as one <code>div.item</code> inside <code>HeroMetadata.vue</code>'s root
+<code>div.metadata</code> (a flex row shared with the estimated-time and project-download chips). Markup,
+web target (<code>isTargetIDE</code> false): <code>div.item</code> &gt; <code>svg.item-large-icon.icon-inline</code>
+(the <code>XcodeIcon</code> component) + <code>div.content.bottom</code> &gt;
+<code>a.content-link[href="{url}"]</code> containing the title text plus a trailing
+<code>svg.icon-inline.small-icon.xcode-icon</code> (<code>InlineChevronRightIcon</code>). In the Xcode/IDE
+target (<code>isTargetIDE</code> true) the anchor is replaced by a plain <code>span</code> with just the
+title text and no chevron icon.
+</p>
+<p>
+Relevant SCSS: all of it lives in <code>HeroMetadata.vue</code>'s own scoped <code>&lt;style
+lang="scss"&gt;</code> block, which imports <code>docc-render/styles/_core.scss</code>. <code>.item</code>
+uses the <code>font-styles(metadata-item)</code> mixin, lays out as a column with
+<code>justify-content: flex-end</code>, and gets a <code>border-right: 1px solid
+dark-color(figure-gray)</code> separator between chips (removed on <code>.item:last-of-type</code> and on
+<code>.item:first-of-type</code>'s left padding). <code>.content-link</code> is a flex row that keeps the
+title text and chevron icon aligned on one baseline. The anchor's color comes from the CSS custom
+property chain <code>a { color: var(--colors-link, var(--color-tutorials-overview-link)); }</code>, and
+the icon is sized via <code>.item-large-icon</code> (<code>height: 2.3rem</code>, <code>1.5rem</code> at
+the <code>small</code> breakpoint) and <code>.small-icon.xcode-icon</code> (<code>width/height:
+0.8em</code>). The whole hero (including this metadata row) sits inside <code>Tutorial/Hero.vue</code>'s
+<code>.hero.dark</code> block, which forces the dark color-scheme custom-property set via
+<code>@include color-vars-dark</code> regardless of the user's OS-level light/dark preference, so the
+metadata chip's colors (<code>dark-color(figure-gray)</code>, the link color variable) are always resolved
+against that forced-dark palette.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current JS/Vue behavior in play: <code>HeroMetadata.vue</code> has no client-side state at all for this
+kind. Its only piece of dynamic logic is a one-time, build-time-injected boolean
+(<code>isTargetIDE</code>, sourced from <code>process.env.VUE_APP_TARGET</code> at build time in
+<code>App.vue</code>) that picks between two static template branches
+(<code>v-if="isTargetIDE"</code> plain <code>&lt;span&gt;</code> vs. <code>v-else</code>
+<code>&lt;a&gt;</code>) &mdash; there is no click handler, no toggling, no runtime interactivity to
+replace. Everything else (the icon, the title text, the href, the border/flex layout) is static markup
+driven directly by the resolved reference's <code>title</code>/<code>url</code> fields.
+</p>
+<p>
+Because the IDE/web branch is decided once at build time and never changes in response to user
+interaction, there is no interactive behavior here for a native CSS mechanism (<code>&lt;details&gt;</code>,
+<code>:checked</code>, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+<code>:has()</code>, container queries, anchor positioning, view transitions) to hold in its place. The
+verdict is therefore not applicable: this kind's rendering is a stateless, build-time-conditional link or
+label, not a runtime UI widget.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

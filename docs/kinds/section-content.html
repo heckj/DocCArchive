@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: content — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>content</code></h1>
+<p class="wire-value">Wire value: <code>"content"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A grep of <code>src/constants/</code> and <code>src/components/DocumentationTopic/</code> for the literal
+string <code>content:</code> finds the dispatch table for a symbol reference page's "primary content"
+sections in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L12-L27"><code>constants/PrimaryContentSection.js#L12-L27</code></a>,
+which declares a plain <code>SectionKind</code> lookup object whose <code>content</code> key holds the
+literal wire string <code>'content'</code>. That constant is consumed by
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L73-L90"><code>DocumentationTopic/PrimaryContent.vue#L73-L90</code></a>,
+the component that renders a symbol page's <code>primaryContentSections</code> array:
+</p>
+<pre><code>componentFor(section) {
+  return {
+    [SectionKind.attributes]: Attributes,
+    [SectionKind.content]: ContentNode,
+    [SectionKind.details]: PropertyListKeyDetails,
+    [SectionKind.parameters]: Parameters,
+    [SectionKind.properties]: PropertyTable,
+    [SectionKind.restBody]: RestBody,
+    [SectionKind.restParameters]: RestParameters,
+    [SectionKind.restHeaders]: RestParameters,
+    [SectionKind.restCookies]: RestParameters,
+    [SectionKind.restEndpoint]: RestEndpoint,
+    [SectionKind.restResponses]: RestResponses,
+    [SectionKind.possibleValues]: PossibleValues,
+    [SectionKind.mentions]: Mentions,
+  }[section.kind];
+},</code></pre>
+<p>
+A section whose <code>kind</code> is <code>"content"</code> is therefore mounted as the
+<code>ContentNode</code> component, and its props are extracted immediately below in the matching
+<code>propsFor(section)</code> table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L91-L127"><code>PrimaryContent.vue#L91-L127</code></a>),
+which forwards only the section's own <code>content</code> field through: <code>[SectionKind.content]:
+{ content }</code>. Every other section kind in the same table (<code>attributes</code>,
+<code>parameters</code>, <code>properties</code>, the REST kinds, etc.) gets its own dedicated
+presentation component; <code>content</code> is the one kind that is handed straight to the generic
+block-content renderer with no section-specific chrome at all.
+</p>
+<p>
+<code>DocumentationTopic/ContentNode.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentNode.vue#L11-L26"><code>ContentNode.vue#L11-L26</code></a>)
+is itself just a thin wrapper that re-exports the props/methods of the shared, non-page-specific
+<code>src/components/ContentNode.vue</code> — the same component every other block/inline content
+dispatch on this reference site (headings, paragraphs, asides, tab navigators, etc.) ultimately goes
+through. That shared component's render function is
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L525-L545"><code>ContentNode.vue#L525-L545</code></a>):
+</p>
+<pre><code>render: function render(createElement) {
+  // Dynamically map each content item and any children to their
+  // corresponding components, and wrap the whole tree in a &lt;div&gt;
+  return createElement(this.tag, { class: 'content' }, (
+    this.content.map(renderNode(createElement, this.references), this)
+  ));
+},</code></pre>
+<p>
+So the <code>content</code> array of a <code>ContentRenderSection</code> is walked item-by-item through
+<code>ContentNode.vue</code>'s internal <code>renderNode()</code> dispatcher (the same
+<code>node.type</code>-keyed switch statement that every block/inline content kind on this site is
+documented against) and the whole tree is wrapped in one root element — by default a
+<code>&lt;div class="content"&gt;</code>, though the wrapping tag is overridable via the component's
+<code>tag</code> prop (unused at this call site, so the default <code>div</code> applies).
+</p>
+<p>
+Zooming out one more level: <code>PrimaryContent</code> is itself only mounted from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L129-L135"><code>DocumentationTopic.vue#L129-L135</code></a>,
+gated on a computed property that filters out <code>declarations</code>-kind sections
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L593-L600"><code>DocumentationTopic.vue#L593-L600</code>, <code>primaryContentSectionsSanitized</code></a>) —
+<code>content</code> sections pass through this filter untouched and are rendered in whatever order
+swift-docc emitted them in <code>primaryContentSections</code>.
+</p>
+<p>
+On the swift-docc production side, this exact wire shape is produced by two different section
+translators that both hardcode <code>kind: .content</code>:
+<code>DiscussionSectionTranslator.translateSection(for:renderNode:renderNodeTranslator:)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderSectionTranslator/DiscussionSectionTranslator.swift</code>,
+line 45 — <code>ContentRenderSection(kind: .content, content: discussionContent.capitalizingFirstWord(),
+heading: title)</code>, where <code>title</code> is computed to be <code>"Overview"</code> or
+<code>"Discussion"</code> depending on the symbol's role/kind) and
+<code>ReturnsSectionTranslator.translateSection(for:renderNode:renderNodeTranslator:)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderSectionTranslator/ReturnsSectionTranslator.swift</code>,
+line 31 — same call shape, but with <code>heading: "Return Value"</code>). A third call site,
+<code>RenderNodeTranslator.swift</code> line 679/1168, produces the same section for a symbol's
+discussion and for a manually-authored Task Group's inline discussion. In every case the
+<code>ContentRenderSection.init(kind:content:heading:)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Symbol/ContentRenderSection.swift</code>, lines 23&ndash;29) is
+what turns the optional <code>heading</code> parameter into an actual <code>RenderBlockContent.heading</code>
+block prepended to <code>content</code> — the heading is not a separate JSON field; it is baked into the
+same <code>content</code> array the client renders, which is why <code>ContentNode.vue</code> alone
+(with no dedicated heading prop) is sufficient to render it.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive/data/documentation/exampledocs/examplearticle.json</code>,
+field <code>primaryContentSections[0]</code>. This is the "Overview" discussion section swift-docc
+generates for an authored <code>## Overview</code> Markdown heading followed by prose and a code
+listing — the same shape <code>DiscussionSectionTranslator</code> produces for any symbol's discussion
+text (see Section 1).
+</p>
+<pre><code>{
+  "kind": "content",
+  "content": [
+    {
+      "type": "heading",
+      "anchor": "Overview",
+      "level": 2,
+      "text": "Overview"
+    },
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        { "type": "text", "text": "Description of what the article is about - the problem being solved, etc." }
+      ]
+    },
+    {
+      "type": "codeListing",
+      "syntax": "swift",
+      "code": [
+        "func main() {",
+        "    print(\"hello world\")",
+        "}"
+      ]
+    },
+    {
+      "type": "heading",
+      "anchor": "Section-header",
+      "level": 3,
+      "text": "Section header"
+    },
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        { "type": "text", "text": "Details, step by step, or explanations grouped by section headers." }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <div style="margin-top:0; font-size:1.5rem;">Overview</div>
+    <p>Description of what the article is about - the problem being solved, etc.</p>
+    <pre style="background:#292a30; color:#f2f2f2; border-radius:4px; padding:12px 16px; overflow-x:auto; font-size:0.85rem;"><code>func main() {
+    print("hello world")
+}</code></pre>
+    <div style="font-size:1.15rem;">Section header</div>
+    <p style="margin-bottom:0;">Details, step by step, or explanations grouped by section headers.</p>
+  </div>
+  <p><em>mockup: the whole array is emitted as one flat, flowing <code>div.content</code> — the
+  <code>heading</code> blocks are ordinary content items in the array, not section titles rendered by
+  a wrapper component; there is no visual separator between this section and neighboring
+  <code>primaryContentSections</code> entries beyond the vertical margin added by
+  <code>PrimaryContent</code>'s own stylesheet (Section 4).</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/ContentRenderSection</code> (lines 2716&ndash;2734), cross-checked against
+<code>Components.Schemas.ContentRenderSection</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6275&ndash;6300). This is one of thirteen
+arms of the <code>DocumentationPrimaryRenderSection</code> discriminated union (schema line 2507) that
+makes up a symbol RenderNode's <code>primaryContentSections</code> array.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"content"</code> (single-value enum)</td>
+<td>Generated as <code>KindPayload: String, Codable, Hashable, Sendable, CaseIterable { case content }</code>.
+On the swift-docc production side the same wire value is written for two distinct
+<code>RenderSectionKind</code> Swift cases, <code>.discussion</code> and <code>.content</code> — both
+decode through <code>ContentRenderSection(from:)</code> in
+<code>CodableContentSection.swift</code> (lines 41&ndash;45) — but every <em>encoding</em> call site in
+swift-docc's translators always passes <code>kind: .content</code> explicitly, so <code>"discussion"</code>
+is never actually observed on the wire for this section type.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Arbitrary block content — matches swift-docc's Swift-side <code>ContentRenderSection.content:
+[RenderBlockContent]</code> exactly (no schema/model mismatch here, unlike some other section kinds).
+Swift-side, an optional <code>heading</code> constructor parameter
+(<code>ContentRenderSection.init(kind:content:heading:)</code>) is not a separate wire field at all —
+when supplied it is spliced into this same array as a leading <code>RenderBlockContent.heading</code>
+block before encoding, so a consumer cannot distinguish "author-provided heading" from
+"synthesized section title" once the JSON has been produced.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM, outer to inner, for a <code>content</code>-kind entry inside a symbol page's primary
+content list:
+</p>
+<ul>
+<li><code>div.primary-content</code> — the root element of
+<code>DocumentationTopic/PrimaryContent.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L11-L20"><code>PrimaryContent.vue#L11-L20</code></a>),
+which iterates every section (not just <code>content</code>-kind ones) and mounts a dynamic
+<code>&lt;component :is="componentFor(section)"&gt;</code> for each.</li>
+<li><code>div.content</code> — the root element produced by the shared
+<code>src/components/ContentNode.vue</code> render function for this particular section
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L525-L545"><code>ContentNode.vue#L525-L545</code></a>);
+its children are whatever block-content components (<code>&lt;h2&gt;</code>/<code>&lt;h3&gt;</code>
+headings, <code>&lt;p&gt;</code> paragraphs, <code>&lt;pre&gt;&lt;code&gt;</code> code listings, asides,
+tables, tab navigators, etc.) each <code>content</code> array item resolves to via that component's
+internal <code>renderNode()</code> switch. Note the class name collision: this inner
+<code>div.content</code> is an implementation detail of the generic content renderer and is unrelated
+to (and nested inside) the outer JSON field also named <code>content</code>.</li>
+</ul>
+<p>
+SCSS files involved: <code>src/components/DocumentationTopic/PrimaryContent.vue</code>'s scoped style
+block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L132-L155"><code>PrimaryContent.vue#L132-L155</code></a>),
+which imports the shared <code>src/styles/_core.scss</code> for the
+<code>$section-spacing-single-side</code> (40px) and <code>$contenttable-spacing-single-side</code>
+(2.353rem) SCSS variables used to space each rendered section vertically from its neighbors; and
+<code>src/components/ContentNode.vue</code>'s own scoped style block, which styles the block-level
+children (code listings, images, lists, asides) that actually appear inside the inner
+<code>div.content</code>.
+</p>
+<p>
+CSS custom properties consumed: <code>--colors-grid</code> (falling back to <code>--color-grid</code>)
+and <code>--content-table-title-border-width</code> (falling back to <code>1px</code>), both used by
+<code>.primary-content.with-border::before</code> to draw the horizontal rule above the whole primary
+content block on non-"enhanced-background" symbol pages
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L135-L143"><code>PrimaryContent.vue#L135-L143</code></a>).
+Inside <code>ContentNode.vue</code>, code listings additionally consume
+<code>--background</code>/<code>--color-code-background</code> and
+<code>--text</code>/<code>--color-code-plain</code> for their syntax-highlighted background/foreground.
+</p>
+<p>
+DocCArchive transform status: not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> (lines
+242&ndash;254) are still stub placeholders — the HTML transformer returns a hardcoded
+<code>&lt;!-- what? --&gt;</code> comment regardless of input, and the Markdown transformer returns an
+empty string — so there is no code path today that walks a <code>ContentRenderSection</code>'s
+<code>content</code> array (or the <code>[RenderBlockContent]</code> items inside it) into HTML or
+Markdown output.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior in play: the dispatch chain described in Section 1
+(<code>PrimaryContent.vue</code>'s <code>componentFor</code>/<code>propsFor</code> lookup tables,
+followed by <code>ContentNode.vue</code>'s <code>render()</code> function) is a pure, one-time
+template-render decision keyed on a static <code>kind</code> string that is already present in the
+RenderNode JSON at page-load time. There is no component-local mutable state guarding whether a
+<code>content</code> section is shown, no click handler, no <code>v-show</code>/<code>v-if</code> toggle
+driven by user interaction, and nothing that changes which DOM subtree is mounted after the initial
+render. The vertical spacing between sections (<code>$section-spacing-single-side</code>,
+<code>$contenttable-spacing-single-side</code>) and the optional top border
+(<code>.primary-content.with-border::before</code>) are static CSS rules evaluated once from
+already-known props/class bindings, not state machines. Because there is no interactive/stateful
+behavior here to replace — the entire mechanism is "pick a Vue component to mount once, based on data
+already known when the page renders, then lay out its children with ordinary flow and margin rules" —
+none of <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>, container
+queries, CSS anchor positioning, or view-transitions has any state to hold on this section's behalf; a
+static server-rendered <code>div.content</code> with the same children would be behaviorally identical.
+(Individual block-content items nested inside — e.g. a tab navigator or disclosure aside — may have
+their own genuinely interactive behavior, but that is scoped to those child kinds' own reference pages,
+not to the <code>content</code> section wrapper documented here.)
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

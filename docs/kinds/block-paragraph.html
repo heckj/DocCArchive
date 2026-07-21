@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: paragraph — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>paragraph</code></h1>
+<p class="wire-value">Wire value: <code>"paragraph"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a>, <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A grep of <code>src/components/</code> for the literal string <code>"paragraph"</code> lands on the single
+file that owns every block/inline content kind on this reference site:
+<code>src/components/ContentNode.vue</code>. Near the top of the file it declares a plain object of wire
+constants,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>,
+whose <code>paragraph</code> key holds the literal string <code>'paragraph'</code>
+(<code>BlockType.paragraph = 'paragraph'</code>). That constant is one arm of the <code>renderNode()</code>
+factory function's <code>switch (node.type)</code> dispatch table, which is the same dispatch site every
+other block/inline kind on this site is documented against:
+</p>
+<pre><code>case BlockType.paragraph: {
+  const hasSingleImage = node.inlineContent.length === 1
+    &amp;&amp; node.inlineContent[0].type === InlineType.image;
+  const props = hasSingleImage ? { class: ['inline-image-container'] } : {};
+
+  return createElement('p', props, (
+    renderChildren(node.inlineContent)
+  ));
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L305-L313"><code>ContentNode.vue#L305-L313</code></a>.)
+A <code>paragraph</code> node is rendered as a plain <code>&lt;p&gt;</code> element with no dedicated Vue
+component — its <code>inlineContent</code> array is recursively mapped through the same
+<code>renderNode()</code>/<code>renderChildren()</code> pair to become the paragraph's child nodes (text
+runs, <code>codeVoice</code>, <code>emphasis</code>, <code>reference</code> links, inline images, etc.).
+There is one special case: if the paragraph's <code>inlineContent</code> is exactly one <code>image</code>
+node, the resulting <code>&lt;p&gt;</code> is given the extra class <code>inline-image-container</code>
+instead of any structural change — this is purely a styling hook (see Section 4) for "a paragraph that
+is really just a standalone image."
+</p>
+<p>
+The <code>type: 'paragraph'</code> string constant is also matched in two other places in the same file:
+the content-tree traversal helpers <code>map()</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L564-L575"><code>ContentNode.vue#L564-L575</code></a>)
+and <code>forEach()</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L619-L628"><code>ContentNode.vue#L619-L628</code></a>),
+which both group <code>BlockType.paragraph</code> together with the various inline kinds because a
+paragraph, structurally, is just a container whose only child field is <code>inlineContent</code> — the
+same shape as <code>emphasis</code>, <code>strong</code>, <code>newTerm</code>, etc. A third use appears in
+the <code>plaintext</code> computed property
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L680-L698"><code>ContentNode.vue#L680-L698</code></a>),
+which reduces a content tree to a single plain-text string for use in things like search snippets and
+metadata descriptions; there, encountering a <code>paragraph</code> node simply appends a newline
+(<code>if (node.type === BlockType.paragraph) { return \`${text}\n\`; }</code>) — the actual text comes
+from the nested <code>text</code>/<code>codeVoice</code>/<code>reference</code> inline nodes visited
+later in the same reduce.
+</p>
+<p>
+<code>ContentNode.vue</code> itself has no template and no <code>&lt;style&gt;</code> block — it is a
+render-function-only component, so it contributes no markup or CSS of its own beyond the bare
+<code>&lt;p&gt;</code> tag. It is always mounted from a wrapping component (for a symbol/article page,
+<code>src/components/DocumentationTopic/ContentNode.vue</code>, a thin re-export wrapper that supplies
+the scoped stylesheet — see Section 4) whose own root element wraps the array of block nodes, of which a
+given <code>paragraph</code> is one item.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive/data/documentation/exampledocs/examplearticle.json</code>,
+field <code>primaryContentSections[0].content[1]</code> — one of two <code>paragraph</code> nodes in that
+article's rendered content array (the other, <code>content[4]</code>, is identical in shape). This is the
+RenderNode swift-docc produced for an authored Markdown paragraph of plain prose.
+</p>
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    {
+      "type": "text",
+      "text": "Description of what the article is about - the problem being solved, etc."
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <p style="margin:0;">Description of what the article is about - the problem being solved, etc.</p>
+  </div>
+  <p><em>mockup: a single <code>&lt;p&gt;</code> element containing the rendered
+  <code>inlineContent</code> — here just one <code>text</code> run, but the same slot can hold any mix of
+  <code>codeVoice</code>, <code>emphasis</code>/<code>strong</code>, <code>reference</code> links,
+  <code>image</code>, <code>newTerm</code>, etc. No border, background, or icon is added by the paragraph
+  renderer itself; all visible spacing comes from the surrounding stylesheet (Section 4), not from
+  anything on the <code>&lt;p&gt;</code> element or its props.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Paragraph</code> (lines 858&ndash;878), cross-checked against
+<code>Components.Schemas.Paragraph</code> in <code>Sources/DocCArchive/generated/Types.swift</code>
+(lines 4330&ndash;4355). <code>Paragraph</code> is one arm of the <code>RenderBlockContent</code>
+discriminated union that makes up the <code>content</code> array of a <code>ContentRenderSection</code>
+(and of any other block-content-bearing container, e.g. an aside, list item, or table cell).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"paragraph"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case paragraph
+= "paragraph" }</code>, decoded/encoded under the Swift property name <code>_type</code> via an explicit
+<code>CodingKeys</code> mapping (<code>case _type = "type"</code>) since <code>type</code> is not a legal
+Swift identifier for a stored property name colliding with the type-erasure convention the generator
+uses for discriminator fields.</td>
+</tr>
+<tr>
+<td><code>inlineContent</code></td>
+<td>array of <code>RenderInlineContent</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The paragraph's rendered inline runs (text, code voice, emphasis/strong, links, inline images, new
+terms, super/subscript, strikethrough). Matches swift-docc's Swift-side
+<code>RenderBlockContent.Paragraph.inlineContent: [RenderInlineContent]</code> exactly — no
+schema/model mismatch for this kind.</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the
+enclosing Swift type is declared at
+<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift</code>: the enum case
+<code>case paragraph(Paragraph)</code> (line 41) and the nested struct
+<code>public struct Paragraph: Equatable { public var inlineContent: [RenderInlineContent] }</code>
+(lines 96&ndash;104). The doc comment on the enclosing <code>RenderBlockContent</code> enum (lines
+14&ndash;38) describes block elements generally as introducing "a break in their container's layout flow"
+and gives paragraphs as the canonical example in its ASCII diagram of stacked blocks. Authoring-side,
+a <code>paragraph</code> node is simply what swift-docc emits for any run of Markdown text separated from
+its neighbors by a blank line — there is no special directive or syntax an author writes to "create" a
+paragraph; it is the default block kind for prose.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>paragraph</code> node, in context:
+</p>
+<ul>
+<li><code>p</code> — the bare element created at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L305-L313"><code>ContentNode.vue#L305-L313</code></a>.
+No class is added in the common case; <code>class="inline-image-container"</code> is added only when the
+paragraph's sole child is an <code>image</code> inline node.</li>
+<li>Its parent is whatever wrapping element hosts the block-content array — typically
+<code>div.content</code>, the root element produced by <code>ContentNode.vue</code>'s
+<code>render()</code> function for the enclosing section (see the <code>block-content</code> and
+<code>section-content</code> reference pages on this site for that wrapper).</li>
+</ul>
+<p>
+SCSS: <code>ContentNode.vue</code> itself carries no <code>&lt;style&gt;</code> block, so a
+<code>&lt;p&gt;</code> paragraph is styled entirely by global/inherited rules, not by anything scoped to
+the paragraph renderer:
+</p>
+<ul>
+<li><code>src/styles/base/_reset.scss</code> (lines 26&ndash;52) zeroes out the browser default
+<code>margin</code>/<code>padding</code> on <code>p</code> along with every other block element.</li>
+<li><code>src/styles/base/_reset.scss</code> (lines 94&ndash;100) then adds back a single rule,
+<code>p, ul, ol { + * { margin-top: var(--spacing-stacked-margin-large); } }</code> — i.e. a paragraph
+gets no margin of its own, but anything that immediately follows one gets pushed down. This is the
+entire source of vertical rhythm between a paragraph and the block that comes after it.</li>
+<li><code>src/components/DocumentationTopic/ContentNode.vue</code>'s scoped style block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentNode.vue#L40-L65"><code>DocumentationTopic/ContentNode.vue#L40-L65</code></a>)
+adds a <code>:deep()</code> rule that specifically targets the <code>inline-image-container</code> class
+— <code>#{between-els('.inline-image-container')} { margin-top:
+var(--spacing-stacked-margin-xlarge); }</code> — giving an image-only paragraph extra top margin (double
+the normal stacked spacing) when it sits next to another such block, code listing, endpoint example,
+figure, or aside.</li>
+<li><code>src/styles/base/_typography.scss</code> (line 32, via the shared <code>body</code> rule at
+<code>src/styles/base/_reset.scss</code> lines 31&ndash;55) applies <code>@include font-styles(body)</code>
+and <code>word-wrap: break-word</code> at the <code>body</code> level, which a bare <code>&lt;p&gt;</code>
+inherits — there is no paragraph-specific font rule anywhere in the codebase.</li>
+</ul>
+<p>
+CSS custom properties consumed: <code>--spacing-stacked-margin-large</code> and
+<code>--spacing-stacked-margin-xlarge</code> (both defined on <code>body</code> in
+<code>_reset.scss</code> lines 39&ndash;45, as <code>0.4em</code>-derived values); the
+<code>inline-image-container</code> rule also resolves through <code>var(--spacing-stacked-margin-xlarge,
+...)</code> by way of the shared <code>between-els()</code> Sass helper. No paragraph-specific custom
+property exists — paragraphs consume the same generic stacking-spacing variables every other block kind
+consumes.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: rendering a <code>paragraph</code> node involves no JavaScript state at all —
+<code>ContentNode.vue</code>'s <code>renderNode()</code> is a pure, one-shot function that maps a JSON
+node to a static <code>&lt;p&gt;</code> element at render time (with one non-interactive, data-driven
+class toggle for the single-image case). There is no click handler, no <code>v-show</code>/<code>v-if</code>
+toggle, no component <code>data()</code> tracking open/closed or active/inactive state, and no
+client-side behavior to reproduce after the initial paint. The vertical-spacing rules described in
+Section 4 (<code>p + *</code>, the <code>between-els()</code> sibling-margin helper) are already plain
+CSS adjacent-sibling selectors — not JavaScript — so there is nothing to "port" to a modern CSS mechanism
+in the first place.
+</p>
+<p>
+Concretely: none of the interactive-state mechanisms this survey looks for
+(<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio-input <code>:checked</code> plus a
+general sibling selector, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+<code>:has()</code>, container queries, CSS anchor positioning, view transitions) apply here, because
+none of them are standing in for anything this kind currently does — a paragraph is, and always was, a
+static leaf of markup. The verdict is "not applicable" for the same reason a plain <code>&lt;span&gt;</code>
+or <code>&lt;em&gt;</code> would be: there is no state to hold.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

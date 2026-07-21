@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DocC-Render Page Hierarchy Guide</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="index.html" class="active" aria-current="page">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<h1>Page Hierarchy Guide</h1>
+<p>A companion to the kind catalog: same underlying RenderNode schema data, but organized top-down by page (route &rarr; component chrome &rarr; schema content &rarr; leaf inline nodes) instead of flat by kind.</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#top-level-pages">Top-level pages</a></nav>
+<section class="tier-group" id="top-level-pages"><h2>Top-level pages (6)</h2><ul class="kind-list">
+<li><a href="doc-topic.html">Documentation Topic</a><p>The symbol/article route (<code>/documentation*</code>), dispatched by <code>views/DocumentationTopic.vue</code> to the shared <code>DocumentationLayout</code>/<code>Topic</code> chrome, covering both <code>kind: "symbol"</code> and <code>kind: "article"</code> RenderNodes.</p></li>
+<li><a href="tutorial-project.html">Tutorial (Project)</a><p>The interactive DocC tutorial page (wire <code>kind: "project"</code>), dispatched by <code>views/Topic.vue</code> to <code>components/Tutorial.vue</code> and its hero/tasks/assessments/callToAction section chain.</p></li>
+<li><a href="tutorial-article.html">Tutorial Article</a><p>The free-standing tutorial-catalog article page (wire <code>kind: "article"</code>, tutorial variant), dispatched by <code>views/Topic.vue</code> to <code>components/Article.vue</code> — a distinct rendering path from the Documentation Topic's own <code>kind: "article"</code>.</p></li>
+<li><a href="overview.html">Tutorials Overview (Table of Contents)</a><p>The technology-root "table of contents" page (wire <code>kind: "overview"</code>), matched purely by URL shape (<code>/tutorials/:id</code>) to <code>views/TutorialsOverview.vue</code>, listing a technology's volumes/chapters and resources.</p></li>
+<li><a href="not-found.html">Not Found (404)</a><p>The ordinarily-reachable catch-all route rendered by <code>views/NotFound.vue</code>, with no RenderNode-schema content at all — just a single static, localized "page not found" string.</p></li>
+<li><a href="server-error.html">Server Error (500)</a><p>The purposefully-unreachable-by-URL fallback route rendered by <code>views/ServerError.vue</code>, reachable only via explicit named navigation, showing a single static "unknown error" string with no schema content.</p></li>
+</ul></section>
+</main>
+<footer class="provenance-footer">
+<p>6 page-hierarchy pages generated. Verified against swift-docc@8b8d8268aa and swift-docc-render@4a9efad637 on 2026-07-20.</p>
+</footer>
+</body>
+</html>

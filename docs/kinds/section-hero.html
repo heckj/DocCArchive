@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: hero — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>hero</code></h1>
+<p class="wire-value">Wire value: <code>"hero"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a>, <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>hero</code> is one of two <code>kind</code> values (<code>hero</code>, <code>intro</code>) accepted by
+the <code>IntroRenderSection</code> schema, used as the first section of a Tutorial page or a
+free-standing Article page (produced from an <code>@Intro</code> directive inside a
+<code>.tutorial</code> file). There are two separate dispatch sites, one per page type, both of
+which key a lookup table on <code>section.kind</code>:
+</p>
+<p>
+For tutorials, the table lives directly in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial.vue#L46-L66"><code>Tutorial.vue</code></a>:
+</p>
+<pre><code>const SectionComponents = {
+  assessments: Assessments,
+  hero: Hero,
+  tasks: SectionList,
+  callToAction: CallToAction,
+};
+...
+const TutorialSection = {
+  name: 'TutorialSection',
+  render: function render(createElement) {
+    const { kind, ...props } = this.section;
+    const component = SectionComponents[kind];
+    return component ? createElement(component, { props }) : null;
+  },
+  ...
+};</code></pre>
+<p>
+<code>hero</code> maps to <code>Hero</code>, imported as
+<code>import Hero from 'theme/components/Tutorial/Hero.vue'</code> &mdash; i.e.
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Hero.vue#L1-L187"><code>Tutorial/Hero.vue</code></a>.
+For articles, the analogous table lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L45-L124"><code>Article.vue</code></a>
+(a <code>SectionKind</code> map plus a <code>componentFor(section)</code> method), which maps
+<code>hero</code> to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/Hero.vue#L1-L21"><code>Article/Hero.vue</code></a>
+&mdash; a two-line wrapper that just re-exports the same tutorial component:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;TutorialHero v-bind="$props" /&gt;
+&lt;/template&gt;
+...
+import TutorialHero from 'theme/components/Tutorial/Hero.vue';
+export default {
+  name: 'Hero',
+  components: { TutorialHero },
+  props: TutorialHero.props,
+};</code></pre>
+<p>
+So both page types ultimately render the same <code>Tutorial/Hero.vue</code> component
+(internally named <code>Hero</code>). Its template wraps everything in a
+<code>LinkableSection</code> (renders an element with <code>id="introduction"</code>, used as an
+in-page jump target) and a <code>div.hero.dark</code>, then lays out an optional background
+image, an <code>H1</code> headline (with <code>chapter</code> shown as an eyebrow if present), the
+<code>content</code> block array via the shared <code>ContentNode.vue</code>, an optional
+"Watch intro video" call-to-action that opens a <code>GenericModal</code>, and a
+<code>HeroMetadata</code> child component for the estimated-time / project-download / Xcode-requirement
+row:
+</p>
+<pre><code>&lt;LinkableSection anchor="introduction" :title="sectionTitle" class="tutorial-hero"&gt;
+  &lt;div class="hero dark"&gt;
+    &lt;div v-if="backgroundImageUrl" class="bg" :style="bgStyle" /&gt;
+    &lt;Row&gt;&lt;Column&gt;
+      &lt;Headline :level="1"&gt;
+        &lt;template v-if="chapter" #eyebrow&gt;{{ chapter }}&lt;/template&gt;
+        {{ title }}
+      &lt;/Headline&gt;
+      &lt;div v-if="content || video" class="intro"&gt;
+        &lt;ContentNode v-if="content" :content="content" /&gt;
+        &lt;template v-if="video"&gt;
+          &lt;a href="#" class="call-to-action" @click.prevent="toggleCallToActionModal"&gt;
+            Watch intro video &lt;PlayIcon /&gt;
+          &lt;/a&gt;
+          &lt;GenericModal :visible.sync="callToActionModalVisible" isFullscreen theme="dark"&gt;
+            &lt;Asset ref="asset" v-show="callToActionModalVisible" :identifier="video" /&gt;
+          &lt;/GenericModal&gt;
+        &lt;/template&gt;
+      &lt;/div&gt;
+      &lt;Metadata :projectFilesUrl="projectFilesUrl"
+                :estimatedTimeInMinutes="estimatedTimeInMinutes"
+                :xcodeRequirement="xcodeRequirementData" class="metadata" /&gt;
+    &lt;/Column&gt;&lt;/Row&gt;
+  &lt;/div&gt;
+&lt;/LinkableSection&gt;</code></pre>
+<p>
+<code>Metadata</code> is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/HeroMetadata.vue#L1-L92"><code>Tutorial/HeroMetadata.vue</code></a>,
+a small presentational component that shows up to three optional items (estimated reading time,
+a project-files download link, an Xcode-requirement link), each guarded by a plain <code>v-if</code>
+on whether the corresponding prop was supplied. <code>backgroundImage</code>, <code>image</code>
+(the standout key image) and <code>video</code> are all plain string reference identifiers that get
+resolved against the page's <code>references</code> map by the <code>referencesProvider</code> mixin
+(<code>backgroundImageUrl</code>/<code>xcodeRequirementData</code> computed properties); note that in
+the template shown, the <code>image</code> prop is accepted but not itself rendered directly in
+<code>Hero.vue</code>&mdash;only <code>backgroundImage</code> and <code>video</code> are consumed there.
+</p>
+<p>
+Note on scope / naming collision: this <code>hero</code> <em>section kind</em> (an
+<code>IntroRenderSection</code>, dispatched by <code>kind</code> as shown above) is unrelated to
+<code>components/DocumentationTopic/Hero/DocumentationHero.vue</code>, a differently-named
+component used for the banner region at the top of ordinary symbol/article pages in
+<code>DocumentationTopic.vue</code>. That component is not driven by a <code>kind: "hero"</code>
+payload at all &mdash; it is structural page chrome, always present, and was not found to consume
+this schema; it is mentioned here only to avoid confusing the two "hero" concepts.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Fixture source: <code>Tests/SwiftDocCTests/Rendering/IntroRenderSectionTests.swift</code> in the
+swift-docc repository (the JSON literal used in its <code>testDecoding()</code>/<code>testRoundTrip()</code>
+tests). DocCArchive's own fixtures (<code>ExampleDocs.doccarchive</code>,
+<code>SampleLibrary.doccarchive</code>) contain only documentation-topic pages, no tutorials or
+articles, so no real <code>data/</code> JSON with <code>"kind": "hero"</code> exists there &mdash;
+the string <code>"hero"</code> only turns up inside the minified render-side JS bundles
+(e.g. <code>js/topic.c7f55345.js</code>), which is why this test fixture was used instead per the
+sourcing order.
+</p>
+<pre><code>{
+    "kind": "hero",
+    "title": "Introducing TechnologyX",
+    "action": {
+        "type": "reference",
+        "identifier": "doc://testbundle/tutorials/TechnologyX/Tutorial",
+        "isActive": true,
+        "overridingTitle": "Get started",
+        "overridingTitleInlineContent": [
+            { "type": "text", "text": "Get started" }
+        ]
+    },
+    "backgroundImage": "intro.png",
+    "image": "intro.png",
+    "content": [
+        {
+            "type": "paragraph",
+            "inlineContent": [
+                { "type": "text", "text": "This is the intro." }
+            ]
+        }
+    ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#2b2b2b; color:#f5f5f5; padding:32px 24px; border-radius:6px;">
+    <p style="text-transform:uppercase; font-size:0.75rem; letter-spacing:0.05em; opacity:0.7; margin:0 0 8px;">Introduction</p>
+    <div style="margin:0 0 16px; font-size:1.8rem;">Introducing TechnologyX</div>
+    <p style="margin:0 0 16px; opacity:0.9;">This is the intro.</p>
+    <p style="margin:0;"><a href="#" style="color:#6cb6ff;">Get started &rarr;</a></p>
+  </div>
+  <p><em>mockup: dark hero band, H1 title, intro paragraph via ContentNode, and an action link
+  (metadata row and background image omitted since this example has no
+  <code>estimatedTimeInMinutes</code>/<code>projectFiles</code>/<code>xcodeRequirement</code> and
+  the background image is not visually simulated here).</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/IntroRenderSection</code>, cross-checked against the generated
+<code>Components.Schemas.IntroRenderSection</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 3110&ndash;3143).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"hero"</code>, <code>"intro"</code></td>
+<td>Generated as a two-case <code>KindPayload</code> enum. Only <code>"hero"</code> has been
+observed in practice (it is the literal value swift-docc's
+<code>IntroRenderSection.kind</code> Swift property is hardcoded to; see
+<code>swiftCaseSite</code> below). No confirmed emitter of <code>"intro"</code> was found while
+researching this page.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Rendered as the page's <code>H1</code> via <code>Headline</code>.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Generated as <code>[RenderBlockContent]?</code> (optional). Rendered via
+<code>ContentNode.vue</code> inside <code>div.intro</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>
+<strong>Important gap between the vendored wire schema and the actual Swift model:</strong> the
+JSON Schema object above (and therefore the generated <code>Components.Schemas.IntroRenderSection</code>
+Swift type DocCArchive exposes) only declares <code>title</code>, <code>kind</code>, and
+<code>content</code>. swift-docc's actual Swift model,
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Tutorial/Sections/IntroRenderSection.swift#L12-L46"><code>IntroRenderSection.swift</code></a>
+(<code>swiftStructSite</code>, since no explicit struct site was given for this page), encodes
+five additional optional fields that swift-docc-render's <code>Hero.vue</code> actively consumes as
+props &mdash; <code>chapter</code> (string), <code>estimatedTimeInMinutes</code> (int),
+<code>xcodeRequirement</code> (a <code>RenderReferenceIdentifier</code> string),
+<code>backgroundImage</code> (a <code>RenderReferenceIdentifier</code> string),
+<code>action</code> (a <code>RenderInlineContent</code> reference), <code>image</code>
+(a <code>RenderReferenceIdentifier</code> string), <code>video</code>
+(a <code>RenderReferenceIdentifier</code> string), and <code>projectFiles</code>
+(a <code>RenderReferenceIdentifier</code> string). The real-fixture JSON in section 2 above
+demonstrates three of these (<code>action</code>, <code>backgroundImage</code>, <code>image</code>)
+being emitted and decoded successfully by swift-docc's own test suite &mdash; confirming they are
+genuinely present on the wire, not just theoretical. A DocCArchive consumer decoding with the
+generated <code>Components.Schemas.IntroRenderSection</code> type today will silently drop all
+eight of these fields, since <code>swift-openapi-generator</code> only generates properties for
+keys the JSON Schema actually declares. Anyone needing <code>chapter</code>, media references,
+the CTA <code>action</code>, or the metadata-row fields from a <code>hero</code> section must
+either widen the vendored schema and regenerate, or decode the raw JSON alongside the generated
+type.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, from <code>Tutorial/Hero.vue</code>'s template:</p>
+<ul>
+<li>Root: whatever tag <code>LinkableElement</code> (aliased <code>LinkableSection</code>) renders,
+carrying <code>id="introduction"</code> and class <code>tutorial-hero</code> &mdash; this is the
+in-page anchor target other UI (e.g. a "back to top" or nav link) can jump to via a plain
+fragment URL.</li>
+<li><code>div.hero.dark</code> &mdash; the actual banner; <code>.dark</code> is always present and
+forces dark-theme color variables regardless of the site-wide light/dark/auto preference.</li>
+<li><code>div.bg</code> &mdash; only rendered when <code>backgroundImageUrl</code> is truthy;
+absolutely positioned, <code>opacity: 0.3</code>, <code>background-size: cover</code>.</li>
+<li><code>h1</code> (via the shared <code>Headline</code> component, level 1) with an
+<code>eyebrow</code> named slot for <code>chapter</code>.</li>
+<li><code>div.intro</code> &mdash; wraps the <code>ContentNode</code> output and, when
+<code>video</code> is present, an <code>a.call-to-action</code> link plus a
+<code>GenericModal</code> containing a full-screen <code>Asset</code> (video player).</li>
+<li><code>div.metadata</code> (from <code>HeroMetadata.vue</code>) &mdash; up to three
+<code>div.item</code> children for estimated time, project download, and Xcode requirement.</li>
+</ul>
+<p>
+SCSS lives inline in <code>Tutorial/Hero.vue</code>'s <code>&lt;style scoped lang="scss"&gt;</code>
+block (importing <code>docc-render/styles/_core.scss</code>) and in
+<code>Tutorial/HeroMetadata.vue</code>'s own scoped block. Key CSS custom properties consumed:
+</p>
+<ul>
+<li><code>--color-tutorial-hero-background</code> and <code>--color-tutorial-hero-text</code> on
+<code>.hero</code> and <code>.bg</code> (defined per color scheme in
+<code>src/styles/core/colors/_light.scss</code>, e.g. lines 196&ndash;197).</li>
+<li><code>--color-hero-eyebrow</code>, applied via <code>:deep(.eyebrow)</code> to style the
+<code>chapter</code> text rendered inside <code>Headline</code>'s eyebrow slot (defined at
+<code>_light.scss</code> line 100).</li>
+</ul>
+<p>
+The <code>.dark</code> modifier class forces both the light-scheme and dark-scheme SCSS color-var
+mixins (<code>color-vars-light</code>, then <code>color-vars-dark</code>) to be included together
+inside a <code>@media screen</code> block, with the dark set declared last so it wins &mdash; a
+build-time SCSS technique, not a runtime media-query based scheme switch.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML
+transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment and the Markdown
+transformer returns an empty string) &mdash; there is no kind-specific handling for
+<code>hero</code>/<code>IntroRenderSection</code> today, and given the field gap documented in
+section 3, a future implementation would need to decode more than the generated type currently
+exposes to reproduce what swift-docc-render actually shows.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">PARTIAL</span></p>
+<p>
+Current behavior: most of <code>Hero.vue</code> is static, one-way prop-to-template rendering with
+no interactivity (background image, title, eyebrow, content, metadata row). The one genuinely
+stateful piece is the "Watch intro video" flow: a boolean <code>callToActionModalVisible</code> in
+component <code>data()</code> is flipped to <code>true</code> by a
+<code>@click.prevent="toggleCallToActionModal"</code> handler on the call-to-action link, which is
+bound via <code>:visible.sync</code> to a child <code>GenericModal</code>, and also drives
+<code>v-show</code> on the inner video <code>Asset</code>; <code>toggleCallToActionModal()</code>
+additionally awaits <code>$nextTick()</code> and imperatively calls <code>.play()</code> on the
+underlying <code>&lt;video&gt;</code> element, and the modal closes itself again on the
+<code>videoEnded</code> event via <code>handleVideoEnd()</code> setting the flag back to
+<code>false</code>.
+</p>
+<p>
+The show/hide half of that (opening and closing the full-screen video overlay) maps mechanically
+onto the native <code>&lt;dialog&gt;</code> element: the call-to-action link becomes a
+<code>&lt;button&gt;</code> whose click handler calls <code>dialogEl.showModal()</code> instead of
+setting a Vue boolean, and the modal markup becomes a <code>&lt;dialog&gt;</code> that the browser
+itself renders top-layer/centered and backdrop-dimmed, with no <code>v-if</code>/<code>v-show</code>
+or synced prop required to hold the "is it open" state &mdash; the dialog's own open/closed DOM
+state <em>is</em> the state. A <code>&lt;form method="dialog"&gt;</code> "close" control or the
+built-in Escape-key handling would replace <code>handleVideoEnd</code>'s manual flag reset for the
+close side. The verdict is <strong>partial</strong>, not fully applicable, because two behaviors
+have no equivalent native primitive: (1) autoplaying the video specifically on modal open
+(<code>&lt;dialog&gt;</code> has no declarative "autoplay when shown" hook; a small script calling
+<code>video.play()</code> on the dialog's <code>open</code> would still be required, same as today),
+and (2) auto-closing the dialog when the video finishes, which still needs a
+<code>videoEnded</code>-style event listener calling <code>dialogEl.close()</code>. So
+<code>&lt;dialog&gt;</code> removes the Vue-specific state-holding boolean and the
+<code>:visible.sync</code> plumbing, but does not remove all script entirely.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>
