@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: callToAction — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>callToAction</code></h1>
+<p class="wire-value">Wire value: <code>"callToAction"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A <code>callToAction</code> section is one of the possible entries in the top-level <code>sections</code>
+array of a tutorial-page or tutorial-article-page RenderNode. It is dispatched in two places, both of which
+ultimately delegate to the same underlying component:
+</p>
+<ul>
+<li>
+<strong>Tutorial pages</strong> — <code>components/Tutorial.vue</code> builds a <code>SectionComponents</code>
+lookup table keyed by section <code>kind</code> and maps <code>callToAction</code> straight to
+<code>components/Tutorial/CallToAction.vue</code>. See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial.vue#L46-L66">Tutorial.vue#L46-L66</a>
+for the dispatch table and the generic <code>TutorialSection</code> render function that instantiates the
+matched component with the section's own properties spread onto it.
+</li>
+<li>
+<strong>Tutorial-article pages</strong> — <code>components/Article.vue</code> keeps a parallel
+<code>SectionKind</code>/<code>componentFor()</code>/<code>propsFor()</code> trio. <code>componentFor()</code>
+maps <code>callToAction</code> to <code>components/Article/CallToAction.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L113-L121">Article.vue#L113-L121</a>),
+and <code>propsFor()</code> extracts exactly <code>abstract</code>, <code>action</code>, <code>media</code>,
+and <code>title</code> from the raw section object to pass down as props
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L142-L151">Article.vue#L142-L151</a>).
+</li>
+</ul>
+<p>
+Both wrapper components are thin: <code>Article/CallToAction.vue</code> simply re-exports
+<code>Tutorial/CallToAction.vue</code>'s props and renders <code>&lt;TutorialCTA v-bind="$props" /&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/CallToAction.vue#L11-L24">Article/CallToAction.vue#L11-L24</a>),
+and <code>Tutorial/CallToAction.vue</code> itself only adds a fixed, localized button label
+(<code>$t('tutorials.next')</code>) before forwarding everything to the true base implementation,
+<code>components/CallToAction.vue</code>:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;BaseCTA
+    v-bind="baseProps"
+    :label="$t('tutorials.next')"
+  /&gt;
+&lt;/template&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/CallToAction.vue#L11-L23">Tutorial/CallToAction.vue#L11-L23</a>).
+Notably, <code>Article/CallToAction.vue</code> re-exports the same <code>props</code> object — which marks
+<code>label</code> as required — but <code>Article.vue</code>'s <code>propsFor()</code> never supplies a
+<code>label</code> value for article-page call-to-actions, so on tutorial-article pages the button ends up
+with an <code>undefined</code> label unless Vue's prop-required warning is otherwise suppressed; only the
+Tutorial-page path reliably supplies "Next".
+</p>
+<p>
+The real template lives in <code>components/CallToAction.vue</code>. Its root element is
+<code>&lt;div class="call-to-action"&gt;</code>, containing a <code>GridRow</code>/<code>GridColumn</code>
+two-column layout: the left column renders an eyebrow <code>&lt;span class="label"&gt;</code>, an
+<code>&lt;h2&gt;</code> title, an optional abstract (wrapped in a synthetic paragraph node and handed to
+<code>ContentNode</code>), and an optional <code>CallToActionButton</code>; the right column renders an
+optional <code>Asset</code> for the <code>media</code> identifier:
+</p>
+<pre><code>&lt;div class="call-to-action"&gt;
+  &lt;Row&gt;
+    &lt;LeftColumn&gt;
+      &lt;span class="label"&gt;{{label}}&lt;/span&gt;
+      &lt;h2&gt; {{ title }} &lt;/h2&gt;
+      &lt;ContentNode v-if="abstract" class="description" :content="[abstractParagraph]"/&gt;
+      &lt;Button v-if="action" :action="action" /&gt;
+    &lt;/LeftColumn&gt;
+    &lt;RightColumn class="right-column"&gt;
+      &lt;Asset v-if="media" class="media" :identifier="media"/&gt;
+    &lt;/RightColumn&gt;
+  &lt;/Row&gt;
+&lt;/div&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/CallToAction.vue#L11-L25">CallToAction.vue#L11-L25</a>).
+The <code>Button</code> child is <code>CallToActionButton.vue</code>, which resolves the <code>action</code>
+(a <code>RenderInlineContent.reference</code>) through <code>DestinationDataProvider</code> to get a
+<code>url</code>/<code>title</code> pair and renders a <code>ButtonLink</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/CallToActionButton.vue#L11-L21">CallToActionButton.vue#L11-L21</a>).
+</p>
+<p>
+Functionally, this section is DocC's own auto-generated "what's next" panel at the bottom of a tutorial or
+tutorial-article page — it is not something an author writes with a Markdown directive. The Swift-DocC
+converter side (<code>RenderNodeTranslator.callToAction(with:volume:)</code> and
+<code>createCallToAction(reference:kind:title:abstract:image:)</code> in
+<code>Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift</code>) walks the learning path for the
+current tutorial's volume, finds the next tutorial or tutorial article, and synthesizes this section with a
+title/abstract copied from that next page, a <code>media</code> reference to its intro image if any, and an
+<code>action</code> that is an active <code>.reference</code> whose <code>overridingTitle</code> is either
+"Get started" (next item is a tutorial) or "Read article" (next item is a tutorial article).
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<p class="synthesized-note">
+No raw JSON fixture containing a <code>callToAction</code> section was found in
+<code>DocCArchive/Tests/DocCArchiveTests/Fixtures/</code> (only minified JS bundle hits, not RenderNode JSON)
+or as a standalone JSON file in <code>swift-docc/Tests/SwiftDocCTests/</code>. Swift-docc's own test suite does
+exercise this kind, but only via Swift struct literals asserted against decoded values (see
+<code>SemaToRenderNodeTests.swift</code> around the <code>guard let callToAction = renderNode.sections.last as?
+CallToActionSection</code> check). The example below is a synthetic JSON document, but its field values
+(title, abstract text, media identifier, action identifier, and <code>overridingTitle</code>) are taken
+directly from that real test's assertions so the shape and content are faithful to actual DocC output.
+</p>
+<pre><code>{
+  "kind": "callToAction",
+  "title": "Making an Augmented Reality App",
+  "abstract": [
+    { "type": "text", "text": "This is an abstract for the intro." }
+  ],
+  "media": "introposter2.png",
+  "action": {
+    "type": "reference",
+    "identifier": "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorialArticle",
+    "isActive": true,
+    "overridingTitle": "Read article",
+    "overridingTitleInlineContent": [
+      { "type": "text", "text": "Read article" }
+    ]
+  }
+}</code></pre>
+<div class="mockup">
+  <div style="display:flex; align-items:center; gap:24px; padding:24px; background:#e9e9ee; border-radius:6px;">
+    <div style="flex: 1 1 auto;">
+      <span style="display:block; font-size:0.75rem; letter-spacing:0.05em; text-transform:uppercase; color:#666; margin-bottom:6px;">Article</span>
+      <div style="margin:0 0 8px;">Making an Augmented Reality App</div>
+      <p style="margin:0 0 12px; color:#333;">This is an abstract for the intro.</p>
+      <span style="display:inline-block; padding:8px 16px; border-radius:18px; background:#0070c9; color:#fff; font-size:0.9rem;">Read article</span>
+    </div>
+    <div style="flex: 1 1 auto; text-align:center; color:#999; border:1px dashed #bbb; border-radius:4px; padding:32px;">
+      [ introposter2.png ]
+    </div>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td>enum: <code>"callToAction"</code></td>
+<td>Discriminator; see <code>RenderNode.spec.json</code> <code>CallToActionRenderSection</code> and generated
+<code>KindPayload</code> enum.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>—</td>
+<td>Title copied from the destination (next tutorial/article) page.</td>
+</tr>
+<tr>
+<td><code>abstract</code></td>
+<td>array of <code>RenderInlineContent</code></td>
+<td>no (spec/generated types mark it optional)</td>
+<td>default: absent → empty in practice</td>
+<td>Wire schema/generated Swift type has this as <code>[RenderInlineContent]?</code>. Note: the pinned
+swift-docc struct <code>CallToActionSection</code> (commit 8b8d8268aa) instead declares it non-optional
+(<code>[RenderInlineContent] = []</code>) and decodes missing input as <code>[]</code> — same effective
+behavior, different optionality on the wire-schema side. This is likely because the vendored spec in this
+repo is pinned to a different upstream commit (<code>5915e66d…</code>, "6.3-nightly" per
+<code>VendorVersion.swift</code>) than the swift-docc checkout used for this page's step-3 sourcing.</td>
+</tr>
+<tr>
+<td><code>media</code></td>
+<td>string</td>
+<td>no</td>
+<td>—</td>
+<td>Wire value is a plain string identifier (a key into the RenderNode's <code>references</code> dictionary),
+not an inline media object. Rendered by resolving it through <code>Asset.vue</code>'s <code>identifier</code> prop.</td>
+</tr>
+<tr>
+<td><code>action</code></td>
+<td><code>RenderInlineContent</code> (single object, not array)</td>
+<td>yes</td>
+<td>—</td>
+<td>In practice always a <code>.reference</code> variant of <code>RenderInlineContent</code> pointing at the
+next tutorial/tutorial-article, with an <code>overridingTitle</code> of "Get started" or "Read article".</td>
+</tr>
+<tr>
+<td><code>featuredEyebrow</code></td>
+<td>string</td>
+<td>no</td>
+<td>—</td>
+<td>Present on the Swift struct <code>CallToActionSection</code> at the pinned swift-docc commit (holds
+"Tutorial" or "Article"), but this field is <strong>absent</strong> from this repo's vendored
+<code>RenderNode.spec.json</code> and from the generated <code>CallToActionRenderSection</code> Swift type —
+another symptom of the vendored-spec/swift-docc version skew noted above. Any archive produced by a DocC
+version that emits <code>featuredEyebrow</code> will have that value silently dropped by DocCArchive's
+current generated decoder.</td>
+</tr>
+</tbody>
+</table>
+<p>
+Sources: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> lines 139-167 (schema object
+<code>CallToActionRenderSection</code>); <code>Sources/DocCArchive/generated/Types.swift</code> lines
+3171-3215 (generated struct <code>Components.Schemas.CallToActionRenderSection</code>); swift-docc struct
+<code>CallToActionSection</code> at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Tutorials%20Overview/Sections/CallToActionSection.swift#L14-L57">CallToActionSection.swift#L14-L57</a>.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered markup from <code>components/CallToAction.vue</code>:
+</p>
+<ul>
+<li><code>div.call-to-action</code> — root wrapper; vertical padding and a themed background.</li>
+<li><code>div.row</code> (from <code>GridRow</code>) — flex row, centered items; becomes <code>display: block</code> at the <code>small</code> breakpoint.</li>
+<li><code>div.col</code> ×2 (from <code>GridColumn</code>, via the inline <code>LeftColumn</code>/<code>RightColumn</code> render-function components) — left column spans 5/12 large-grid columns (12/12 on small), right column spans 6/12 (12/12 on small) with <code>class="right-column"</code> additionally pushing itself to the far right (<code>margin-left: auto</code>).</li>
+<li><code>span.label</code> — the eyebrow/button-label text (e.g. "Next" on tutorial pages).</li>
+<li><code>h2</code> — the section title, styled via the <code>heading-2</code> font-style mixin.</li>
+<li><code>div.description</code> (a <code>ContentNode</code> class hook) — the abstract paragraph.</li>
+<li><code>a</code> / <code>ButtonLink</code> markup (from <code>CallToActionButton.vue</code> → <code>ButtonLink.vue</code>) — the action button, not a raw <code>&lt;button&gt;</code>.</li>
+<li><code>div.media</code> (an <code>Asset</code> class hook) inside <code>div.right-column</code> — the optional image/video.</li>
+</ul>
+<p>
+SCSS lives inline in each <code>.vue</code> file's <code>&lt;style scoped lang="scss"&gt;</code> block. The
+relevant rules are in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/CallToAction.vue#L109-L160">CallToAction.vue#L109-L160</a>
+and, for the article-specific breakpoint tweak, in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/CallToAction.vue#L26-L34">Article/CallToAction.vue#L26-L34</a>.
+CSS custom properties consumed: <code>--color-call-to-action-background</code> (overridden to
+<code>rgb(66, 66, 66)</code> under <code>.theme-dark</code>), <code>--color-eyebrow</code>,
+<code>--spacing-stacked-margin-small</code>. The section also imports the shared
+<code>docc-render/styles/_core.scss</code> partial for the <code>breakpoint</code>,
+<code>breakpoint-content</code>, and <code>font-styles</code> mixins used above.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current JS/Vue behavior: <code>components/CallToAction.vue</code> is a stateless presentational component —
+it has no internal reactive state, no toggled visibility, and no client-side interaction of its own. It
+receives <code>title</code>/<code>abstract</code>/<code>media</code>/<code>action</code>/<code>label</code>
+as props and renders them straight into a two-column grid layout every time; <code>CallToActionButton.vue</code>
+resolves the destination URL through <code>DestinationDataProvider</code> at render time and emits a plain
+<code>&lt;a&gt;</code>-based <code>ButtonLink</code> — clicking it is normal browser navigation, not a
+JS-driven state change. The one piece of client-side interactivity anywhere near this component,
+<code>Hero.vue</code>'s <code>callToActionModalVisible</code> data flag controlling a modal, belongs to the
+unrelated tutorial <em>Hero</em> section, not to <code>callToAction</code> sections.
+</p>
+<p>
+Because there is no interactive state to reproduce (no tabs, no expand/collapse, no conditional visibility
+driven by user input), there is no native HTML/CSS mechanism to name here — the section is a static,
+server/build-time-rendered content block whose only "logic" is conditional presence of optional fields
+(<code>abstract</code>, <code>action</code>, <code>media</code>), which plain <code>v-if</code>/absence-in-HTML
+already covers with no client behavior to replace.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

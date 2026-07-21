@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept: the references map — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="../archive-structure.html">Archive Structure</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">concept</p>
+<h1>The top-level <code>references</code> map</h1>
+<p>Nearly every content kind that points at "something else" &mdash; a symbol link, an image, a
+download, a video, a footnote &mdash; does it the same way: an inline or block node carries an opaque
+<code>identifier</code> string, and the actual payload (URL, title, alt text, kind-specific fields)
+lives in one shared, flat dictionary at the top of the <code>RenderNode</code>, keyed by that same
+identifier. Fullest single-kind treatment prior to this page:
+<a href="../kinds/inline-reference.html"><code>inline-reference.html</code></a>, which walks the
+lookup-and-dispatch mechanism for the <code>reference</code> inline kind specifically.</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Worked example</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. Where else this shows up</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+The pattern is identical everywhere it's used: a content node never embeds its target's URL, title,
+or metadata directly &mdash; it embeds only an <code>identifier</code> string, and the consumer resolves
+that string against the render node's top-level <code>references</code> object at render time. The
+clearest example is the <code>reference</code> inline kind's dispatch arm in
+<code>ContentNode.vue</code>'s <code>renderNode()</code> factory:
+</p>
+<pre><code>case InlineType.reference: {
+  const reference = references[node.identifier];
+  if (!reference) return null;
+  ...
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L467-L487"><code>ContentNode.vue#L467-L487</code></a>.)
+The <code>image</code> inline kind does the same lookup one branch earlier in the same function
+(<code>const image = references[node.identifier]; if (!image) return null;</code>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L442-L458"><code>ContentNode.vue#L442-L458</code></a>).
+The dictionary itself flows down from the top-level RenderNode as a prop, then gets re-exposed to
+every deeply nested content component through a shared mixin,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/referencesProvider.js"><code>src/mixins/referencesProvider.js</code></a>,
+rather than threaded through props at every level &mdash; which is why a <code>reference</code> node
+buried five components deep inside a tutorial step can still resolve against the same one map the
+top-level article body uses.
+</p>
+<p>
+The failure mode is consistent across every consumer of this map: if <code>node.identifier</code>
+has no matching key, the lookup returns <code>undefined</code>, the guard clause fires, and the whole
+node renders as nothing (<code>return null</code>). There is no broken-link placeholder, no console
+warning, no fallback text &mdash; a dangling reference is silently invisible in the rendered page. This
+is a deliberate simplicity/robustness tradeoff, not a bug: DocC guarantees at build time that every
+<code>identifier</code> it emits has a matching <code>references</code> entry (unresolved links are
+caught and reported as build warnings before the archive is ever written), so swift-docc-render's
+job is just to render what's there, not to validate archive integrity.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Worked example: two different kinds, one map</h2>
+<p>
+Real fixtures, spliced from two different sources to show the pattern generalizing across kinds (the
+first pairing is drawn directly from
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/term-lists-1.json</code> and
+<code>external-location-custom-url.json</code>; the second reuses the
+<code>plus.svg</code> icon fixture from <code>Tests/SwiftDocCTests/Indexing/RenderIndexTests.swift</code>,
+lines 803-818, also cited on
+<a href="../kinds/reference-image.html"><code>reference-image.html</code></a>):
+</p>
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    { "type": "text", "text": "See " },
+    { "type": "reference", "identifier": "doc://org.swift.docc.example/downloads/sample.zip",
+      "isActive": true, "overridingTitle": "Download" },
+    { "type": "text", "text": " for the full project, or click " },
+    { "type": "image", "identifier": "plus.svg" },
+    { "type": "text", "text": " to add one." }
+  ]
+}</code></pre>
+<p>Both identifiers resolve against the <em>same</em> top-level map, even though one arm is a
+<code>FileRenderReference</code> and the other an <code>ImageRenderReference</code>:</p>
+<pre><code>"references": {
+  "doc://org.swift.docc.example/downloads/sample.zip": {
+    "type": "file",
+    "identifier": "doc://org.swift.docc.example/downloads/sample.zip",
+    "url": "/downloads/sample.zip",
+    "title": "sample.zip"
+  },
+  "plus.svg": {
+    "type": "image",
+    "identifier": "plus.svg",
+    "alt": "A plus icon.",
+    "variants": [
+      { "url": "/images/org.swift.docc.Book/plus.svg", "traits": ["1x", "light"], "svgID": "plus-id" }
+    ]
+  }
+}</code></pre>
+<div class="mockup">
+<p><em>Both nodes go through the same two-step dance &mdash; look up <code>node.identifier</code> in
+<code>references</code>, then dispatch on the resolved object's own <code>type</code> discriminator
+(<code>"file"</code> vs. <code>"image"</code>) to decide which Vue component and props to build. The
+<code>reference</code> node ends up as an <code>&lt;a class="inline-link"&gt;Download&lt;/a&gt;</code>; the
+<code>image</code> node ends up as a <code>&lt;picture&gt;</code>/<code>&lt;img&gt;</code> pair (see
+<a href="../concepts/assets.html">Assets</a> for how the <code>variants</code> array inside an
+<em>image</em> reference becomes that markup). Nothing about the lookup step itself differs between
+the two &mdash; only what happens after the resolved object's own <code>type</code> field is read.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>. <code>RenderNode.references</code>
+is a free-form object (map of string identifier &rarr; <code>RenderReference</code>) rather than a typed
+array, generated as <code>Components.Schemas.RenderReferenceMap</code>, a dictionary keyed by
+<code>String</code> with <code>Components.Schemas.RenderReference</code> values. <code>RenderReference</code>
+itself (schema around line 1491) is a <code>oneOf</code> discriminated union with exactly nine members,
+each identifiable by its own <code>type</code> discriminator string:
+</p>
+<table>
+<thead><tr><th>Reference kind</th><th>Wire <code>type</code></th><th>Documented on</th></tr></thead>
+<tbody>
+<tr><td><code>ImageRenderReference</code></td><td><code>"image"</code></td><td><a href="../kinds/reference-image.html">reference-image.html</a></td></tr>
+<tr><td><code>VideoRenderReference</code></td><td><code>"video"</code></td><td><a href="../kinds/reference-video.html">reference-video.html</a></td></tr>
+<tr><td><code>FileRenderReference</code></td><td><code>"file"</code></td><td><a href="../kinds/reference-file.html">reference-file.html</a></td></tr>
+<tr><td><code>FileTypeRenderReference</code></td><td><code>"fileType"</code></td><td><a href="../kinds/reference-filetype.html">reference-filetype.html</a></td></tr>
+<tr><td><code>XcodeRequirementRenderReference</code></td><td><code>"xcodeRequirement"</code></td><td><a href="../kinds/reference-xcoderequirement.html">reference-xcoderequirement.html</a></td></tr>
+<tr><td><code>TopicRenderReference</code></td><td><code>"topic"</code></td><td><a href="../kinds/reference-topic.html">reference-topic.html</a>, <a href="../kinds/node-section.html">node-section.html</a></td></tr>
+<tr><td><code>DownloadRenderReference</code></td><td><code>"download"</code></td><td><a href="../kinds/reference-download.html">reference-download.html</a></td></tr>
+<tr><td><code>UnresolvableRenderReference</code></td><td><code>"unresolvable"</code></td><td><a href="../kinds/reference-unresolvable.html">reference-unresolvable.html</a></td></tr>
+<tr><td><code>LinkRenderReference</code></td><td><code>"link"</code></td><td><a href="../kinds/reference-link.html">reference-link.html</a></td></tr>
+</tbody>
+</table>
+<p>
+Every member shares two required fields regardless of kind &mdash; <code>type</code> (the discriminator)
+and <code>identifier</code> (the dictionary key this object is stored under, duplicated onto the object
+itself for self-description, matching swift-docc's <code>RenderReference</code> protocol requirement at
+<code>Sources/SwiftDocC/Model/Rendering/References/RenderReference.swift:29</code>). Everything past
+those two fields is kind-specific: an <code>ImageRenderReference</code> carries <code>variants</code>
+and <code>alt</code>; a <code>TopicRenderReference</code> carries <code>title</code>,
+<code>abstract</code>, <code>kind</code>, <code>role</code>, and a resolved <code>url</code>; an
+<code>UnresolvableRenderReference</code> carries just a <code>title</code> string, since by
+definition there's no URL or richer content to show for a link DocC couldn't resolve at build time.
+"Section," despite appearing as a distinct concept in the page-hierarchy docs, is not a tenth
+reference kind &mdash; it's a <code>type: "section"</code> value nested inside a
+<code>TopicRenderReference</code>, not a top-level arm of this union.
+</p>
+</section>
+<section id="css-mapping"><h2>4. Where else this shows up</h2>
+<p>
+A non-exhaustive but representative list of nodes that resolve against <code>references</code>:
+<a href="../kinds/inline-image.html">image</a> and
+<a href="../kinds/inline-reference.html">reference</a> inline nodes;
+<a href="../kinds/block-links.html">links</a> and
+<a href="../kinds/block-video.html">video</a> block content;
+<a href="../kinds/node-section.html">section</a> nodes (topic groups resolve their child
+identifiers this way); and reference-dictionary entries that themselves nest further identifiers,
+such as a <a href="../kinds/reference-download.html">download</a> reference's associated file. The
+same <code>identifier</code>-then-lookup shape also appears one level up, in the archive's
+<code>index/index.json</code> (icon references on index nodes) and in
+<code>linkable-entities.json</code> (each entry carries its own nested <code>references</code> map)
+&mdash; see <a href="../archive-structure.html">Archive Structure</a> &sect;3 and &sect;6.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+The lookup itself is a one-shot, build-time-equivalent dictionary read with no reactive state, no
+user interaction, and no toggled visibility &mdash; there is nothing here for a CSS-only mechanism to
+replace. (Individual reference kinds have their own Modern CSS verdicts where a real interactive
+mechanism exists downstream of the lookup &mdash; e.g. the light/dark asset selection covered on
+<a href="../concepts/assets.html">Assets</a> &mdash; but the map-resolution step itself is inert.)
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

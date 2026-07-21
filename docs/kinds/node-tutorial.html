@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: tutorial — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">node</p>
+<h1><code>tutorial</code></h1>
+<p class="wire-value">Wire value: <code>"project"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A top-level <code>RenderNode</code> has a <code>kind</code> discriminator. For interactive
+tutorial pages (as opposed to symbol/article documentation pages) the wire value is the
+legacy string <code>"project"</code>, even though every other layer of the stack now calls
+this concept a "tutorial." swift-docc's own decoder,
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNode.swift#L253-L278"><code>RenderNode.Kind</code></a>,
+accepts both spellings on decode but only ever <em>encodes</em> <code>"project"</code>
+(<code>case tutorial = "project"</code>, line 256), so <code>"project"</code> is what actually
+appears in <code>.doccarchive</code> output on disk.
+</p>
+<p>
+swift-docc-render's route-level dispatcher is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/Topic.vue#L37-L115"><code>views/Topic.vue</code></a>.
+It keeps its own local map from a friendly key back to the wire string, and switches on
+<code>topic.kind</code>:
+</p>
+<pre><code>const TopicKind = {
+  article: 'article',
+  tutorial: 'project',
+};
+...
+methods: {
+  componentFor(topic) {
+    const { kind } = topic;
+    return {
+      [TopicKind.article]: Article,
+      [TopicKind.tutorial]: Tutorial,
+    }[kind];
+  },
+  propsFor(topic) {
+    const {
+      hierarchy, kind, metadata, references, sections, identifier,
+    } = topic;
+    return {
+      [TopicKind.tutorial]: {
+        hierarchy, metadata, references, sections, identifierUrl: identifier.url,
+      },
+      ...
+    }[kind];
+  },
+},</code></pre>
+<p>
+For <code>kind: "project"</code>, <code>Topic.vue</code> renders
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial.vue#L1-L172"><code>components/Tutorial.vue</code></a>
+and passes through exactly five props: <code>hierarchy</code>, <code>metadata</code>,
+<code>references</code>, <code>sections</code>, and <code>identifierUrl</code> (derived from
+<code>identifier.url</code>). <code>Tutorial.vue</code>'s root template is:
+</p>
+<pre><code>&lt;div class="tutorial"&gt;
+  &lt;NavigationBar
+    v-if="!isTargetIDE"
+    :technology="metadata.category"
+    :chapters="hierarchy.modules"
+    :topic="tutorialTitle || ''"
+    :rootReference="hierarchy.reference"
+    :identifierUrl="identifierUrl"
+  /&gt;
+  &lt;main id="app-main" tabindex="0"&gt;
+    &lt;Section
+      v-for="(section, index) in sections"
+      :section="section"
+      :key="index"
+    /&gt;
+    &lt;BreakpointEmitter @change="handleBreakpointChange" /&gt;
+  &lt;/main&gt;
+  &lt;PortalTarget name="modal-destination" multiple /&gt;
+&lt;/div&gt;</code></pre>
+<p>
+The page's own <code>sections</code> array gets a second, local dispatch table (this is the
+node's per-section-kind lookup, distinct from the top-level <code>RenderNode.kind</code>
+dispatch above):
+</p>
+<pre><code>const SectionComponents = {
+  assessments: Assessments,
+  hero: Hero,
+  tasks: SectionList,
+  callToAction: CallToAction,
+};
+const ValidSectionTypes = new Set(Object.keys(SectionComponents));
+
+const TutorialSection = {
+  name: 'TutorialSection',
+  render: function render(createElement) {
+    const { kind, ...props } = this.section;
+    const component = SectionComponents[kind];
+    return component ? createElement(component, { props }) : null;
+  },
+  props: {
+    section: {
+      type: Object,
+      required: true,
+      validator: section => ValidSectionTypes.has(section.kind),
+    },
+  },
+};</code></pre>
+<p>
+(<code>components/Tutorial.vue</code>, lines 46-74.) Each entry in <code>sections</code> is
+therefore routed by its own <code>kind</code> (<code>hero</code>, <code>tasks</code>,
+<code>assessments</code>, or <code>callToAction</code>) to a dedicated component:
+<code>theme/components/Tutorial/Hero.vue</code> (imported via the <code>theme/</code> alias,
+which the project's own <code>jest.config.js</code> maps straight back to
+<code>src/components/Tutorial/Hero.vue</code>),
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionList.vue"><code>components/Tutorial/SectionList.vue</code></a>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Assessments.vue"><code>components/Tutorial/Assessments.vue</code></a>,
+and
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/CallToAction.vue"><code>components/Tutorial/CallToAction.vue</code></a>.
+Sections with an unrecognized <code>kind</code> are silently dropped (the render function
+returns <code>null</code>).
+</p>
+<p>
+The page chrome above the sections is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/NavigationBar.vue#L1-L56"><code>components/Tutorial/NavigationBar.vue</code></a>,
+which builds the "Primary"/"Secondary" chapter/section dropdowns from the same
+<code>hierarchy.modules</code> tree documented in the data sheet below (see
+<a href="#css-mapping">section 4</a> and <a href="#modern-css">section 5</a> for how that
+dropdown holds its open/closed state).
+</p>
+<p>
+What an author writes to produce this: swift-docc's authoring-side model class is
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Semantics/Tutorial/Tutorial.swift#L14-L60"><code>Semantics/Tutorial/Tutorial.swift</code></a>,
+backing the <code>@Tutorial</code> directive: a tutorial article's DocC catalog page opens with
+<code>@Tutorial(time: ..., projectFiles: ...)</code>, followed by an <code>@Intro</code> child
+directive (becomes the <code>hero</code> section), one or more <code>@Section</code>/
+<code>@Steps</code> child directives (become the <code>tasks</code> section's tutorial
+sections), and an optional <code>@Assessments</code> directive (becomes the
+<code>assessments</code> section). The compiler emits the resulting
+<code>TutorialsPageRenderNode</code> with <code>kind: "project"</code>.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> both accept the full
+<code>Components.Schemas.RenderNode</code> enum (which includes the
+<code>.TutorialsPageRenderNode</code> case for this kind) but are still stub placeholders —
+the HTML transformer unconditionally returns a hardcoded <code>&lt;!-- what? --&gt;</code>
+comment and the Markdown transformer unconditionally returns an empty string. Neither has
+any kind-specific handling for tutorial pages today.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>swift-docc-render/tests/unit/imagePreloading/tutorial.json</code>
+(committed test fixture, ~2000 lines) is a full, real <code>kind: "project"</code>
+<code>RenderNode</code>. The excerpt below is a trimmed-down subset of that exact fixture
+(same field shapes and several verbatim values — chapter/module/section references, hero
+copy, and the <code>tasks</code>/<code>assessments</code>/<code>callToAction</code> section
+kinds — with most of the tutorial's step content removed for length).
+</p>
+<pre><code>{
+  "kind": "project",
+  "schemaVersion": { "major": 1, "minor": 0, "patch": 0 },
+  "identifier": {
+    "url": "doc://com.example.Test/tutorials/TechnologyX/Tutorial",
+    "interfaceLanguage": "swift"
+  },
+  "metadata": {
+    "title": "Basic Augmented Reality App",
+    "category": "Technology X",
+    "categoryPathComponent": "TechnologyX",
+    "role": "article"
+  },
+  "hierarchy": {
+    "reference": "doc://com.example.Test/tutorials/TechnologyX",
+    "modules": [
+      {
+        "reference": "doc://com.example.Test/tutorials/TechnologyX/Getting-Started",
+        "projects": [
+          {
+            "reference": "doc://com.example.Test/tutorials/TechnologyX/Tutorial",
+            "sections": [
+              { "kind": "task", "reference": "doc://com.example.Test/tutorials/TechnologyX/Tutorial#Create-a-New-AR-Project" },
+              { "kind": "assessment", "reference": "doc://com.example.Test/tutorials/TechnologyX/Tutorial#Check-Your-Understanding" }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "sections": [
+    {
+      "kind": "hero",
+      "title": "Basic Augmented Reality App",
+      "chapter": "Getting Started",
+      "estimatedTimeInMinutes": 20,
+      "xcodeRequirement": "Xcode 10 beta",
+      "video": "video.mov",
+      "backgroundImage": "hero_school.jpg",
+      "projectFiles": "project.zip",
+      "content": [
+        { "type": "paragraph", "inlineContent": [ { "type": "text", "text": "The first tutorial." } ] }
+      ]
+    },
+    {
+      "kind": "tasks",
+      "tasks": [
+        {
+          "anchor": "Create-a-New-AR-Project",
+          "title": "Create a New AR Project",
+          "contentSection": [],
+          "stepsSection": []
+        }
+      ]
+    },
+    {
+      "kind": "assessments",
+      "anchor": "Check-Your-Understanding",
+      "assessments": []
+    },
+    {
+      "kind": "callToAction",
+      "title": "Making an Augmented Reality App",
+      "featuredEyebrow": "Article",
+      "media": "arkit.png",
+      "action": {
+        "type": "reference",
+        "isActive": true,
+        "identifier": "doc://com.example.Test/tutorials/TechnologyX/TestTutorialArticle",
+        "overridingTitle": "Read article"
+      },
+      "abstract": [ { "type": "text", "text": "This is an abstract for the hero." } ]
+    }
+  ],
+  "references": {
+    "doc://com.example.Test/tutorials/TechnologyX/TestTutorialArticle": {
+      "kind": "article",
+      "role": "article",
+      "type": "topic",
+      "title": "Making an Augmented Reality App",
+      "url": "/tutorials/technologyx/testtutorialarticle"
+    }
+  }
+}</code></pre>
+<div class="mockup">
+  <div style="border:1px solid var(--color-border); border-radius:6px; overflow:hidden;">
+    <div style="background:#2d2d34; color:white; padding:8px 16px; font-size:0.85em;">
+      Technology X &nbsp;&middot;&nbsp; Tutorials &nbsp;&nbsp;
+      <span style="opacity:0.7;">[Getting Started &#9662;] [Basic Augmented Reality App &#9662;]</span>
+    </div>
+    <div style="background:#1b1b1f; color:white; padding:32px 24px;">
+      <div style="font-size:0.8em; opacity:0.7; text-transform:uppercase;">Getting Started</div>
+      <div style="margin:4px 0;">Basic Augmented Reality App</div>
+      <p style="opacity:0.85;">The first tutorial.</p>
+      <p style="font-size:0.8em; opacity:0.6;">20 min &middot; Xcode 10 beta &middot; ⬇ project.zip</p>
+    </div>
+    <div style="padding:16px 24px;">
+      <strong>Create a New AR Project</strong>
+      <p style="font-size:0.85em; color:var(--color-text-secondary);">(task steps content)</p>
+    </div>
+    <div style="padding:16px 24px; border-top:1px dashed var(--color-border);">
+      <em>Check your understanding</em> — assessment questions
+    </div>
+    <div style="padding:16px 24px; background:var(--color-fill-secondary,#f5f5f7); display:flex; gap:12px; align-items:center;">
+      <span style="flex:0 0 64px; border:1px dashed var(--color-border); border-radius:4px; padding:12px; text-align:center; font-size:0.7em;">[arkit.png]</span>
+      <span><strong>Making an Augmented Reality App</strong><br>This is an abstract for the hero. &rarr; Read article</span>
+    </div>
+  </div>
+  <p><em>mockup: NavigationBar chrome, Hero (dark), a task section, an assessment section, and a callToAction footer — the four section kinds Tutorial.vue dispatches on.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/TutorialsPageRenderNode</code> (one of the two <code>oneOf</code>
+branches of <code>#/components/schemas/RenderNode</code>), cross-checked against the
+generated <code>Components.Schemas.TutorialsPageRenderNode</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 2917-3024), which is reached
+via the <code>Components.Schemas.RenderNode.TutorialsPageRenderNode(_:)</code> enum case.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hierarchy</code></td>
+<td>object (<code>oneOf</code>: <code>Hierarchy</code>)</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Generated as a one-case <code>HierarchyPayload</code> enum wrapping
+<code>Components.Schemas.Hierarchy</code>. Has a required <code>reference</code> string and
+optional <code>paths</code> / <code>modules</code> arrays (the latter feeding
+<code>NavigationBar.vue</code>'s chapter dropdown).</td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"overview"</code>, <code>"project"</code>, <code>"article"</code></td>
+<td>Generated as <code>KindPayload: String, CaseIterable</code>. This page documents the
+<code>"project"</code> case specifically; <code>"overview"</code> and <code>"article"</code>
+are the tutorial-table-of-contents and free-standing-tutorial-article variants of the same
+struct and are out of scope here.</td>
+</tr>
+<tr>
+<td><code>identifier</code></td>
+<td><code>ResolvedTopicReference</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Contains the page's <code>url</code> and <code>interfaceLanguage</code>; <code>Topic.vue</code>
+reads <code>identifier.url</code> to build the <code>identifierUrl</code> prop.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Optional page title. In practice <code>Tutorial.vue</code> instead derives its displayed
+title from the <code>hero</code> section's own <code>title</code> field
+(<code>tutorialTitle</code> computed property).</td>
+</tr>
+<tr>
+<td><code>sections</code></td>
+<td>array of <code>RenderSection</code></td>
+<td>yes</td>
+<td><code>oneOf</code>: <code>IntroRenderSection</code>, <code>ArticleBodyRenderSection</code>,
+<code>CallToActionRenderSection</code>, <code>TasksSection</code>,
+<code>AssessmentsSection</code>, <code>VolumeRenderSection</code>,
+<code>ResourcesRenderSection</code></td>
+<td>Only the <code>hero</code>/<code>intro</code> (<code>IntroRenderSection</code>),
+<code>tasks</code> (<code>TasksSection</code>), <code>assessments</code>
+(<code>AssessmentsSection</code>), and <code>callToAction</code>
+(<code>CallToActionRenderSection</code>) kinds are consumed by <code>Tutorial.vue</code>'s
+<code>SectionComponents</code> map (see section 1); the others are separately used by tutorial
+overview/table-of-contents pages.</td>
+</tr>
+<tr>
+<td><code>references</code></td>
+<td>object, additionalProperties → <code>RenderReference</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Generated as <code>ReferencesPayload</code> with an
+<code>additionalProperties: [String: RenderReference1]</code> dictionary. Keyed by the
+reference identifiers used throughout <code>sections</code> (e.g. topic links, images, code
+listings).</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>TutorialsMetadata</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Only two documented properties in the vendored schema: <code>category</code> and
+<code>categoryPathComponent</code> (both strings). <code>Tutorial.vue</code> also reads
+<code>metadata.availableLanguages</code>/<code>availableLocales</code> at runtime, but those
+are not declared on the vendored <code>TutorialsMetadata</code> object.</td>
+</tr>
+<tr>
+<td><code>schemaVersion</code></td>
+<td><code>SchemaVersion</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td><code>{ major, minor, patch }</code> triple identifying the RenderNode JSON schema
+version the archive was generated with.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, from <code>Tutorial.vue</code>'s template and its imported children:</p>
+<ul>
+<li><code>div.tutorial</code> &mdash; root element for the whole page (scoped style sets its
+<code>background-color</code>; see custom properties below).</li>
+<li><code>#nav</code> (via <code>NavBase.vue</code>, rendered by <code>NavigationBar.vue</code>)
+&mdash; the technology/chapter/section navigation chrome, only rendered when
+<code>!isTargetIDE</code>. Contains a <code>.primary-dropdown</code>
+(<code>PrimaryDropdown.vue</code>) and, when a current section exists, a
+<code>.secondary-dropdown</code> (<code>SecondaryDropdown.vue</code>), plus a
+<code>.mobile-dropdown-container</code> (<code>MobileDropdown.vue</code>) for small
+viewports.</li>
+<li><code>main#app-main[tabindex="0"]</code> &mdash; wraps the section list; each entry is one
+of <code>Hero.vue</code> (root class <code>.tutorial-hero</code> wrapping
+<code>div.hero.dark</code>), <code>SectionList.vue</code> (<code>tasks</code>),
+<code>Assessments.vue</code> (<code>assessments</code>), or <code>CallToAction.vue</code>
+(<code>callToAction</code>).</li>
+<li><code>PortalTarget[name="modal-destination"]</code> &mdash; a portal-vue teleport target
+used by modals raised from within tutorial content (e.g. the Hero's "Watch intro video"
+<code>GenericModal</code>).</li>
+</ul>
+<p>
+SCSS lives inline in each component's <code>&lt;style scoped lang="scss"&gt;</code> block.
+<code>Tutorial.vue</code>'s own block is minimal:
+</p>
+<pre><code>.tutorial {
+  background-color: var(--colors-text-background, var(--color-tutorial-background));
+}</code></pre>
+<p>
+<code>--color-tutorial-background</code> itself is a themeable custom property, defined
+per color scheme in
+<code>src/styles/core/colors/_light.scss</code> (<code>var(--color-fill)</code>) and
+<code>src/styles/core/colors/_dark.scss</code> (<code>var(--color-fill-tertiary)</code>) —
+so the page background automatically follows the site's light/dark theme without any
+component-level branching. <code>NavigationBar.vue</code>, <code>Hero.vue</code>, and the
+dropdown components each import the shared <code>docc-render/styles/_core.scss</code>
+partial and layer their own scoped rules (chapter list typography, dropdown positioning,
+hero background-image sizing, etc.) on top.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">PARTIAL</span></p>
+<p>
+Current behavior: the tutorial page itself (<code>Tutorial.vue</code>) has no interactive
+state of its own — it is a static list-to-component mapping over <code>sections</code>, same
+as the <code>contentAndMedia</code> case. But this render node's page chrome,
+<code>NavigationBar.vue</code>, does carry real client-side state: its chapter/section pickers
+delegate to <code>DropdownCustom.vue</code>
+(<code>src/components/DropdownCustom.vue</code>), which keeps an <code>isOpen</code> boolean
+in Vue component <code>data()</code> (initialized <code>false</code>), flips it in a
+<code>toggleDropdown()</code> click handler on a
+<code>button.form-dropdown-toggle</code>, and uses that boolean to add an
+<code>is-open</code> class to the dropdown's content panel and to set
+<code>:aria-expanded="isOpen ? 'true' : 'false'"</code> on the toggle button. A document-level
+click listener also closes the dropdown when a click lands outside
+<code>this.$el</code>.
+</p>
+<p>
+That exact state/behavior — a labeled control that reveals a panel of options and closes
+again on a second interaction — is mechanically what
+<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code> is for. A native
+<code>&lt;details class="tutorial-dropdown"&gt;&lt;summary&gt;Basic Augmented Reality
+App&lt;/summary&gt;&lt;ul&gt;...chapters...&lt;/ul&gt;&lt;/details&gt;</code> would hold the
+open/closed state in the element's own <code>open</code> boolean attribute (toggled by the
+browser on <code>&lt;summary&gt;</code> click, no JS required), let CSS target the open state
+with the <code>details[open] > summary</code> / <code>details:not([open]) .options</code>
+selectors in place of the <code>is-open</code> class, and get outside-click-to-close behavior
+"for free" for the common case of a second click on the page (the browser does not auto-close
+on outside click the way <code>DropdownCustom.vue</code>'s manual listener does, so an author
+relying purely on <code>&lt;details&gt;</code> would lose that one behavior, or would need a
+small amount of supplementary script — this is the reason for the "partial" verdict rather
+than "applicable"). Accessibility semantics also shift: native
+<code>&lt;details&gt;</code> exposes its own disclosure semantics to assistive tech, which is
+different from (not strictly better or worse than) the manually-authored
+<code>aria-expanded</code>/<code>listbox</code>/<code>option</code> roles
+<code>DropdownCustom.vue</code> and <code>PrimaryDropdown.vue</code> currently build by hand.
+</p>
+<p>
+The rest of the node's own chrome — the <code>Hero</code> background image, the static
+section-to-component list, and the <code>PortalTarget</code> modal mount point — has no
+comparable native-CSS analog: the Hero's video modal is driven by a
+<code>GenericModal</code> component that itself could plausibly move to
+<code>&lt;dialog&gt;</code>, but that component is shared across many render-node kinds and is
+out of scope for this page; it is called out here only to be honest that "partial" reflects
+the navigation dropdown specifically, not every interactive surface a tutorial page happens
+to embed.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

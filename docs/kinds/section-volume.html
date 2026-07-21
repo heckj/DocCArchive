@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: volume — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>volume</code></h1>
+<p class="wire-value">Wire value: <code>"volume"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>volume</code> is the <code>kind</code> discriminator for <code>VolumeRenderSection</code>, one
+of the top-level sections of a Tutorials Overview (a.k.a. "Table of Contents") page &mdash; the page
+produced from a <code>@Tutorials</code> directive's <code>.tutorial</code>-adjacent overview file. The
+outer page component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview.vue#L45-L49"><code>TutorialsOverview.vue</code></a>,
+declares a small <code>SectionKind</code> map (<code>hero</code>, <code>resources</code>,
+<code>volume</code>) used only to validate incoming <code>sections</code> and to split out the
+<code>hero</code> section; every non-hero section (which in practice means every <code>volume</code>
+and <code>resources</code> section) is handed to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/LearningPath.vue#L43-L104"><code>LearningPath.vue</code></a>
+as <code>otherSections</code>.
+</p>
+<p>
+<code>LearningPath.vue</code> is the actual dispatch site for this kind. It partitions
+<code>sections</code> into <code>volumes</code> (everything with <code>kind === 'volume'</code>) and
+<code>otherSections</code>, renders every <code>volume</code> through a dedicated
+<code>&lt;Volume v-for="(volume, i) in volumes"&gt;</code> loop, and renders the remaining sections
+(currently only <code>resources</code>) through a generic <code>componentFor(section)</code> /
+<code>propsFor(section)</code> lookup table:
+</p>
+<pre><code>const SectionKind = { resources: 'resources', volume: 'volume' };
+...
+partitionedSections: ({ sections }) => sections.reduce(([volumes, others], section) => (
+  section.kind === SectionKind.volume ? (
+    [volumes.concat(section), others]
+  ) : (
+    [volumes, others.concat(section)]
+  )
+), [[], []]),
+volumes: ({ partitionedSections }) => partitionedSections[0],
+otherSections: ({ partitionedSections }) => partitionedSections[1],
+...
+propsFor: ({ chapters, content, image, kind, name, tiles }) => ({
+  [SectionKind.resources]: { content, tiles },
+  [SectionKind.volume]: { chapters, content, image, name },
+}[kind]),</code></pre>
+<p>
+Each matched section is rendered by
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/Volume.vue#L1-L88"><code>TutorialsOverview/Volume.vue</code></a>,
+whose entire template is:
+</p>
+<pre><code>&lt;section class="volume"&gt;
+  &lt;VolumeName v-if="name" v-bind="{ name, image, content }" /&gt;
+  &lt;Chapter
+    v-for="(chapter, i) in chapters"
+    class="tile"
+    :content="chapter.content"
+    :image="chapter.image"
+    :key="chapter.name"
+    :name="chapter.name"
+    :number="i + 1"
+    :topics="lookupTopics(chapter.tutorials)"
+    :volumeHasName="!!name"
+  /&gt;
+&lt;/section&gt;</code></pre>
+<p>
+When <code>name</code> is present, the volume's own header/blurb is delegated to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/VolumeName.vue#L11-L19"><code>VolumeName.vue</code></a>
+(an <code>Asset</code> for <code>image</code>, an <code>h2.name</code>, and the <code>content</code>
+array rendered through the shared <code>ContentNode.vue</code>). Each entry of <code>chapters</code>
+is handed to <code>Chapter.vue</code> (not itself keyed by this <code>kind</code>, so out of scope for
+this page) along with <code>lookupTopics(chapter.tutorials)</code>, which resolves each tutorial's
+reference-identifier string against the page's <code>references</code> map (via an injected
+<code>store</code>) so <code>Chapter.vue</code> can render the actual tutorial tiles.
+</p>
+<p>
+<code>Volume.vue</code> also mixes in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/onIntersectViewport.js#L1-L45"><code>onIntersectViewport</code></a>:
+an <code>IntersectionObserver</code> watches the volume's root element, and whenever it crosses the
+vertical center of the viewport while scrolling, the mixin calls
+<code>this.store.setActiveVolume(this.name)</code>. That store is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/stores/TutorialsOverviewStore.js#L11-L31"><code>TutorialsOverviewStore</code></a>,
+a plain reactive object holding <code>activeVolume</code> (plus <code>activeTutorialLink</code> and
+<code>references</code>). The sidebar,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/TutorialsNavigation.vue#L45-L120"><code>TutorialsNavigation.vue</code></a>,
+reads <code>state.activeVolume</code> back out to decide which named-volume disclosure menu should be
+expanded, and also writes to the store on click (<code>onSelectMenu</code>/<code>onDeselectMenu</code>),
+so scrolling the main content and clicking the side nav both drive the same shared "which volume is
+active" state.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No literal JSON fixture containing <code>"kind": "volume"</code> was found. DocCArchive's own
+fixtures (<code>ExampleDocs.doccarchive</code>, <code>SampleLibrary.doccarchive</code>) contain only
+documentation-topic pages, not tutorials, so the string <code>"volume"</code> only appears there
+inside a minified render-side JS bundle
+(<code>js/tutorials-overview.9144a669.js</code>), not as page data. swift-docc's test suite
+(<code>Tests/SwiftDocCTests/Model/SemaToRenderNodeTests.swift</code>) exercises
+<code>VolumeRenderSection</code> only via Swift-literal <code>XCTAssert*</code> calls against decoded
+objects, not an embedded JSON literal, so there is no ready-made JSON string to lift either. The
+example below is therefore hand-written to match the vendored schema exactly (required
+<code>kind</code> + <code>chapters</code>; optional <code>name</code>, <code>image</code>,
+<code>content</code>), using field values modeled on the names actually asserted in
+<code>SemaToRenderNodeTests.swift</code> (<code>"Volume 1"</code>, <code>"Chapter 1"</code>,
+<code>figure1.png</code>).
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+    "kind": "volume",
+    "name": "Volume 1",
+    "image": "figure1.png",
+    "content": [
+        {
+            "type": "paragraph",
+            "inlineContent": [
+                { "type": "text", "text": "Learn the basics of TechnologyX." }
+            ]
+        }
+    ],
+    "chapters": [
+        {
+            "name": "Chapter 1",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "inlineContent": [
+                        { "type": "text", "text": "Get started with your first project." }
+                    ]
+                }
+            ],
+            "tutorials": [
+                "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorial"
+            ],
+            "image": "figure1.png"
+        }
+    ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#3a3a3c; border-radius:12px; padding:50px 60px; color:#f5f5f5;">
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="margin:0 0 8px; font-size:1.4rem;">Volume 1</div>
+      <p style="margin:0; opacity:0.85;">Learn the basics of TechnologyX.</p>
+    </div>
+    <div style="background:#2c2c2e; border-radius:8px; padding:20px 24px;">
+      <p style="text-transform:uppercase; font-size:0.7rem; opacity:0.6; margin:0 0 4px;">Chapter 1</p>
+      <p style="margin:0 0 10px; opacity:0.9;">Get started with your first project.</p>
+      <div style="background:#48484a; border-radius:6px; padding:12px 16px; font-size:0.85rem;">Tutorial tile: TestTutorial</div>
+    </div>
+  </div>
+  <p><em>mockup: a named volume band (<code>VolumeName</code>: image + <code>h2</code> + intro
+  content) followed by one chapter tile per entry in <code>chapters</code>, each listing its
+  resolved tutorial tiles.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema objects
+<code>#/components/schemas/VolumeRenderSection</code> (lines 298&ndash;329) and
+<code>#/components/schemas/Chapter</code> (lines 330&ndash;359), cross-checked against the generated
+<code>Components.Schemas.VolumeRenderSection</code> / <code>Components.Schemas.Chapter</code> structs
+in <code>Sources/DocCArchive/generated/Types.swift</code> (lines 3386&ndash;3464). This pairing matches
+swift-docc's own <code>VolumeRenderSection.swift</code> field-for-field, including the same optional
+<code>name</code>, <code>image</code>, <code>content</code> and required <code>chapters</code>.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"volume"</code></td>
+<td>Generated as a one-case <code>KindPayload</code> enum. In swift-docc's Swift model this defaults
+to <code>.volume</code> in the property declaration (<code>public var kind: RenderSectionKind =
+.volume</code>), and <code>VolumeRenderSection</code> hand-writes its own <code>encode(to:)</code> to
+guarantee <code>name</code> is emitted as JSON <code>null</code> (not omitted) for anonymous
+volumes.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Optional in the schema. A volume with no <code>@Volume(name:)</code> argument authored is an
+"anonymous" volume: swift-docc-render's <code>Volume.vue</code> then skips rendering
+<code>VolumeName</code> entirely, and the volume's chapters appear with no volume-level heading.</td>
+</tr>
+<tr>
+<td><code>image</code></td>
+<td>string (<code>format: reference(ImageRenderReference)</code>)</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>A reference-identifier string resolved against the page's <code>references</code> map; passed to
+<code>VolumeName</code>'s <code>Asset</code> child (only shown when <code>name</code> is also
+present, since <code>VolumeName</code> is gated on <code>v-if="name"</code>).</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Introductory content for the volume, rendered through <code>ContentNode.vue</code> inside
+<code>VolumeName</code> &mdash; also only shown when <code>name</code> is present.</td>
+</tr>
+<tr>
+<td><code>chapters</code></td>
+<td>array of <code>Chapter</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>One or more grouped lists of tutorials/articles; each becomes one <code>Chapter.vue</code> tile.
+swift-docc's authoring-side model requires <code>HasAtLeastOne&lt;Volume, Chapter&gt;</code> at parse
+time, so an authored <code>@Volume</code> always has at least one chapter in practice, though the wire
+schema itself does not encode a minimum length.</td>
+</tr>
+<tr>
+<td><code>Chapter.name</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Used as the chapter's heading and as the Vue <code>:key</code> in <code>Volume.vue</code>'s
+<code>v-for</code>.</td>
+</tr>
+<tr>
+<td><code>Chapter.content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Required in the schema (unlike the volume-level <code>content</code>); an empty array is valid
+and is what swift-docc emits when a <code>Chapter</code> directive has no prose.</td>
+</tr>
+<tr>
+<td><code>Chapter.tutorials</code></td>
+<td>array of string (<code>format: reference(TopicRenderReference)</code>)</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Ordered list of tutorial/article reference identifiers; resolved via
+<code>Volume.vue</code>'s <code>lookupTopics()</code> against the injected store's
+<code>references</code> map before being handed to <code>Chapter.vue</code> as <code>topics</code>.</td>
+</tr>
+<tr>
+<td><code>Chapter.image</code></td>
+<td>string (<code>format: reference(ImageRenderReference)</code>)</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Per-chapter illustration reference, passed straight through to <code>Chapter.vue</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, assembled from <code>LearningPath.vue</code> and <code>Volume.vue</code>:</p>
+<ul>
+<li><code>div.learning-path</code> (from <code>LearningPath.vue</code>) &mdash; wraps the whole
+"below the hero" region; contains <code>div.main-container</code> &gt;
+<code>div.secondary-content-container</code> (the sticky side nav, hidden below the small
+breakpoint) and <code>div.primary-content-container</code> &gt; <code>div.content-sections-container</code>.</li>
+<li><code>section.volume.content-section</code> &mdash; one per <code>VolumeRenderSection</code>,
+the root element emitted by <code>Volume.vue</code>'s template (<code>.content-section</code> is
+added by the <code>v-for</code> loop in <code>LearningPath.vue</code>, giving each top-level section
+rounded corners and inter-section spacing).</li>
+<li><code>div.volume-name</code> (from <code>VolumeName.vue</code>, only when <code>name</code> is
+set) &mdash; contains <code>Asset.image</code> (optional), <code>h2.name</code>, and the
+<code>ContentNode</code> output for <code>content</code>.</li>
+<li><code>Chapter.tile</code> &times; N (one per entry in <code>chapters</code>) &mdash; class
+<code>tile</code> is applied by <code>Volume.vue</code>'s <code>v-for</code>, and
+<code>Chapter.vue</code> itself supplies whatever inner markup it uses for the chapter heading,
+blurb, and per-tutorial link tiles (out of scope for this page, since <code>Chapter.vue</code> is not
+keyed by <code>kind</code>).</li>
+</ul>
+<p>
+SCSS lives in each component's own <code>&lt;style scoped lang="scss"&gt;</code> block, all importing
+<code>docc-render/styles/_core.scss</code>: <code>LearningPath.vue</code> (layout/spacing of the
+container and the 200px sticky nav rail), <code>Volume.vue</code> (the <code>.tile</code> background
+and padding), and <code>VolumeName.vue</code> (the centered name/blurb band). Key CSS custom
+properties consumed:
+</p>
+<ul>
+<li><code>--color-tutorials-overview-fill</code> on <code>.learning-path</code> (falls back to
+<code>dark-color(fill)</code>).</li>
+<li><code>--color-tutorials-overview-fill-secondary</code> on both <code>Volume.vue</code>'s
+<code>.tile</code> and <code>VolumeName.vue</code>'s <code>.volume-name</code> (falls back to
+<code>dark-color(fill-secondary)</code>) &mdash; this is what gives chapter tiles and the volume-name
+band their slightly-lighter-than-background panel color.</li>
+<li><code>--color-tutorials-overview-header-text</code> on <code>VolumeName.vue</code>'s
+<code>h2.name</code>.</li>
+<li><code>--color-tutorials-overview-content-alt</code> on <code>VolumeName.vue</code>'s
+<code>.content</code> wrapper.</li>
+</ul>
+<p>
+These custom properties are defined per color scheme in
+<code>src/styles/core/colors/_light.scss</code> (e.g. <code>--color-tutorials-overview-background</code>
+at line 187 through the surrounding <code>--color-tutorials-overview-*</code> block) and mirrored for
+dark mode elsewhere in the same colors directory; <code>TutorialsOverview.vue</code> additionally
+forces <code>body:has(.tutorials-overview) { --color-text-background: ... }</code> so the page
+background stays dark even under a light OS/browser theme.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML
+transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment and the Markdown
+transformer returns an empty string) &mdash; there is no kind-specific handling for
+<code>volume</code>/<code>VolumeRenderSection</code> today.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">PARTIAL</span></p>
+<p>
+Current behavior in play spans two components. (1) <code>Volume.vue</code> mixes in
+<code>onIntersectViewport</code>, which attaches an <code>IntersectionObserver</code> to the
+volume's root element and calls <code>store.setActiveVolume(this.name)</code> whenever that element
+crosses the viewport's vertical center while the user scrolls &mdash; a JS-computed "which volume is
+currently in view" signal with no DOM attribute backing it directly. (2)
+<code>TutorialsNavigation.vue</code> reads that same <code>state.activeVolume</code> value back out
+of the shared <code>TutorialsOverviewStore</code> to decide, per named volume, whether its
+<code>TutorialsNavigationMenu</code> disclosure should be <code>collapsed</code>; that menu also
+toggles itself directly on click (<code>@click.stop="onClick"</code> emitting
+<code>select-menu</code>/<code>deselect-menu</code>, which write back into the same store), and its
+open/closed content is animated in/out via a custom <code>&lt;transition-expand&gt;</code> wrapping a
+<code>v-if="!collapsed"</code> block.
+</p>
+<p>
+The click-to-expand/collapse half of behavior (2) maps mechanically onto a native
+<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code> pair: each named volume's nav entry becomes
+a <code>&lt;details&gt;</code> whose <code>&lt;summary&gt;</code> is the toggle button, and the
+browser's own open/closed attribute state (the presence or absence of the <code>open</code> attribute
+on <code>&lt;details&gt;</code>) replaces the Vue <code>collapsed</code> prop entirely &mdash; no
+store write needed just to expand/collapse a menu the user clicked. That removes the
+<code>select-menu</code>/<code>deselect-menu</code> event-emit plumbing for the "user manually
+toggled this menu" case. However, the verdict is <strong>partial</strong>, not fully applicable, for
+two reasons grounded in the actual code above: first, "only one named volume's menu open at a time,
+driven by scroll position" (behavior (1)) has no CSS-only equivalent &mdash; there is no native
+selector that reacts to "which section is nearest the viewport center while scrolling," so the
+<code>IntersectionObserver</code> + <code>setActiveVolume</code> call would still need to run in
+script to keep the currently-visible volume's <code>&lt;details&gt;</code> element's <code>open</code>
+attribute in sync as the user scrolls past sections without clicking anything; second, cross-menu
+exclusivity (opening one collapses the others) is not automatic for independent
+<code>&lt;details&gt;</code> elements unless they are given a shared <code>name</code> attribute (the
+newer "exclusive accordion" behavior), which would need to be added explicitly and does not by itself
+replicate the scroll-driven activation in reason one. So <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>
+would cleanly replace the click-driven expand/collapse state and its custom expand transition, but
+the scroll-linked "active volume" tracking that also feeds that same state is not achievable as a
+CSS-only mechanism with the sources examined here.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

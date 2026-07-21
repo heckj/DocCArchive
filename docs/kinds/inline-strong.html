@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: strong — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>strong</code></h1>
+<p class="wire-value">Wire value: <code>"strong"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> and <code>src/views/</code> for the literal string
+<code>'strong'</code> lands entirely inside <code>src/components/ContentNode.vue</code> — there is no
+dedicated <code>Strong.vue</code> component. The wire constant is declared in the inline-type lookup
+table:
+</p>
+<pre><code>const InlineType = {
+  codeVoice: 'codeVoice',
+  emphasis: 'emphasis',
+  image: 'image',
+  inlineHead: 'inlineHead',
+  link: 'link',
+  newTerm: 'newTerm',
+  reference: 'reference',
+  strong: 'strong',
+  text: 'text',
+  superscript: 'superscript',
+  subscript: 'subscript',
+  strikethrough: 'strikethrough',
+};</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>.)
+That constant is matched inside the <code>renderNode()</code> factory function's <code>switch
+(node.type)</code> dispatch table, sharing its case with the (undocumented-on-the-wire-schema, but
+still-handled) <code>inlineHead</code> kind:
+</p>
+<pre><code>case InlineType.strong:
+case InlineType.inlineHead:
+  return createElement('strong', (
+    renderChildren(node.inlineContent)
+  ));</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L488-L492"><code>ContentNode.vue#L488-L492</code></a>.)
+Unlike <code>heading</code> or <code>reference</code>, a <code>strong</code> node is not delegated to a
+child Vue component at all — it is turned directly into a bare native <code>&lt;strong&gt;</code> element
+via Vue's <code>createElement</code> render function, with no props and no wrapper class. The node's
+<code>inlineContent</code> array (its nested inline children — text, links, other emphasis, etc.) is
+recursively rendered by the shared <code>renderChildren</code> helper, which simply maps each child node
+back through the same <code>renderNode()</code> dispatcher
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L121-L124"><code>ContentNode.vue#L121-L124</code></a>).
+The <code>type</code> discriminator itself is consumed only by the <code>switch</code> and never
+forwarded into the DOM.
+</p>
+<p>
+<code>ContentNode.vue</code> also exposes tree-walking utility methods (<code>map</code>,
+<code>forEach</code>, <code>reduce</code>) used elsewhere in the app to recurse over rendered content —
+for example to build a plain-text index or to find/replace nodes. <code>InlineType.strong</code> appears
+in both of those switch tables purely so the walker knows to recurse into
+<code>node.inlineContent</code> for this kind, alongside <code>emphasis</code>, <code>inlineHead</code>,
+<code>superscript</code>, <code>subscript</code>, <code>strikethrough</code>, and <code>newTerm</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L564-L575"><code>ContentNode.vue#L564-L575</code></a>
+and
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L619-L628"><code>ContentNode.vue#L619-L628</code></a>).
+This is bookkeeping, not additional rendering behavior — the actual DOM output is fully determined by the
+one <code>createElement('strong', ...)</code> call above.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/term-lists-1.json</code> in the
+swift-docc repository (pinned commit 8b8d8268aa), field
+<code>primaryContentSections[0].content[0].items[3].term.inlineContent[0]</code> — a <code>strong</code>
+node used inside a <code>termList</code> term's inline content, followed by a plain-text sibling node
+(" term"). No fixture inside DocCArchive's own <code>Tests/DocCArchiveTests/Fixtures/</code> archives
+(<code>ExampleDocs.doccarchive</code>, <code>SampleLibrary.doccarchive</code>) contains a real
+<code>"strong"</code> RenderNode; the only hits there are unrelated occurrences of the string inside
+bundled third-party JS assets (e.g. syntax-highlighter chunks), not RenderNode JSON data.
+</p>
+<pre><code>{
+  "term": {
+    "inlineContent": [
+      {
+        "type": "strong",
+        "inlineContent": [
+          { "type": "text", "text": "Final" }
+        ]
+      },
+      { "type": "text", "text": " term" }
+    ]
+  },
+  "definition": {
+    "content": [
+      {
+        "type": "paragraph",
+        "inlineContent": [
+          { "type": "text", "text": "Definition for bold term." }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12); font-family: -apple-system, sans-serif;">
+    <dl style="margin:0;">
+      <dt style="font-weight:400; margin-bottom:4px;"><strong>Final</strong> term</dt>
+      <dd style="margin:0 0 0 1.5em; color:#444;">Definition for bold term.</dd>
+    </dl>
+  </div>
+  <p><em>mockup: the <code>strong</code> node's <code>inlineContent</code> ("Final") is rendered as a bare
+  <code>&lt;strong&gt;Final&lt;/strong&gt;</code>, immediately followed by the sibling text node
+  (" term") — both are children of the enclosing <code>termList</code> item's <code>&lt;dt&gt;</code>. No
+  wrapper class or component is introduced by the <code>strong</code> kind itself; the bold weight comes
+  entirely from the browser's default <code>strong</code> styling as overridden by DocC-render's global
+  typography rule (see Section 4).</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Strong</code> (lines 1265&ndash;1285), cross-checked against
+<code>Components.Schemas.Strong</code> in <code>Sources/DocCArchive/generated/Types.swift</code>
+(lines 1714&ndash;1740). <code>Strong</code> is one arm (<code>case3</code>) of the
+<code>RenderInlineContent</code> discriminated union (<code>#/components/schemas/RenderInlineContent</code>,
+spec line 1190; generated as an <code>indirect enum</code>, lines 1535&ndash;1557 of
+<code>Types.swift</code>), which is decoded as an OpenAPI <code>oneOf</code> — the generated
+initializer tries each candidate case's <code>init(from:)</code> in declaration order
+(<code>Text</code>, then <code>Emphasis</code>, then <code>Strong</code>, ...) and keeps the first one
+that decodes without throwing.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"strong"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case strong =
+"strong" }</code>, decoded/encoded under the Swift property name <code>_type</code> via an explicit
+<code>CodingKeys</code> mapping (<code>case _type = "type"</code>).</td>
+</tr>
+<tr>
+<td><code>inlineContent</code></td>
+<td>array of <code>RenderInlineContent</code></td>
+<td>yes</td>
+<td>&mdash; (no length constraint; may be empty)</td>
+<td>Generated as <code>[Components.Schemas.RenderInlineContent]</code>. Holds the nested inline nodes
+that receive the bold styling — recursively, another <code>strong</code>, <code>emphasis</code>,
+<code>text</code>, <code>reference</code>, etc. can appear here, matching swift-markdown's ability to
+nest inline formatting.</td>
+</tr>
+</tbody>
+</table>
+<p>
+Note on schema shape versus the closely related <code>emphasis</code> kind: <code>Emphasis</code>'s
+<code>type</code> field is a two-value enum, <code>["emphasis", "italic"]</code> (spec lines
+1250&ndash;1255), a historical alias kept for backward compatibility. <code>Strong</code> has no such
+alias — its <code>type</code> enum has exactly one member, <code>"strong"</code>. There is no equivalent
+of a <code>"bold"</code> wire alias anywhere in the spec.
+</p>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the
+enclosing enum case is <code>case strong(inlineContent: [RenderInlineContent])</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift</code>, line 38, within the
+public enum <code>RenderInlineContent: Equatable</code> declared at line 32). The doc comment on the
+enclosing type describes the inline-content model generally: "Apart from simple content like an image or
+a piece of plain text, a renderer uses inline elements to style content," and gives the illustrative
+ASCII tree <code>[Paragraph [Text] [Strong [Text]] [Text] [Emphasize [Reference]] ...]</code> (lines
+11&ndash;28). The case-specific comment is a single line: "A strongly emphasized piece of inline
+content" (line 37). Codable conformance for this case is hand-written in the same file (not
+<code>@Codable</code>-synthesized) — the <code>encode(to:)</code>/<code>init(from:)</code> switch
+statements read/write <code>inlineContent</code> under the shared <code>.inlineContent</code> coding key
+(lines 93&ndash;94 and 144&ndash;145), matching the generated wire struct field-for-field. A separate
+<code>plainText</code> computed property collapses a <code>.strong</code> case to its children's
+concatenated plain text with no bold marker retained (line 185&ndash;186 — <code>return
+inlineContent.plainText</code>), and <code>RenderBlockContent+Capitalization.swift</code> (lines
+20&ndash;21) shows the one place swift-docc mutates <em>through</em> a <code>strong</code> node — capitalizing
+the first word of a sentence that happens to start inside bolded text.
+</p>
+<p>
+Authoring-side, a <code>strong</code> node is what swift-docc emits for a swift-markdown
+<code>Strong</code> AST node — i.e. Markdown written with double asterisks or double underscores
+(<code>**bold text**</code> / <code>__bold text__</code>) — via
+<code>RenderContentCompiler.visitStrong(_:)</code>, which recursively visits the markup node's children
+and wraps the result in <code>RenderInlineContent.strong(inlineContent:)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift</code>, lines 299&ndash;301). This
+mirrors the adjacent <code>visitEmphasis(_:)</code> (lines 295&ndash;297) one case above it, confirming
+<code>strong</code> and <code>emphasis</code> are produced by structurally identical compiler paths, one
+for bold and one for italic markup.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind:
+<code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift</code>, lines 242&ndash;254) are still stub placeholders
+that return a hardcoded HTML comment and an empty string respectively for an entire
+<code>RenderNode</code>, with no per-inline-kind switch reached yet — so a <code>strong</code> node
+parsed via <code>Components.Schemas.Strong</code> is available on the decoded model today, but nothing in
+this repository currently converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>strong</code> node, in context:
+</p>
+<ul>
+<li><code>&lt;strong&gt;</code> — the sole element produced; no <code>id</code>, no <code>class</code>,
+no <code>data-*</code> attribute. Its children are whatever <code>renderChildren(node.inlineContent)</code>
+produces (plain text nodes, nested <code>&lt;em&gt;</code>, links, etc.).</li>
+</ul>
+<p>
+No component-scoped SCSS targets <code>strong</code> specifically inside
+<code>ContentNode.vue</code>'s own render path — there is no
+<code>src/components/ContentNode/Strong.vue</code> and no scoped stylesheet for this kind. The only
+project-wide rule that touches the native <code>&lt;strong&gt;</code> tag is a global typography default
+in <code>src/styles/base/_typography.scss</code>:
+</p>
+<pre><code>b,
+strong {
+  font-weight: $font-weight-semibold;
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_typography.scss#L158-L161"><code>_typography.scss#L158-L161</code></a>.)
+This overrides the browser's default <code>font-weight: bold</code> with the site's own
+<code>$font-weight-semibold</code> Sass variable, so every <code>strong</code> RenderNode (and every
+literal <code>&lt;strong&gt;</code>/<code>&lt;b&gt;</code> anywhere else in the app's static templates)
+renders at a consistent semibold weight rather than the UA-stylesheet's full bold. This is a compiled Sass
+constant, not a runtime CSS custom property, so it cannot be overridden via <code>--</code>-prefixed
+theming variables the way many of DocC-render's color tokens can.
+</p>
+<p>
+Unrelated but worth flagging so it is not mistaken for this kind's styling: there is a second, unrelated
+<code>&amp;-strong</code> SCSS rule in <code>src/styles/base/_syntax.scss</code>
+(<code>.token-strong { font-weight: bold; }</code>, under the syntax-highlighter's token-class prefix). That
+rule styles a <code>highlight.js</code> "strong" token class inside code-listing syntax highlighting — a
+completely different concern from the <code>RenderInlineContent.strong</code> kind documented on this
+page, despite the coincidental name.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: the <code>strong</code> kind carries no interactive or stateful behavior at all.
+<code>ContentNode.vue</code>'s handling for it is a single, unconditional
+<code>createElement('strong', renderChildren(node.inlineContent))</code> call
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L488-L492"><code>ContentNode.vue#L488-L492</code></a>) —
+no click handlers, no computed/reactive Vue state, no <code>v-if</code>/<code>v-show</code> branching, and
+no JavaScript-driven visual state of any kind. The only styling involved is the static, non-conditional
+<code>font-weight</code> override in <code>_typography.scss</code> (Section 4), which is already plain CSS
+with nothing to migrate.
+</p>
+<p>
+There is accordingly no state/behavior for a native HTML mechanism (<code>&lt;details&gt;</code>, radio +
+<code>:checked</code>, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+<code>:has()</code>, container queries, anchor positioning, view transitions) to replace — this kind is a
+pure, stateless text-formatting wrapper, structurally identical in spirit to reading <code>**bold**</code>
+markup and emitting a <code>&lt;strong&gt;</code> tag. The verdict is "not applicable" because there is
+nothing interactive here to reproduce, not because a modern CSS feature happens to be a poor fit.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

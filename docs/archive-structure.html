@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Archive structure — DocC RenderNode Schema Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="index.html">Kind Catalog</a><a href="archive-structure.html" class="active" aria-current="page">Archive Structure</a><a href="hierarchy/index.html">Page Hierarchy</a><a href="methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<h1>Inside a <code>.doccarchive</code></h1>
+<p>Everything else on this site documents one <code>RenderNode</code> JSON file — the per-page
+content record. This page is the other half: what's in the archive <em>directory</em> around
+those files, and how a reader (or a program) gets from "I have a <code>.doccarchive</code>" to
+"I have one <code>RenderNode</code> to hand to the Kind Catalog."</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#overview">1. Directory layout</a> &middot; <a href="#metadata">2. metadata.json</a> &middot; <a href="#index">3. index/index.json</a> &middot; <a href="#diagnostics">4. diagnostics.json</a> &middot; <a href="#indexing-records">5. indexing-records.json</a> &middot; <a href="#linkable-entities">6. linkable-entities.json</a> &middot; <a href="#relationship-to-rendernodes">7. Getting to a RenderNode</a></nav>
+
+<section id="overview"><h2>1. Directory layout</h2>
+<p>
+A DocC archive is a plain directory tree, not an opaque bundle format — every file in it is
+either a static web asset (HTML/CSS/JS for the bundled single-page viewer) or one of a small,
+fixed set of top-level JSON files. Six of those JSON files are what <code>DocCArchive</code>'s
+<code>Archive</code> type (<code>Sources/DocCArchive/DocCArchive.swift</code>) parses today, plus
+one JSON file and two binary files that exist in every archive but that this library does
+<strong>not yet parse</strong>. This is the real top level of
+<code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive</code>, annotated:
+</p>
+<pre><code>ExampleDocs.doccarchive
+├── metadata.json              always present — see &sect;2
+├── diagnostics.json           always present, deprecated (removed after Swift 6.3) — see &sect;4
+├── indexing-records.json      only with `docc convert --emit-digest` — see &sect;5
+├── linkable-entities.json     only with `--enable-experimental-external-link-support` — see &sect;6
+├── assets.json                always present — NOT parsed by DocCArchive today
+├── index/
+│   ├── index.json             always present — see &sect;3
+│   ├── data.mdb                NOT parsed by DocCArchive today (LMDB navigator database)
+│   ├── navigator.index         NOT parsed by DocCArchive today (binary)
+│   └── availability.index      NOT parsed by DocCArchive today (binary)
+├── data/
+│   └── documentation/…json    one RenderNode per symbol/article — see &sect;7
+├── documentation/…             static HTML pages (bundled single-page viewer, one per route)
+├── css/, js/, img/, favicon.*  static web assets for the bundled viewer
+└── index.html                  entry point for the bundled viewer
+</code></pre>
+<p>
+<code>assets.json</code> lists the images/videos/downloads referenced anywhere in the archive
+(each an empty array in this fixture, since <code>ExampleDocs</code> has none); the two
+<code>index/*.index</code> files and <code>index/data.mdb</code> back the bundled viewer's
+client-side search and navigator sidebar. All three are real, always-present archive contents —
+they're just outside this library's and this reference site's current scope, since nothing in
+<code>DocCArchive.swift</code> decodes them (confirmed: no <code>parseAssets()</code> or
+LMDB/index-file reader exists in the source). <code>SampleLibrary.doccarchive</code>, the other
+test fixture, has the identical six-JSON-file shape at its top level, just with many more
+per-symbol files under <code>data/documentation/</code>.
+</p>
+</section>
+
+<section id="metadata"><h2>2. <code>metadata.json</code> &rarr; <code>Metadata</code></h2>
+<p>
+Parsed by <code>Archive.parseMetadata()</code>
+(<code>DocCArchive.swift</code>, line 45), which reads <code>{baseArchivePath}/metadata.json</code>
+and decodes it as <code>Components.Schemas.Metadata</code>. Schema source:
+<code>Sources/DocCArchive/Vendored/Metadata.json</code>, object <code>Metadata</code> (three
+required fields: <code>bundleDisplayName</code>, <code>bundleID</code>,
+<code>schemaVersion</code>); generated as <code>Components.Schemas.Metadata</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (line 2805). The schema traces to
+swift-docc's <code>BuildMetadata</code> type
+(<code>Sources/SwiftDocC/Model/BuildMetadata.swift</code>, line 14).
+</p>
+<p>Real fixture, <code>ExampleDocs.doccarchive/metadata.json</code> in full (it's this short):</p>
+<div class="mockup"><pre><code>{
+  "bundleDisplayName" : "ExampleDocs",
+  "bundleID" : "ExampleDocs",
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 1,
+    "patch" : 0
+  }
+}</code></pre></div>
+<p>
+<code>bundleDisplayName</code>/<code>bundleID</code> identify which documentation bundle (module,
+roughly) produced the archive — relevant once an archive contains more than one bundle's worth of
+content, per <code>includedArchiveIdentifiers</code> in &sect;3. <code>schemaVersion</code> is the
+render-schema version this specific archive was written against; it's a separate, independently
+versioned number from the vendored spec's <code>schemaVersion</code> tracked in
+<code>Sources/DocCArchive/VendorVersion.swift</code> and referenced throughout the Kind Catalog —
+don't conflate the two when comparing versions.
+</p>
+</section>
+
+<section id="index"><h2>3. <code>index/index.json</code> &rarr; <code>RenderIndex</code></h2>
+<p>
+Parsed by <code>Archive.parseIndex()</code> (<code>DocCArchive.swift</code>, line 79 — commented
+"always available for the static hosting scenarios, which is default"), which reads
+<code>{baseArchivePath}/index/index.json</code> and decodes it as
+<code>Components.Schemas.RenderIndex</code>. This is the archive's manifest: a recursive tree of
+every documentation page it contains, independent of and much smaller than any individual
+<code>RenderNode</code>.
+</p>
+<p>
+Schema source: <code>Sources/DocCArchive/Vendored/RenderIndex.spec.json</code>. The top-level
+<code>RenderIndex</code> object (line 11) has two required fields —
+<code>schemaVersion</code> and <code>interfaceLanguages</code> (a map of language name, e.g.
+<code>"swift"</code>, to an array of <code>Node</code>) — plus two optional fields,
+<code>references</code> (a map of image references, for icons attached to index nodes) and
+<code>includedArchiveIdentifiers</code> (the list of bundle identifiers folded into this archive,
+matching &sect;2's <code>bundleID</code> when there's exactly one). Generated as
+<code>Components.Schemas.RenderIndex</code> in <code>Types.swift</code> (line 30); traces to
+swift-docc's <a href="https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Indexing/RenderIndexJSON/RenderIndex.swift#L24"><code>RenderIndex.swift#L24</code></a>.
+</p>
+<p>
+The recursive <code>Node</code> type (spec line 45; generated as
+<code>Components.Schemas.Node</code> in <code>Types.swift</code>, line 105; traces to
+<a href="https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Indexing/RenderIndexJSON/RenderIndex.swift#L117"><code>RenderIndex.swift#L117</code></a>)
+has one required field, <code>title</code>, and several optional ones: <code>type</code> (a
+34-value enum covering everything from <code>"module"</code>/<code>"struct"</code>/<code>"class"</code>
+to <code>"article"</code>/<code>"tutorial"-adjacent kinds</code>), <code>path</code> (present only
+when this node has a corresponding <code>RenderNode</code> file — see &sect;7), <code>deprecated</code>/
+<code>external</code>/<code>beta</code> flags, an <code>icon</code> image reference, and
+<code>children</code> — an array of more <code>Node</code>s, making the whole thing a tree, not a
+flat list.
+</p>
+<p>Real fixture, <code>ExampleDocs.doccarchive/index/index.json</code> in full:</p>
+<div class="mockup"><pre><code>{
+  "includedArchiveIdentifiers" : [ "ExampleDocs" ],
+  "interfaceLanguages" : {
+    "swift" : [
+      {
+        "title" : "ExampleDocs",
+        "type" : "module",
+        "path" : "/documentation/exampledocs",
+        "children" : [
+          {
+            "title" : "ExampleArticle",
+            "type" : "article",
+            "path" : "/documentation/exampledocs/examplearticle"
+          }
+        ]
+      }
+    ]
+  },
+  "schemaVersion" : { "major" : 0, "minor" : 1, "patch" : 2 }
+}</code></pre></div>
+<p>
+The canonical way to walk this tree is <code>Archive.walkRenderIndexNodes(nodes:doing:)</code>
+(<code>DocCArchive.swift</code>, lines 104&ndash;110), which depth-first-visits every node via the
+single-node overload <code>walkRenderIndexNodes(node:level:doing:)</code> (lines 112&ndash;121),
+recursing into <code>node.children</code> when present. <code>Archive.convert(transformer:)</code>
+(lines 143&ndash;191) shows the real usage pattern end to end: parse the index, pull
+<code>index.interfaceLanguages.additionalProperties["swift"]</code> (the <code>"additionalProperties"</code>
+name is an OpenAPI-generator artifact of representing a <code>[String: [Node]]</code> map — see the
+inline comment at lines 158&ndash;167 for why), walk it, and for every visited node that has a
+<code>path</code>, call <code>parseRenderNode(dataPath:)</code> (&sect;7) to load that node's actual
+content. Nodes without a <code>path</code> — e.g. pure grouping nodes — are skipped, not treated as
+errors.
+</p>
+</section>
+
+<section id="diagnostics"><h2>4. <code>diagnostics.json</code></h2>
+<p>
+Parsed by <code>Archive.parseDiagnostics()</code> (<code>DocCArchive.swift</code>, line 56) as
+<code>Components.Schemas.Diagnostics</code>, a bare array of <code>DiagnosticSummary</code>
+objects. Schema source: <code>Sources/DocCArchive/Vendored/Diagnostics.json</code>, whose own
+<code>info.description</code> states it plainly: "Specification of the <em>deprecated</em> DocC
+<code>diagnostics.json</code> digest file. This deprecated file will be removed after 6.3 is
+released." Generated as <code>Components.Schemas.Diagnostics</code>, a typealias for
+<code>[Components.Schemas.DiagnosticSummary]</code>, in <code>Types.swift</code> (line 790).
+</p>
+<p>
+Each <code>DiagnosticSummary</code> carries a <code>severity</code> (integer), <code>summary</code>
+and optional <code>explanation</code> strings, an optional <code>start</code>
+<code>Location</code> (line/column) and <code>source</code> file path, and an array of
+<code>Note</code>s (each its own <code>location</code> + <code>message</code>) — the same shape
+Swift compiler diagnostics use, unsurprisingly, since this captures the warnings/errors DocC itself
+emitted while building the archive, not anything about the documented symbols. The
+<code>ExampleDocs</code> fixture's file is simply <code>[]</code> — a clean build produced no
+diagnostics to report.
+</p>
+</section>
+
+<section id="indexing-records"><h2>5. <code>indexing-records.json</code></h2>
+<p>
+Parsed by <code>Archive.parseIndexingRecords()</code> (<code>DocCArchive.swift</code>, line 68 —
+commented "only available when the docc archive was created with <code>--emit-digest</code>") as
+<code>Components.Schemas.IndexingRecords</code>, a typealias for
+<code>[Components.Schemas.IndexingRecord]</code> (<code>Types.swift</code>, line 885). This is a
+full-text search index: one <code>IndexingRecord</code> per indexable page/section, each with
+<code>kind</code> (<code>overview</code>/<code>tutorial</code>/<code>article</code>/
+<code>tutorialSection</code>/<code>symbol</code>), a resolved <code>location</code> (either
+<code>topLevelPage</code> or <code>contained</code>-in-page), <code>title</code>,
+<code>summary</code>, the page's <code>headings</code> array, and
+<code>rawIndexableTextContent</code> — the flattened plain-text body used for search matching.
+Schema source: <code>Sources/DocCArchive/Vendored/IndexingRecords.spec.json</code>; traces to
+<a href="https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/Indexing/IndexingRecord.swift#L14"><code>IndexingRecord.swift#L14</code></a>.
+</p>
+<p>Real fixture excerpt, one record from <code>ExampleDocs.doccarchive/indexing-records.json</code>:</p>
+<div class="mockup"><pre><code>{
+  "headings" : [ "Overview", "Section header" ],
+  "kind" : "article",
+  "location" : {
+    "type" : "topLevelPage",
+    "reference" : {
+      "interfaceLanguage" : "swift",
+      "url" : "doc://ExampleDocs/documentation/ExampleDocs/ExampleArticle"
+    }
+  },
+  "rawIndexableTextContent" : "An example article to display. Overview Description of what the article is about…",
+  "summary" : "An example article to display.",
+  "title" : "ExampleArticle"
+}</code></pre></div>
+<p>
+This file exists only to power full-text search over a statically-hosted archive without a server
+— it's a derived, denormalized index of content that also lives in the <code>RenderNode</code>
+files under <code>data/</code> (&sect;7); nothing here is unique source-of-truth data.
+</p>
+</section>
+
+<section id="linkable-entities"><h2>6. <code>linkable-entities.json</code></h2>
+<p>
+Parsed by <code>Archive.parseLinkableEntities()</code> (<code>DocCArchive.swift</code>, line 127)
+as <code>Components.Schemas.LinkableEntities</code>, a typealias for
+<code>[Components.Schemas.LinkDestinationSummary]</code> (<code>Types.swift</code>, line 1133).
+The function's doc comment (lines 123&ndash;126) describes it precisely: "only available when the
+archive was generated with the experimental linkable entities enabled. This holds — or could hold —
+almost everything from the <code>--emit-digest</code> output and quite a bit more, enabling easier
+references to content external to the DocC archive." (Generated with
+<code>docc convert --enable-experimental-external-link-support</code>, per
+<code>Sources/DocCArchive/Documentation.docc/UnderstandingDocCArchiveStructure.md</code>.) Schema
+source: <code>Sources/DocCArchive/Vendored/LinkableEntities.json</code>; traces to
+<a href="https://github.com/swiftlang/swift-docc/blob/main/Sources/SwiftDocC/LinkTargets/LinkDestinationSummary.swift#L76"><code>LinkDestinationSummary.swift#L76</code></a>.
+</p>
+<p>
+Each <code>LinkDestinationSummary</code> is self-contained enough to resolve a cross-archive link
+without opening the target archive's own <code>RenderNode</code> file: it carries the symbol's
+<code>usr</code> (mangled name), a <code>doc://MODULE/…</code> <code>referenceURL</code>, its
+<code>title</code>/<code>abstract</code>/<code>kind</code>, optional declaration
+<code>fragments</code>, and — notably — its own nested <code>references</code> map and
+<code>variants</code> array, the same two cross-cutting mechanisms that show up throughout the
+per-page <code>RenderNode</code> schema. Real fixture, one record from
+<code>ExampleDocs.doccarchive/linkable-entities.json</code>:
+</p>
+<div class="mockup"><pre><code>{
+  "abstract" : [ { "text" : "An example article to display.", "type" : "text" } ],
+  "availableLanguages" : [ "swift" ],
+  "kind" : "org.swift.docc.kind.article",
+  "language" : "swift",
+  "path" : "/documentation/exampledocs/examplearticle",
+  "referenceURL" : "doc://ExampleDocs/documentation/ExampleDocs/ExampleArticle",
+  "taskGroups" : [ ],
+  "title" : "ExampleArticle"
+}</code></pre></div>
+</section>
+
+<section id="relationship-to-rendernodes"><h2>7. From an index <code>Node</code> to a <code>RenderNode</code></h2>
+<p>
+Every index <code>Node</code> (&sect;3) that carries a <code>path</code> — e.g.
+<code>"/documentation/exampledocs/examplearticle"</code> — names exactly one file under
+<code>data/</code>: strip the leading slash, append <code>.json</code>, and resolve it relative to
+the archive root (<code>data/documentation/exampledocs/examplearticle.json</code>). That's what
+<code>Archive.parseRenderNode(dataPath:)</code> (<code>DocCArchive.swift</code>, line 90) does —
+and it's the single point where this container-level walkthrough hands off to everything else on
+this site. Once you have that file open and decoded as <code>Components.Schemas.RenderNode</code>,
+every field on it — <code>kind</code>, <code>primaryContentSections</code>, <code>references</code>,
+<code>variants</code>, and so on — is documented one kind at a time starting from the
+<a href="index.html">Kind Catalog</a>.
+</p>
+</section>
+
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <code>Sources/DocCArchive/DocCArchive.swift</code> in this repository on 2026-07-20. See <a href="methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

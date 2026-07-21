@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: orderedList — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>orderedList</code></h1>
+<p class="wire-value">Wire value: <code>"orderedList"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Block content is dispatched by the <code>renderNode()</code> function in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L121-L404"><code>ContentNode.vue</code></a>,
+which switches on a <code>BlockType</code> constant map. <code>orderedList</code> is registered at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L42"><code>ContentNode.vue#L42</code></a>
+(<code>orderedList: 'orderedList'</code>), alongside <code>unorderedList</code> at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L46"><code>ContentNode.vue#L46</code></a>.
+The <code>BlockType.orderedList</code> case is handled directly, with no dedicated Vue child component,
+at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L297-L304"><code>ContentNode.vue#L297-L304</code></a>:
+</p>
+<pre><code>case BlockType.orderedList:
+  return createElement('ol', {
+    attrs: {
+      start: node.start,
+    },
+  }, (
+    renderListItems(node.items)
+  ));</code></pre>
+<p>
+<code>renderListItems</code> is a small shared helper (used by both <code>orderedList</code> and
+<code>unorderedList</code>) defined at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L126-L130"><code>ContentNode.vue#L126-L130</code></a>:
+</p>
+<pre><code>const renderListItems = items => items.map(item => (
+  createElement('li', {}, (
+    renderChildren(item.content)
+  ))
+));</code></pre>
+<p>
+So an <code>orderedList</code> block becomes a plain HTML <code>&lt;ol&gt;</code> element (no wrapper
+component, no scoped Vue template), with each entry in <code>node.items</code> becoming an <code>&lt;li&gt;</code>
+whose children are recursively rendered through <code>renderChildren</code> &mdash; meaning a list item's
+<code>content</code> array can hold arbitrary nested block content (paragraphs, code listings, even nested
+lists). The wire field <code>node.start</code> is passed straight through as the native HTML <code>start</code>
+attribute on the <code>&lt;ol&gt;</code>; when it is <code>undefined</code> the attribute is simply omitted and
+the browser's own default numbering (starting at 1) takes over.
+</p>
+<p>
+This differs from the sibling case, <code>BlockType.unorderedList</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L354-L370"><code>ContentNode.vue#L354-L370</code></a>),
+which first checks whether the list qualifies as a "task list" (at least one item carries a boolean
+<code>checked</code> property, validated by
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/TaskList.vue#L28-L34"><code>TaskList.vue#L28-L34</code></a>)
+and, if so, delegates to the dedicated <code>TaskList</code> component instead of a plain <code>&lt;ul&gt;</code>.
+There is no equivalent task-list branch for <code>orderedList</code>: an ordered list is <em>always</em>
+rendered as a bare <code>&lt;ol&gt;</code>/<code>&lt;li&gt;</code> tree, even if an item happened to carry a
+<code>checked</code> field.
+</p>
+<p>
+Two other places in the same file treat <code>orderedList</code> identically to <code>unorderedList</code>
+purely for tree-walking purposes (not rendering): the generic content-tree mapper at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L576-L584"><code>ContentNode.vue#L576-L584</code></a>
+and the depth-first <code>forEach</code> walker at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L629-L632"><code>ContentNode.vue#L629-L632</code></a>,
+both of which recurse into <code>item.content</code> for every item in <code>node.items</code> &mdash; used
+for things like collecting all references/links contained anywhere in a content tree.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No JSON fixture containing a <code>"type": "orderedList"</code> block was found in either
+<code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive</code> or <code>SampleLibrary.doccarchive</code>
+in this repository (a grep for <code>orderedList</code> in those fixture trees only matches the bundled,
+minified <code>js/39.06467a79.js</code> application bundle, not archive content data), nor as a JSON/wire-literal
+fixture in swift-docc's test suite &mdash; the closest matches
+(<code>Tests/SwiftDocCTests/Model/RenderBlockContent+CapitalizationTests.swift</code>,
+<code>Tests/SwiftDocCTests/Model/SemaToRenderNodeTests.swift</code>) construct
+<code>RenderBlockContent.orderedList(.init(items: ...))</code> as in-memory Swift values and assert on them
+directly, never round-tripping through literal JSON. The example below is hand-written to match the schema
+confirmed in &sect;3.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "orderedList",
+  "start": 3,
+  "items": [
+    {
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Configure the build settings." }
+          ]
+        }
+      ]
+    },
+    {
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Run the target on a simulator." }
+          ]
+        }
+      ]
+    },
+    {
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Verify the output in the console." }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<p>An author produces this by writing a Markdown numbered list starting above 1, e.g.:</p>
+<pre><code>3. Configure the build settings.
+4. Run the target on a simulator.
+5. Verify the output in the console.</code></pre>
+<div class="mockup">
+  <ol start="3" style="margin-left:1.2em;">
+    <li>Configure the build settings.</li>
+    <li>Run the target on a simulator.</li>
+    <li>Verify the output in the console.</li>
+  </ol>
+  <p style="font-size:0.85em; color:#666;">Mockup: a native <code>&lt;ol start="3"&gt;</code>, exactly as
+  <code>ContentNode.vue</code> emits it &mdash; numbering, markers, and indentation are 100% native HTML/CSS
+  list rendering, with no JavaScript involved after the initial <code>createElement('ol', ...)</code> call.</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Authoritative source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (schema object
+<code>OrderedList</code>, referencing <code>ListItem</code>), cross-checked against the generated
+<code>Components.Schemas.OrderedList</code> / <code>Components.Schemas.ListItem</code> structs in
+<code>Sources/DocCArchive/generated/Types.swift</code> (around lines 4357&ndash;4437).
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"orderedList"</code> (fixed enum, one value)</td><td>Discriminator tag; generated as <code>Components.Schemas.OrderedList._TypePayload</code>, a single-case <code>String</code>-backed enum.</td></tr>
+<tr><td><code>start</code></td><td>integer</td><td>no</td><td>no schema default stated; generated Swift property is <code>Swift.Int?</code></td><td>Starting index for the list's numbering. Per swift-docc's own model (<code>RenderBlockContent.swift</code> encoder, around line 1179&ndash;1182 of the pinned commit) this key is present in the JSON only when the authoring-side <code>startIndex</code> differs from its default of <code>1</code>; when omitted, swift-docc-render's <code>&lt;ol start="undefined"&gt;</code> is dropped by Vue and the browser numbers from 1.</td></tr>
+<tr><td><code>items</code></td><td>array of <code>ListItem</code></td><td>yes</td><td>&mdash;</td><td>One entry per authored list line; order is rendering order, top to bottom.</td></tr>
+<tr><td><code>ListItem.content</code></td><td>array of <code>RenderBlockContent</code></td><td>yes</td><td>&mdash;</td><td>Arbitrary nested block content for that item (paragraphs, code listings, nested lists, etc.).</td></tr>
+<tr><td><code>ListItem.checked</code></td><td>boolean</td><td>no</td><td>&mdash;</td><td>Present on the shared <code>ListItem</code> shape for task-list support, but swift-docc-render's <code>BlockType.orderedList</code> branch never inspects it (only the <code>unorderedList</code> branch's task-list check does) &mdash; so on an ordered list this field, even if present, has no rendering effect.</td></tr>
+</tbody>
+</table>
+<p>
+Cross-checking swift-docc's authoring-side Swift model (not the wire schema, but useful color): the
+in-memory struct at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift#L461-L472"><code>RenderBlockContent.swift#L461-L472</code></a>
+(local path: <code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift:461</code>) names the
+field <code>startIndex: UInt</code> with an explicit default of <code>1</code>, and the case itself is declared at
+<code>RenderBlockContent.swift:49</code> (<code>case orderedList(OrderedList)</code>). The Codable
+implementation only emits the wire key <code>start</code> when <code>startIndex != 1</code>
+(<code>RenderBlockContent.swift</code> lines ~1179&ndash;1182), and decodes it back with
+<code>container.decodeIfPresent(UInt.self, forKey: .start) ?? 1</code> (line ~1074). The vendored JSON
+schema's looser <code>Swift.Int?</code> (no explicit default, no non-negativity constraint) is the
+authoritative wire-level contract for this repository, per the task's data-sheet precedence &mdash; but the
+swift-docc authoring model's implicit "1 unless otherwise stated" default is worth stating explicitly since
+the JSON schema alone doesn't encode it.
+</p>
+<p>
+<strong>DocCArchive transform status:</strong> Not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub
+placeholders (<code>HTMLRaw("&lt;!-- what? --&gt;")</code> and <code>return ""</code> respectively) that do
+not branch on <code>RenderBlockContent</code>/<code>Components.Schemas.OrderedList</code> at all, so an
+<code>orderedList</code> block passed through either transformer today produces no list-specific output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Root element: a plain <code>&lt;ol&gt;</code> (no wrapper <code>&lt;div&gt;</code>, no CSS class, no
+<code>id</code>), with an optional native <code>start</code> attribute, produced inline by
+<code>ContentNode.vue</code>'s <code>createElement('ol', ...)</code> &mdash; there is no dedicated
+<code>OrderedList.vue</code> component the way there is a <code>Row.vue</code> or <code>TabNavigator.vue</code>
+for other block kinds. Each item is a plain <code>&lt;li&gt;</code>, likewise with no class or id.
+</p>
+<p>Styling comes entirely from the shared base stylesheets, not from any component-scoped SCSS:</p>
+<pre><code>// src/styles/base/_reset.scss (around line 26-32)
+body,
+ul,
+ol,
+li,
+dl,
+dt,
+dd,
+h1, h2, h3, ... {
+  margin: 0;
+  padding: 0;
+  ...
+}
+
+// src/styles/base/_typography.scss (lines 94-121)
+p,
+ul,
+ol {
+  + * {
+    margin-top: var(--spacing-stacked-margin-large);
+  }
+}
+
+ul,
+ol {
+  margin-inline-start: em(20px);
+
+  // remove the top margin when nesting lists
+  ul,
+  ol {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  // relieve list styles for lists inside nav el.
+  nav & {
+    margin: 0;
+    list-style: none;
+  }
+}
+
+li li {
+  font-size: 1em;
+}</code></pre>
+<p>
+CSS custom properties consumed: <code>--spacing-stacked-margin-large</code> (defined as
+<code>0.8em</code> in <code>_typography.scss</code> around line 42, used to add vertical space after a list
+before the next sibling block) and, indirectly, <code>--colors-text</code> /
+<code>--color-text</code> for the inherited text color (set at the document root, not by the list rules
+themselves). List marker glyphs (<code>1.</code>, <code>2.</code>, ...) are the browser's native
+<code>::marker</code> / <code>list-style: decimal</code> default for <code>&lt;ol&gt;</code> &mdash; DocC-Render
+does not override <code>list-style-type</code> for ordered lists, so numbering, marker style, and the
+<code>start</code>-attribute offset are all native browser behavior, not CSS-authored or JS-computed.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior: <code>ContentNode.vue</code>'s <code>BlockType.orderedList</code> branch
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L297-L304"><code>ContentNode.vue#L297-L304</code></a>)
+is a one-time, non-reactive mapping from JSON to a native <code>&lt;ol start="..."&gt;</code>/<code>&lt;li&gt;</code>
+tree at render time. There is no client-side state, no toggle, no <code>v-show</code>/<code>v-if</code>,
+and nothing a reader interacts with afterward that changes the list's appearance or numbering.
+</p>
+<p>
+Since there is no interactive behavior or hidden/revealed state to replace, none of the stateful modern-CSS
+mechanisms (<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>) apply here &mdash;
+there is no state for them to hold. The list itself is already rendered with plain, semantic HTML
+(<code>&lt;ol&gt;</code>/<code>&lt;li&gt;</code>) and native browser numbering rather than any
+JavaScript-computed marker text, so there is no legacy JS-rendering technique to migrate away from either.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

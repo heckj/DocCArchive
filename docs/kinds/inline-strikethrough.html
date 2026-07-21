@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: strikethrough — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>strikethrough</code></h1>
+<p class="wire-value">Wire value: <code>"strikethrough"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'strikethrough'</code> finds the
+same wire-constant table used by every block/inline kind on this reference site,
+<code>src/components/ContentNode.vue</code>'s <code>InlineType</code> map
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>):
+</p>
+<pre><code>const InlineType = {
+  codeVoice: 'codeVoice',
+  emphasis: 'emphasis',
+  image: 'image',
+  inlineHead: 'inlineHead',
+  link: 'link',
+  newTerm: 'newTerm',
+  reference: 'reference',
+  strong: 'strong',
+  text: 'text',
+  superscript: 'superscript',
+  subscript: 'subscript',
+  strikethrough: 'strikethrough',
+};</code></pre>
+<p>
+Unlike <code>newTerm</code> or <code>inlineHead</code> (which fall through to the same branch as another
+kind), <code>strikethrough</code> gets its own case in the <code>renderNode()</code> factory function's
+<code>switch (node.type)</code> dispatch table, and delegates to a dedicated Vue component rather than a
+bare native element
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L503-L504"><code>ContentNode.vue#L503-L504</code></a>):
+</p>
+<pre><code>case InlineType.strikethrough:
+  return createElement(StrikeThrough, renderChildren(node.inlineContent));</code></pre>
+<p>
+<code>StrikeThrough</code> is imported at the top of the file from
+<code>./ContentNode/StrikeThrough.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L24"><code>ContentNode.vue#L24</code></a>).
+That component's entire template is a native <code>&lt;s&gt;</code> element wrapping a
+<code>&lt;slot /&gt;</code>, with two accessibility-only <code>data-*</code> attributes carrying localized
+strings for screen readers
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/StrikeThrough.vue#L11-L17"><code>StrikeThrough.vue#L11-L17</code></a>):
+</p>
+<pre><code>&lt;s
+  :data-before-text="$t('accessibility.strike.start')"
+  :data-after-text="$t('accessibility.strike.end')"&gt;
+    &lt;slot /&gt;
+&lt;/s&gt;</code></pre>
+<p>
+Those localization keys resolve (in the English locale bundle,
+<code>src/lang/locales/en-US.json</code>) to <code>"start of stricken text"</code> and
+<code>"end of stricken text"</code>. The component's scoped <code>&lt;style&gt;</code> block turns those two
+attribute values into generated <code>::before</code>/<code>::after</code> pseudo-element content via
+<code>content: attr(data-before-text)</code> / <code>attr(data-after-text)</code>, then visually hides both
+with the shared <code>visuallyhidden()</code> SCSS mixin &mdash; so a sighted reader sees only the struck-through
+text, while a screen reader announces "start of stricken text&hellip;end of stricken text" around it. The
+node's only payload field, <code>inlineContent</code> (an array of nested <code>RenderInlineContent</code> items),
+is recursively rendered through the same module-local <code>renderChildren</code> helper used by every other
+inline wrapper kind
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L122-L124"><code>ContentNode.vue#L122-L124</code></a>).
+</p>
+<p>
+<code>ContentNode.vue</code>'s tree-walking utility API (<code>map</code>, <code>forEach</code>) also
+explicitly lists <code>InlineType.strikethrough</code> alongside <code>emphasis</code>, <code>strong</code>,
+<code>inlineHead</code>, <code>superscript</code>, <code>subscript</code>, and <code>newTerm</code> as a
+"wrapper" kind whose <code>inlineContent</code> array must be recursed into when walking a content tree without
+rendering it &mdash; for example when building a plain-text abstract for search indexing
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L564-L575"><code>ContentNode.vue#L564-L575</code></a>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L619-L628"><code>ContentNode.vue#L619-L628</code></a>).
+No other <code>.vue</code> file under <code>src/components/</code> or <code>src/views/</code> matches the
+literal string <code>'strikethrough'</code> as a RenderNode-kind handler. (A separate, unrelated
+<code>strikethrough</code> CSS class exists in
+<code>src/components/ContentNode/CodeListing.vue</code>, used to mark a highlighted code-listing line as
+user-deleted diff content &mdash; that is a distinct feature keyed on syntax-highlighting diff metadata, not
+on a <code>RenderInlineContent</code> node, and is not discussed further here.)
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No real fixture containing a <code>strikethrough</code> RenderInlineContent node was found in
+<code>Tests/DocCArchiveTests/Fixtures/</code> (the two <code>.doccarchive</code> bundles) or in
+<code>Tests/SwiftDocCTests/</code> in the swift-docc checkout at this pin &mdash; the only hits in either
+test tree are a Swift unit test that constructs the case directly in memory
+(<code>RenderBlockContent+CapitalizationTests.swift</code>, <code>testRenderInlineContentStrikethrough()</code>)
+rather than a JSON fixture on disk. The example below is therefore hand-written.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    {
+      "type": "text",
+      "text": "This API is "
+    },
+    {
+      "type": "strikethrough",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "deprecated"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": " removed."
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+<p>This API is <s>deprecated</s> removed.</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Field table for the <code>Strikethrough</code> schema object in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (lines 1432&ndash;1452 of the vendored copy),
+cross-checked against the generated <code>Components.Schemas.Strikethrough</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 1954&ndash;1980):
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"strikethrough"</code></td><td>Discriminator. Generated as <code>Strikethrough._TypePayload</code>, a <code>String</code>-backed <code>enum</code> with exactly one case.</td></tr>
+<tr><td><code>inlineContent</code></td><td>array of <code>RenderInlineContent</code></td><td>yes</td><td>&mdash;</td><td>The nested inline-content children to be struck through; generated as <code>[Components.Schemas.RenderInlineContent]</code>. Structurally identical in shape to <code>Emphasis.inlineContent</code>, <code>Strong.inlineContent</code>, <code>Superscript.inlineContent</code>, and <code>Subscript.inlineContent</code>.</td></tr>
+</tbody>
+</table>
+<p>
+A schema-authority discrepancy worth flagging plainly: the <code>Strikethrough</code> object is defined as
+its own top-level schema entry in <code>RenderNode.spec.json</code>, but at this pinned commit it is
+<strong>not listed</strong> among the <code>oneOf</code> members of the <code>RenderInlineContent</code>
+discriminator schema. That <code>oneOf</code> array enumerates exactly eleven refs &mdash; <code>Text</code>,
+<code>Emphasis</code>, <code>Strong</code>, <code>CodeVoice</code>, <code>Reference</code>, <code>Image</code>,
+<code>InlineHead</code>, <code>NewTerm</code>, <code>Superscript</code>, <code>Link</code>, and
+<code>Subscript</code> &mdash; and <code>Strikethrough</code> is absent from it, even though sibling wrapper
+kinds <code>Superscript</code> and <code>Subscript</code> are present. Grepping the whole vendored spec file
+for the literal string <code>"Strikethrough"</code> turns up only the one schema definition itself; it is
+never <code>$ref</code>'d from anywhere. This looks like an omission in the vendored JSON Schema rather than
+an intentional exclusion, since swift-docc's own Swift-side <code>RenderInlineContent</code> enum (see below)
+does include a <code>strikethrough</code> case in its <code>Codable</code> round-trip, and swift-docc-render's
+own <code>InlineType</code> constant table (Step 1, above) treats it as a first-class sibling of
+<code>superscript</code>/<code>subscript</code>. Practically, this means a JSON-Schema-driven consumer that
+validates strictly against <code>RenderInlineContent</code>'s <code>oneOf</code> could reject a wire-valid
+<code>strikethrough</code> node as non-conforming, even though every actual producer and consumer in the
+swift-docc toolchain treats it as valid; the OpenAPI-generated Swift types in this repository still expose a
+usable <code>Components.Schemas.Strikethrough</code> struct because it was generated as its own named schema
+component, independent of whether the <code>RenderInlineContent</code> <code>oneOf</code> list references it.
+</p>
+<p>
+On the authoring side, swift-docc's in-memory <code>RenderInlineContent</code> Swift <code>enum</code> case
+at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift#L56">RenderInlineContent.swift#L56</a>
+is <code>case strikethrough(inlineContent: [RenderInlineContent])</code>, documented with the doc comment
+"A strikethrough piece of content." &mdash; brief, but as with its sibling cases the doc comment supplies no
+further semantics beyond the name. This case is produced by
+<code>RenderContentCompiler.visitStrikethrough(_:)</code>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift#L358-L360">RenderContentCompiler.swift#L358-L360</a>),
+which visits a swift-markdown <code>Strikethrough</code> markup AST node (the GitHub-Flavored-Markdown
+<code>~~text~~</code> syntax, as parsed by swift-markdown's cmark-gfm extension) and reduces its children into
+the <code>inlineContent</code> array. So the author-facing syntax that produces this RenderNode kind is
+ordinary Markdown double-tilde strikethrough, e.g. <code>~~deprecated~~</code>, written directly in a
+DocC comment or article &mdash; there is no dedicated directive for it. Unlike <code>newTerm</code>, this
+compiler path is real and reachable, not dormant.
+</p>
+<p>
+Within this repository, DocCArchive does not yet implement any transform logic keyed on
+<code>RenderInlineContent</code> case at all: <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>) are still
+stub/placeholder implementations of the <code>Transformer</code> protocol &mdash; the former returns a
+hardcoded HTML comment and the latter an empty string &mdash; so a <code>strikethrough</code> node parsed via
+<code>Archive.parseRenderNode(dataPath:)</code> would decode correctly into
+<code>Components.Schemas.RenderInlineContent.Strikethrough</code> but is not yet converted to any output
+format.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+The rendered output is a native <code>&lt;s&gt;...&lt;/s&gt;</code> element (via the dedicated
+<code>StrikeThrough.vue</code> component, not a bare <code>createElement('s', ...)</code> call inline in
+<code>ContentNode.vue</code>) carrying two <code>data-*</code> attributes:
+</p>
+<ul>
+<li><code>data-before-text</code> &mdash; localized to <code>"start of stricken text"</code> in <code>en-US</code></li>
+<li><code>data-after-text</code> &mdash; localized to <code>"end of stricken text"</code> in <code>en-US</code></li>
+</ul>
+<p>
+The component carries no <code>class</code> or <code>id</code> of its own; styling is scoped entirely to the
+bare <code>s</code> element selector inside <code>StrikeThrough.vue</code>'s own
+<code>&lt;style scoped lang="scss"&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/StrikeThrough.vue#L24-L38"><code>StrikeThrough.vue#L24-L38</code></a>),
+which imports the shared <code>docc-render/styles/_core.scss</code> partial for its <code>@include
+visuallyhidden()</code> mixin (defined in
+<code>src/styles/core/_helpers.scss</code>). That mixin clips the generated <code>::before</code>/
+<code>::after</code> pseudo-element content to a 1px box off-screen (via <code>clip-path: inset(...)</code>,
+<code>height: 1px</code>, <code>width: 1px</code>, <code>overflow: hidden</code>) so it is readable only by
+assistive technology. No CSS custom property (<code>--*</code> variable) is consumed by this component; the
+visible strikethrough line itself is produced entirely by the browser's user-agent default rendering of the
+<code>&lt;s&gt;</code> element (<code>text-decoration-line: line-through</code>), not by any DocC-render
+SCSS declaration.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior, precisely: a <code>strikethrough</code> node is rendered by <code>StrikeThrough.vue</code>
+as a static native <code>&lt;s&gt;</code> element wrapping its recursively-rendered children, with two
+<code>data-*</code> attributes populated once at render time from i18n strings and consumed only by generated
+<code>::before</code>/<code>::after</code> pseudo-element content for screen-reader announcement text. There is
+no Vue <code>data</code>, no reactive prop, no event handler, and no client-side state of any kind attached to
+this component or its rendering path &mdash; it renders once from its <code>inlineContent</code> prop and never
+changes. The "behavior" in play is simply the native semantics of <code>&lt;s&gt;</code> (the browser's default
+<code>text-decoration-line: line-through</code>) plus a static accessibility affordance, which is already the
+plain, non-interactive, CSS/HTML-only mechanism in use today &mdash; there is nothing toggleable, hidden, or
+otherwise stateful for a native CSS mechanism such as <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>,
+a radio-input <code>:checked</code> pattern, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+or <code>:has()</code> to replace.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

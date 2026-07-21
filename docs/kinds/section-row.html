@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: row — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>row</code></h1>
+<p class="wire-value">Wire value: <code>"row"</code></p>
+<p class="appears-on">Not emitted on any page (see notes above).</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<strong>A necessary correction first.</strong> The task's <code>swiftCaseSite</code> points at
+<code>RenderSectionKind.row</code>, declared in the "Symbol render sections" group at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderSection.swift#L20"><code>RenderSection.swift#L20</code></a>:
+</p>
+<pre><code>// Symbol render sections
+case mentions, discussion, content, taskGroup, relationships, declarations, parameters, sampleDownload, row</code></pre>
+<p>
+Having read the rest of the pipeline, this enum case appears to be <strong>dead</strong>. The discriminator
+switch that turns a decoded <code>kind</code> into a concrete <code>RenderSection</code> struct for
+reference-page content &mdash;
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNode/CodableContentSection.swift#L41-L73"><code>CodableContentSection.swift#L41-L73</code></a>
+&mdash; has cases for <code>.mentions</code>, <code>.discussion</code>/<code>.content</code>,
+<code>.taskGroup</code>, <code>.relationships</code>, <code>.declarations</code>, <code>.parameters</code>,
+and several others, but <strong>no case for <code>.row</code></strong>; it falls through to
+<code>default: fatalError()</code>. No struct anywhere under
+<code>Sources/SwiftDocC/Model/Rendering/Symbol/</code> sets <code>kind = .row</code>, and a repo-wide
+grep for <code>RenderSectionKind.row</code> at the pinned commit returns nothing. On the render side, the
+component that dispatches a symbol page's <code>primaryContentSections</code> to Vue components &mdash;
+<code>PrimaryContent.vue</code>'s <code>SectionKind</code> map in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L12-L27"><code>constants/PrimaryContentSection.js#L12-L27</code></a>
+&mdash; also has no <code>row</code> entry. So a <code>"kind": "row"</code> object inside
+<code>primaryContentSections</code> is not a real, reachable shape in either the encoder or the renderer;
+it's a vestigial case in an enum whose members were probably enumerated in one place ahead of the section
+types actually being implemented.
+</p>
+<p>
+The <code>"row"</code> wire value that <em>does</em> flow through the system end-to-end lives one tier
+down, as a member of <code>RenderBlockContent</code> (block-level content, not a top-level render
+section): <code>case row(Row)</code> at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift#L66"><code>RenderBlockContent.swift#L66</code></a>,
+with the payload struct at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift#L781-L813"><code>RenderBlockContent.swift#L781-L813</code></a>.
+This is what the rest of this page documents, since it is the only "row" shape that is actually
+observable in DocC's JSON output, and it is the shape the vendored schema and generated Swift types in
+this repository (DocCArchive) describe as <code>Row</code> (see the data sheet below).
+</p>
+<p>
+In swift-docc-render, block content is dispatched by the <code>renderNode()</code> function in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L121-L404"><code>ContentNode.vue</code></a>,
+which switches on a <code>BlockType</code> constant map (<code>row: 'row'</code> at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L50"><code>ContentNode.vue#L50</code></a>).
+The <code>BlockType.row</code> case is handled at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L395-L404"><code>ContentNode.vue#L395-L404</code></a>:
+</p>
+<pre><code>case BlockType.row: {
+  const columns = node.numberOfColumns ? { large: node.numberOfColumns } : undefined;
+  return createElement(
+    Row, { props: { columns } }, node.columns.map(col =&gt; (
+      createElement(
+        Column, { props: { span: col.size } }, renderChildren(col.content),
+      )
+    )),
+  );
+}</code></pre>
+<p>
+<code>node.numberOfColumns</code> becomes the <code>columns.large</code> breakpoint prop on a
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Row.vue"><code>Row.vue</code></a>
+component, and each entry in <code>node.columns</code> becomes a child
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Column.vue"><code>Column.vue</code></a>
+whose <code>span</code> prop is that column's <code>size</code>; each column's own
+<code>content</code> array is recursively rendered through <code>renderChildren</code>, so a column can
+hold arbitrary block content (paragraphs, images, code listings, even a nested <code>@Row</code>).
+<code>Row.vue</code>'s root template is:
+</p>
+<pre><code>&lt;div class="row" :style="style" :class="{ 'with-columns': columns }"&gt;
+  &lt;slot /&gt;
+&lt;/div&gt;</code></pre>
+<p>
+where <code>style</code> is a computed property exposing CSS custom properties
+(<code>--col-count-large</code>, <code>--col-count-medium</code>, <code>--col-count-small</code>,
+<code>--col-gap</code>) derived from the <code>columns</code> and <code>gap</code> props
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Row.vue#L38-L45"><code>Row.vue#L38-L45</code></a>).
+Layout itself is pure CSS grid (see &sect;4); no JavaScript recalculates column widths at runtime.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No fixture containing a <code>"kind": "row"</code> block was found in either
+<code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive</code> or
+<code>SampleLibrary.doccarchive</code> in this repository, nor as a JSON/wire-literal fixture in
+swift-docc's test suite (<code>Tests/SwiftDocCTests/Semantics/Reference/RowTests.swift</code> only
+constructs <code>RenderBlockContent.Row</code> as in-memory Swift values, not JSON). The example below is
+therefore hand-written to match the schema confirmed in &sect;3.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "row",
+  "numberOfColumns": 3,
+  "columns": [
+    {
+      "size": 1,
+      "content": [
+        {
+          "type": "heading", "level": 3, "text": "Ice power",
+          "anchor": "ice-power"
+        }
+      ]
+    },
+    {
+      "size": 1,
+      "content": [
+        {
+          "type": "heading", "level": 3, "text": "Fire power",
+          "anchor": "fire-power"
+        }
+      ]
+    },
+    {
+      "size": 1,
+      "content": [
+        {
+          "type": "heading", "level": 3, "text": "Wind power",
+          "anchor": "wind-power"
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<p>This is the block that an author produces by writing (see &sect;3 for the authoring-side directive):</p>
+<pre><code>@Row {
+   @Column {
+      ### Ice power
+   }
+   @Column {
+      ### Fire power
+   }
+   @Column {
+      ### Wind power
+   }
+}</code></pre>
+<div class="mockup">
+  <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+    <div style="border:1px solid #ccc; padding:0.75rem; min-width:0;"><strong>Ice power</strong></div>
+    <div style="border:1px solid #ccc; padding:0.75rem; min-width:0;"><strong>Fire power</strong></div>
+    <div style="border:1px solid #ccc; padding:0.75rem; min-width:0;"><strong>Wind power</strong></div>
+  </div>
+  <p style="font-size:0.85em; color:#666;">Mockup: three equal-width columns in one row, as CSS Grid
+  would lay out <code>numberOfColumns: 3</code> with three <code>size: 1</code> columns. On narrow
+  viewports <code>Row.vue</code>'s <code>breakpoint(small)</code> rule collapses this to one column per
+  row (<code>grid-auto-flow: row</code>).</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Authoritative source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (schema object
+<code>Row</code>, and its dependency <code>Column</code>), cross-checked against the generated
+<code>Components.Schemas.Row</code> / <code>Components.Schemas.Column</code> structs in
+<code>Sources/DocCArchive/generated/Types.swift</code>. Note that <code>Row</code> is one of the untagged
+"any of" members of the generated <code>RenderBlockContent</code> enum
+(<code>case Row(Components.Schemas.Row)</code>, decoded by trial rather than by a <code>kind</code>
+discriminator on the Swift/OpenAPI side &mdash; see <code>Types.swift</code> around the
+<code>RenderBlockContent</code> initializer).
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>"row"</code> (fixed)</td><td>Discriminator tag on the swift-docc encoding side; the generated Swift enum instead tries each <code>RenderBlockContent</code> case in turn.</td></tr>
+<tr><td><code>columns</code></td><td>array of <code>Column</code></td><td>yes</td><td>&mdash;</td><td>One entry per authored <code>@Column</code>; order is rendering order, left to right / top to bottom.</td></tr>
+<tr><td><code>numberOfColumns</code></td><td>number (generated as <code>Swift.Double</code>; swift-docc's own model uses <code>Int</code>)</td><td>yes</td><td>&mdash;</td><td>Total column-slots in the row's grid; may exceed <code>columns.count</code> when the row isn't fully filled, or when a column spans more than one slot via <code>size</code>.</td></tr>
+<tr><td><code>Column.content</code></td><td>array of <code>RenderBlockContent</code></td><td>yes</td><td>&mdash;</td><td>Arbitrary nested block content (headings, paragraphs, images, even nested rows).</td></tr>
+<tr><td><code>Column.size</code></td><td>number</td><td>yes</td><td>default <code>1</code> on the authoring side</td><td>How many of the row's column-slots this column spans.</td></tr>
+<tr><td><code>Column.alignment</code></td><td>string enum</td><td>swift-docc model: yes (default <code>leading</code>); DocCArchive vendored schema: <strong>absent</strong></td><td><code>leading</code> / <code>center</code> / <code>trailing</code></td><td>Added to swift-docc's <code>RenderBlockContent.Row.Column</code> for DocC 6.4's <code>@Column(alignment:)</code> argument. The vendored <code>RenderNode.spec.json</code> and generated <code>Components.Schemas.Column</code> in this repository do not include this field &mdash; the vendored schema is stale relative to swift-docc's current model at the pinned commit.</td></tr>
+</tbody>
+</table>
+<p>
+Also cross-checked: <code>RenderSectionKind.row</code> itself carries no fields of its own beyond the
+shared <code>kind</code> discriminator on the <code>RenderSection</code> protocol, and (per &sect;1) no
+concrete struct implements it, so there is no payload shape to document for that case.
+</p>
+<p>
+<strong>DocCArchive transform status:</strong> Not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub
+placeholders (<code>HTMLRaw("&lt;!-- what? --&gt;")</code> and <code>return ""</code> respectively) that
+do not branch on <code>RenderBlockContent</code> case at all, so a <code>row</code> block passed through
+either transformer today produces no row-specific output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Root element: <code>&lt;div class="row"&gt;</code>, rendered by
+<code>src/components/ContentNode/Row.vue</code>, with a conditional <code>with-columns</code> class
+applied when the <code>columns</code> prop (derived from <code>numberOfColumns</code>) is present. Each
+child is a <code>&lt;div class="column"&gt;</code> from <code>src/components/ContentNode/Column.vue</code>.
+</p>
+<p>SCSS (both scoped, both under <code>src/components/ContentNode/</code>):</p>
+<pre><code>.row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  grid-gap: var(--col-gap, #{$article-stacked-margin-small});
+
+  @include breakpoint(small) {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+  }
+
+  &amp;.with-columns {
+    --col-count: var(--col-count-large);
+    grid-template-columns: repeat(var(--col-count), 1fr);
+    grid-auto-flow: row;
+
+    @include breakpoint(medium) {
+      --col-count: var(--col-count-medium, var(--col-count-large));
+    }
+    @include breakpoint(small) {
+      --col-count: var(--col-count-small);
+    }
+  }
+
+  @include space-out-between-siblings(var(--spacing-stacked-margin-xlarge));
+}
+
+.column {
+  grid-column: span var(--col-span);
+  min-width: 0;
+  @include breakpoint(small) {
+    grid-column: span 1;
+  }
+}</code></pre>
+<p>
+CSS custom properties consumed/produced: <code>--col-count-large</code>, <code>--col-count-medium</code>,
+<code>--col-count-small</code> (all set inline by <code>Row.vue</code>'s <code>style</code> computed
+property from the <code>columns</code> prop, default <code>--col-count-small: 1</code>);
+<code>--col-gap</code> (from the optional <code>gap</code> prop, currently not populated by the
+<code>BlockType.row</code> dispatch in <code>ContentNode.vue</code>, so it falls back to the SCSS
+variable <code>$article-stacked-margin-small</code>); <code>--col-count</code> (an internal alias set by
+the <code>.with-columns</code> rule itself, swapped per breakpoint); <code>--col-span</code> (set inline
+per <code>Column.vue</code> instance from its <code>span</code> prop, i.e. the column's <code>size</code>
+value); and <code>--spacing-stacked-margin-xlarge</code>, consumed by the shared
+<code>space-out-between-siblings</code> mixin (<code>src/styles/core/_helpers.scss</code>) to add vertical
+spacing between sibling rows/blocks. Responsive behavior is entirely mixin-driven via
+<code>@include breakpoint(...)</code> from <code>src/styles/core/_breakpoints.scss</code>; there is no
+JavaScript resize listener &mdash; the breakpoints are plain CSS media queries.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior: <code>Row.vue</code> and <code>Column.vue</code> hold no interactive state at all.
+The only "logic" is a one-time, non-reactive-after-mount computation &mdash; a <code>computed</code>
+property maps static props (<code>columns</code>, <code>gap</code>, <code>span</code>) to inline CSS
+custom properties, and CSS Grid plus <code>@include breakpoint(...)</code> media queries do 100% of the
+actual layout work, including the responsive collapse to a single column on narrow viewports. There is no
+click handler, no <code>v-show</code>/<code>v-if</code> toggle, no stored "current" selection, and nothing
+a user interacts with to change the row's state after render.
+</p>
+<p>
+Since there is no interactive behavior or hidden/revealed state to replace, none of the stateful modern-CSS
+mechanisms (<code>&lt;details&gt;</code>, radio+<code>:checked</code>, <code>:target</code>, Popover API,
+<code>&lt;dialog&gt;</code>) apply here &mdash; there is nothing for them to hold. The row/column layout
+itself is already implemented with modern CSS (Grid custom properties and container-free breakpoint media
+queries) rather than JavaScript-computed geometry, so there is no legacy JS-layout technique to migrate
+away from either.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

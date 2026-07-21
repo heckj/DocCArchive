@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: intro — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>intro</code></h1>
+<p class="wire-value">Wire value: <code>"intro"</code></p>
+<p class="appears-on">Not emitted on any page (see notes above).</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<strong><code>intro</code> is a decode-only alias, not a value swift-docc-render's dispatch tables ever
+see.</strong> Both <code>"hero"</code> and <code>"intro"</code> are declared as valid values of
+<code>RenderSectionKind</code> at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderSection.swift#L15-L17"><code>RenderSection.swift#L15-L17</code></a>,
+and swift-docc's <code>CodableRenderSection</code> decoder accepts either one and routes both to the
+same <code>IntroRenderSection</code> type:
+</p>
+<pre><code>switch kind {
+case .hero, .intro:
+    section = try IntroRenderSection(from: decoder)
+...</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNode/CodableRenderSection.swift#L21-L46"><code>CodableRenderSection.swift#L21-L46</code></a>.)
+But <code>IntroRenderSection.kind</code> itself is a hardcoded constant, not something set from the
+decoded value:
+</p>
+<pre><code>public struct IntroRenderSection: RenderSection, Equatable {
+    public let kind: RenderSectionKind = .hero
+    ...</code></pre>
+<p>
+(<code>swiftCaseSite</code>'s enclosing struct,
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Tutorial/Sections/IntroRenderSection.swift#L12-L13"><code>IntroRenderSection.swift#L12-L13</code></a>.)
+So a RenderNode that swift-docc <em>itself produces</em> (via <code>RenderNodeTranslator.visitIntro</code>,
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift#L294-L295"><code>RenderNodeTranslator.swift#L294-L295</code></a>)
+always re-encodes as <code>"kind": "hero"</code>, even if the section originated from JSON that said
+<code>"kind": "intro"</code>. swift-docc's own test suite documents this normalization explicitly, with a
+comment stating the intent in plain words: "We should always output renderJSON that uses 'hero' to
+describe an intro section to maintain compatibility" (see the Data sheet section below for the exact
+test).
+</p>
+<p>
+Because of that, a grep of
+<a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a>'s
+<code>src/components/</code> and <code>src/views/</code> for the literal string <code>"intro"</code> as a
+<code>kind</code> discriminator turns up nothing — only unrelated CSS class names (a <code>div.intro</code>
+wrapper inside <code>Tutorial/Hero.vue</code>, and a <code>.intro</code> class in
+<code>TutorialsOverview/Chapter.vue</code>) and copy strings like "Watch intro video". The three actual
+section-kind dispatch tables all key exclusively on <code>hero</code>:
+</p>
+<ul>
+<li><code>Tutorial.vue</code>'s <code>SectionComponents</code> map
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial.vue#L46-L66"><code>Tutorial.vue#L46-L66</code></a>):
+<code>{ assessments: Assessments, hero: Hero, tasks: SectionList, callToAction: CallToAction }</code>.</li>
+<li><code>Article.vue</code>'s <code>SectionKind</code> map plus <code>componentFor(section)</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article.vue#L45-L124"><code>Article.vue#L45-L124</code></a>),
+which maps <code>hero</code> to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/Hero.vue#L1-L21"><code>Article/Hero.vue</code></a>,
+a two-line wrapper that re-exports <code>Tutorial/Hero.vue</code> unchanged.</li>
+<li><code>TutorialsOverview.vue</code>'s inline <code>SectionKind</code>-gated template
+(<code>&lt;Hero v-if="heroSection" ... /&gt;</code>), which renders a separate, unrelated component,
+<code>TutorialsOverview/Hero.vue</code>.</li>
+</ul>
+<p>
+None of these tables has an <code>intro</code> key, and no <code>v-if</code>/<code>v-else</code> branch
+anywhere in the searched directories checks <code>section.kind === 'intro'</code>. In other words: even
+though the wire schema and swift-docc's decoder both still recognize <code>"intro"</code> as an input
+value (for backward compatibility with older-format render JSON), the current
+swift-docc-render frontend was not found to contain any code path that would ever receive
+<code>"kind": "intro"</code> in practice, because swift-docc normalizes it to <code>"hero"</code> before
+any consumer sees it. This page therefore documents the wire alias and its rendering intent, but the
+actual template/DOM/SCSS mechanics belong to the sibling page for <code>hero</code>
+(<a href="section-hero.html"><code>kinds/section-hero.html</code></a>), since they are, by construction,
+the exact same <code>IntroRenderSection</code> payload and the exact same <code>Tutorial/Hero.vue</code>
+component.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Fixture source: <code>Tests/SwiftDocCTests/Model/RenderSectionTests.swift</code>,
+<code>testDecoderAcceptsIntroKeyAndOutputsHeroKey()</code>, in the swift-docc repository. This test is
+the most directly on-topic fixture available for the <code>"intro"</code> wire value: it feeds in JSON
+using <code>"kind": "intro"</code> and asserts the re-encoded JSON uses <code>"kind": "hero"</code>.
+DocCArchive's own fixtures (<code>ExampleDocs.doccarchive</code>, <code>SampleLibrary.doccarchive</code>)
+contain only documentation-topic pages (no tutorials or articles), so neither contains any
+<code>IntroRenderSection</code> payload at all, let alone one using the <code>"intro"</code> spelling; and
+a grep of <code>Tests/SwiftDocCTests/</code> for <code>"intro"</code> as a <code>kind</code> value found
+only this one test file.
+</p>
+<p><strong>Input JSON, as actually written on the wire:</strong></p>
+<pre><code>{
+  "backgroundImage" : "intro_school.jpg",
+  "chapter" : "Getting Started",
+  "content" : [
+    {
+      "inlineContent" : [
+        {
+          "text" : "Here is some introduction text that will explain all the things and such you will be following this tutorial. You are going to learn a lot by building an app.",
+          "type" : "text"
+        }
+      ],
+      "type" : "paragraph"
+    }
+  ],
+  "estimatedTimeInMinutes" : 20,
+  "kind" : "intro",
+  "projectFiles" : "project.zip",
+  "title" : "Basic Augmented Reality App",
+  "video" : "video.mov",
+  "xcodeRequirement" : "Xcode 10 beta"
+}</code></pre>
+<p><strong>Output JSON, after being decoded and re-encoded by swift-docc:</strong></p>
+<pre><code>{
+  "backgroundImage" : "intro_school.jpg",
+  "chapter" : "Getting Started",
+  "content" : [ /* ...unchanged... */ ],
+  "estimatedTimeInMinutes" : 20,
+  "kind" : "hero",
+  "projectFiles" : "project.zip",
+  "title" : "Basic Augmented Reality App",
+  "video" : "video.mov",
+  "xcodeRequirement" : "Xcode 10 beta"
+}</code></pre>
+<p>
+Only <code>kind</code> changes. Every other field passes through untouched — confirming this is a pure
+discriminator-value normalization, not a content transformation.
+</p>
+<div class="mockup">
+  <div style="background:#2b2b2b; color:#f5f5f5; padding:32px 24px; border-radius:6px;">
+    <p style="text-transform:uppercase; font-size:0.75rem; letter-spacing:0.05em; opacity:0.7; margin:0 0 8px;">Getting Started</p>
+    <div style="margin:0 0 16px; font-size:1.8rem;">Basic Augmented Reality App</div>
+    <p style="margin:0 0 16px; opacity:0.9;">Here is some introduction text that will explain all the things and such you will be following this tutorial. You are going to learn a lot by building an app.</p>
+    <p style="margin:0; font-size:0.85rem; opacity:0.8;">20 min &middot; Project files &middot; Xcode 10 beta required</p>
+  </div>
+  <p><em>mockup: the rendered result is visually identical to any other <code>hero</code> section
+  (see <a href="section-hero.html">the <code>hero</code> page's mockup</a> for a rendering that also
+  shows the call-to-action link) — because by the time it reaches the browser, it <em>is</em> a
+  <code>hero</code> section; the <code>"intro"</code> spelling never survives past swift-docc's own
+  decode/re-encode step.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/IntroRenderSection</code> (the <code>kind</code> property's
+<code>enum</code> array is <code>["hero", "intro"]</code>), cross-checked against the generated
+<code>Components.Schemas.IntroRenderSection.KindPayload</code> enum in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 3115&ndash;3118).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"hero"</code>, <code>"intro"</code></td>
+<td>Generated as <code>KindPayload: String, Codable, ... CaseIterable { case hero, case intro }</code>.
+<code>"intro"</code> is a legacy/alternate spelling accepted by swift-docc's decoder
+(<code>CodableRenderSection</code>) but never produced by swift-docc's own encoder — the
+<code>IntroRenderSection.kind</code> Swift property is hardcoded to <code>.hero</code> (see Section 1).
+Treat <code>"intro"</code> as a read-compatibility input value only.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Rendered as the page's <code>H1</code> via <code>Headline</code> in <code>Tutorial/Hero.vue</code>.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Generated as <code>[RenderBlockContent]?</code> (optional). Rendered via
+<code>ContentNode.vue</code> inside <code>div.intro</code> (a CSS class, unrelated to the
+<code>kind</code> discriminator discussed on this page).</td>
+</tr>
+</tbody>
+</table>
+<p>
+<strong>Same wire-schema/Swift-model gap noted on the <code>hero</code> page applies here</strong>,
+since <code>intro</code> and <code>hero</code> decode to the identical Swift type: the vendored JSON
+Schema (and therefore the generated <code>Components.Schemas.IntroRenderSection</code> Swift type)
+only declares <code>title</code>, <code>kind</code>, and <code>content</code>, while swift-docc's actual
+model at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Tutorial/Sections/IntroRenderSection.swift#L12-L46"><code>IntroRenderSection.swift#L12-L46</code></a>
+(<code>swiftStructSite</code>, since none was pinned for this page — found by searching
+<code>Sources/SwiftDocC/Model/Rendering/</code>) additionally encodes <code>chapter</code>,
+<code>estimatedTimeInMinutes</code>, <code>xcodeRequirement</code>, <code>backgroundImage</code>,
+<code>action</code>, <code>image</code>, <code>video</code>, and <code>projectFiles</code> — all five
+of the "extra" fields shown in the Section 2 fixture (<code>backgroundImage</code>, <code>chapter</code>,
+<code>estimatedTimeInMinutes</code>, <code>video</code>, <code>xcodeRequirement</code>,
+<code>projectFiles</code>) that a DocCArchive consumer decoding with the generated type today would
+silently drop. See <a href="section-hero.html#data-sheet">the <code>hero</code> page's data sheet</a>
+for the full breakdown of those fields; nothing about that gap differs when the wire value happens to
+be <code>"intro"</code> instead of <code>"hero"</code>.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+There is no CSS or DOM structure specific to the <code>"intro"</code> spelling — because swift-docc
+normalizes <code>"intro"</code> to <code>"hero"</code> before the render JSON is written to
+<code>data/</code> in a <code>.doccarchive</code>, swift-docc-render's dispatch tables (Section 1) never
+branch on <code>kind === "intro"</code>, so there is no distinct template, class, or SCSS rule to
+document that differs from the <code>hero</code> case. The full DOM shape (root
+<code>LinkableSection</code> anchor <code>id="introduction"</code>, <code>div.hero.dark</code>,
+<code>div.bg</code>, <code>H1</code>, <code>div.intro</code>, <code>div.metadata</code>) and the SCSS
+custom properties it consumes (<code>--color-tutorial-hero-background</code>,
+<code>--color-tutorial-hero-text</code>, <code>--color-hero-eyebrow</code>, from
+<code>src/styles/core/colors/_light.scss</code>) are documented on
+<a href="section-hero.html#css-mapping">the <code>hero</code> page, Section 4</a> and apply identically
+here, since they are produced by the same <code>Tutorial/Hero.vue</code> component regardless of which
+spelling appeared in the source JSON before swift-docc's decode step.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code> in
+<code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML transformer
+returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment and the Markdown transformer returns an
+empty string) — there is no kind-specific handling for <code>intro</code>/<code>hero</code>/
+<code>IntroRenderSection</code> today, and because DocCArchive decodes with the generated type (which
+only exposes <code>title</code>/<code>kind</code>/<code>content</code>), it also could not currently
+tell an incoming <code>"intro"</code>-spelled section apart from any other metadata beyond that.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior in play: <code>"intro"</code> is not a runtime UI state at all — it is a JSON string
+discriminator that exists only inside swift-docc's Swift decoder
+(<code>CodableRenderSection.init(from:)</code>'s <code>switch kind { case .hero, .intro: ... }</code>),
+and it is fully resolved (normalized to <code>"hero"</code>) before any HTML, Vue component, or CSS is
+ever produced. There is no client-side branching, toggle, visibility state, or DOM structure that
+depends on whether the original JSON said <code>"hero"</code> or <code>"intro"</code>; by the time
+swift-docc-render's <code>ContentNode</code>/<code>Tutorial.vue</code>/<code>Article.vue</code> code
+runs, only <code>"hero"</code> is possible. Since there is no rendering-time behavior distinguishing
+these two spellings to replace, no native CSS mechanism (<code>&lt;details&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>, container queries,
+anchor positioning, view-transitions) is relevant to <em>this</em> distinction. (The genuinely stateful
+piece of the rendered output — the "Watch intro video" modal inside <code>Tutorial/Hero.vue</code> — is
+identical regardless of the <code>intro</code>/<code>hero</code> spelling and is analyzed on
+<a href="section-hero.html#modern-css">the <code>hero</code> page, Section 5</a>, which reaches a
+<strong>partial</strong> verdict for that unrelated interactive behavior via <code>&lt;dialog&gt;</code>.)
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

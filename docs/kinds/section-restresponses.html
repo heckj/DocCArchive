@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: restResponses — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>restResponses</code></h1>
+<p class="wire-value">Wire value: <code>"restResponses"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>restResponses</code> is one of the "Rest symbol sections" cases of <code>RenderSectionKind</code> in
+swift-docc, declared at
+<code>Sources/SwiftDocC/Model/Rendering/RenderSection.swift:23</code> alongside <code>restParameters</code>,
+<code>restBody</code>, <code>restEndpoint</code>, and <code>properties</code>. It is produced by
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Symbol/RESTResponseRenderSection.swift#L13-L35"><code>RESTResponseRenderSection</code></a>,
+whose <code>kind</code> defaults to <code>.restResponses</code> and which wraps a <code>title</code> and an
+array of <code>RESTResponse</code> values (each an HTTP status/reason/MIME-type/type-declaration/content
+tuple). This section appears in the <code>primaryContentSections</code> array of a symbol
+<code>RenderNode</code> for REST endpoint documentation (e.g. an <code>@Response</code> directive under a
+<code>@RESTResponses</code>-style authoring construct in a symbol-graph-derived REST operation).
+</p>
+<p>
+On the render side, the dispatch table lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L127"><code>src/components/DocumentationTopic/PrimaryContent.vue</code></a>,
+which is the shared dispatcher for every entry in a symbol page's <code>primaryContentSections</code>
+(<code>content</code>, <code>parameters</code>, <code>properties</code>, all the <code>rest*</code> kinds,
+etc.). It keys a literal component map and a literal props map off
+<code>SectionKind.restResponses</code> (itself just the string <code>'restResponses'</code>, defined in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L11-L27"><code>src/constants/PrimaryContentSection.js</code></a>):
+</p>
+<pre><code>componentFor(section) {
+  return {
+    ...
+    [SectionKind.restResponses]: RestResponses,
+    ...
+  }[section.kind];
+},
+propsFor(section) {
+  const { ..., items, kind, title, ... } = section;
+  return {
+    ...
+    [SectionKind.restResponses]: { responses: items, title },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+Note the field rename here: the wire property is <code>items</code>, but <code>PrimaryContent.vue</code>
+passes it into the child component as a prop named <code>responses</code>. The matched component is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/RestResponses.vue#L11-L97"><code>src/components/DocumentationTopic/PrimaryContent/RestResponses.vue</code></a>,
+which renders a <code>&lt;LinkableHeading&gt;</code> for the section <code>title</code> (anchored via
+<code>anchorize(title)</code>) followed by a shared
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParametersTable.vue#L11-L27"><code>ParametersTable.vue</code></a>
+(the same grid-row/grid-column table component used by <code>Parameters.vue</code> and
+<code>RestParameters.vue</code>), keyed by each response's <code>status</code> rather than the usual
+<code>name</code> (<code>key-by="status"</code>):
+</p>
+<pre><code>&lt;ParametersTable :parameters="sanitizedResponses" :changes="propertyChanges" key-by="status"&gt;
+  &lt;template #symbol="{ status, type, reason, content, changes }"&gt;
+    &lt;div class="response-name"&gt;
+      &lt;code&gt;{{ status }} &lt;span class="reason"&gt;{{ reason }}&lt;/span&gt;&lt;/code&gt;
+    &lt;/div&gt;
+    &lt;PossiblyChangedType v-if="!shouldShiftType(...)" :type="type" :changes="changes.type" /&gt;
+  &lt;/template&gt;
+  &lt;template #description="{ content, mimeType, reason, type, status, changes }"&gt;
+    &lt;PossiblyChangedType v-if="shouldShiftType(...)" :type="type" :changes="changes.type" /&gt;
+    &lt;div class="response-reason"&gt;&lt;code&gt;{{ reason }}&lt;/code&gt;&lt;/div&gt;
+    &lt;ContentNode v-if="content" :content="content" /&gt;
+    &lt;PossiblyChangedMimetype v-if="mimeType" :mimetype="mimeType" :changes="changes.mimetype" :change="changes.change" /&gt;
+  &lt;/template&gt;
+&lt;/ParametersTable&gt;</code></pre>
+<p>
+The "symbol" column shows the numeric HTTP status code plus its reason phrase (e.g.
+<code>200 OK</code>) and, normally, the declared response <code>type</code> tokens rendered via
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PossiblyChangedType.vue#L11-L23"><code>PossiblyChangedType.vue</code></a>
+(itself delegating to <code>DeclarationTokenGroup.vue</code>). The "description" column holds the free-form
+<code>content</code> (rendered through the generic block-content dispatcher, <code>ContentNode.vue</code>)
+plus an optional MIME-type badge. A local <code>shouldShiftType</code> method
+(<code>!(content.length || reason) &amp;&amp; status</code>) moves the type declaration into the
+description column instead when a response has neither prose content nor a reason string, so the symbol
+column isn't left holding only a bare status code. A local <code>sanitizeResponse</code> method also
+normalizes a legacy/alternate JSON spelling: some data sources emit <code>mimetype</code> (lowercase t)
+instead of the documented <code>mimeType</code>, and <code>RestResponses.vue</code> re-keys it before
+handing rows to <code>ParametersTable</code>.
+</p>
+<p>
+Separately, <code>restResponses</code> also participates in the page's "on this page" navigation sidebar:
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/onThisPageRegistrator.js#L75-L84"><code>src/mixins/onThisPageRegistrator.js</code></a>
+groups it with the other <code>rest*</code>/<code>properties</code> section kinds and registers one
+navigation entry per section using the section's own <code>title</code> and <code>anchorize(title)</code>
+as the anchor — the same anchor <code>LinkableHeading</code> uses for the in-page deep link.
+</p>
+<p>
+Within this repository (DocCArchive), a decoded <code>RESTResponsesRenderSection</code> would reach
+<code>Sources/DocCArchive/DocCArchive.swift</code>'s <code>MyHTMLTransformer</code>/<code>MyMarkdownTransformer</code>
+only as an entry inside <code>Components.Schemas.RenderNode.primaryContentSections</code>, but transform
+support for it is not yet implemented — both transformers are still stub placeholders (a hardcoded HTML
+comment and an empty string, respectively) that do not branch on section kind at all.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+A real fixture exists in swift-docc's test suite:
+<code>Tests/SwiftDocCTests/Rendering/Rendering&nbsp;Fixtures/rest-symbol.json</code> contains a
+<code>restResponses</code> section (lines 223&ndash;250 as pinned) used by
+<code>Tests/SwiftDocCTests/Rendering/RESTSymbolsTests.swift</code>. The example below is that fixture's
+<code>restResponses</code> object, reproduced verbatim.
+</p>
+<pre><code>{
+  "kind": "restResponses",
+  "title": "Response Codes",
+  "items": [
+    {
+      "status": 200,
+      "reason": "OK",
+      "mimeType": "application/json",
+      "type": [
+        {
+          "kind": "typeIdentifier",
+          "text": "LibraryArtistResponse",
+          "identifier": "doc://org.swift.docc/applemusicapi/libraryartistresponse"
+        }
+      ],
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "The request was successful." }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="margin-bottom:0.25em;">Response Codes</div>
+  <div style="display:flex; border-top:1px solid var(--color-border); padding:0.5em 0;">
+    <div style="flex:0 0 25%; text-align:right; padding-right:1em; font-weight:bold;">
+      <code>200 <span style="font-weight:normal;">OK</span></code><br>
+      <span style="font-family:monospace; color:var(--color-text-secondary);">LibraryArtistResponse</span>
+    </div>
+    <div style="flex:1;">
+      <p style="margin:0;">The request was successful.</p>
+      <p style="margin:0; font-size:0.85em; color:var(--color-text-secondary);">Content-Type: application/json</p>
+    </div>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (schema objects
+<code>RESTResponsesRenderSection</code> and <code>RESTResponse</code>), cross-checked against the generated
+<code>Components.Schemas.RESTResponsesRenderSection</code> / <code>Components.Schemas.RESTResponse</code>
+in <code>Sources/DocCArchive/generated/Types.swift</code>.
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note / source</th></tr>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>enum: ["restResponses"]</code></td><td>Discriminator; generated as <code>RESTResponsesRenderSection.KindPayload</code>, a single-case enum.</td></tr>
+<tr><td><code>title</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Section heading text; used both as the visible <code>&lt;LinkableHeading&gt;</code> text and (via <code>anchorize</code>) as its DOM anchor id.</td></tr>
+<tr><td><code>items</code></td><td>array of <code>RESTResponse</code></td><td>yes</td><td>&mdash;</td><td>Wire name is <code>items</code>; <code>PrimaryContent.vue</code> renames it to the <code>responses</code> prop when instantiating <code>RestResponses.vue</code>. Swift authoring API (<code>RESTResponseRenderSection</code>) names the equivalent property <code>responses</code> with an explicit <code>CodingKeys</code> mapping to <code>items</code>.</td></tr>
+<tr><td><code>RESTResponse.status</code></td><td>number</td><td>yes</td><td>&mdash;</td><td>HTTP status code. Schema type is JSON <code>number</code> (generated as <code>Swift.Double</code> in DocCArchive's OpenAPI-generated types); swift-docc's own hand-written <code>RESTResponse</code> struct instead uses <code>UInt</code>. Used as the <code>key-by="status"</code> row key in <code>ParametersTable</code>.</td></tr>
+<tr><td><code>RESTResponse.reason</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Plain-text HTTP reason phrase (e.g. <code>"OK"</code>); shown next to the status code and, on small breakpoints, promoted into its own bolded row via the <code>.response-reason</code> style.</td></tr>
+<tr><td><code>RESTResponse.mimeType</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Response content-type. <code>RestResponses.vue</code>'s <code>sanitizeResponse</code> also accepts a legacy/lowercase <code>mimetype</code> key from some data sources and re-keys it to <code>mimeType</code> before rendering.</td></tr>
+<tr><td><code>RESTResponse.type</code></td><td>array of <code>DeclarationToken</code></td><td>yes</td><td>&mdash;</td><td>Declaration-style type tokens for the response body (can link to a documented type). Generated field is named <code>_type</code> in DocCArchive's <code>Types.swift</code> because <code>type</code> collides with the Swift keyword-adjacent property pattern used by the generator; rendered via <code>PossiblyChangedType.vue</code> &rarr; <code>DeclarationTokenGroup.vue</code>.</td></tr>
+<tr><td><code>RESTResponse.content</code></td><td>array of <code>RenderBlockContent</code></td><td>no</td><td>large <code>oneOf</code> (paragraph, aside, codeListing, etc.)</td><td>Free-form prose describing the response; rendered through the generic <code>ContentNode.vue</code> block-content dispatcher, only when present (<code>v-if="content"</code>).</td></tr>
+</table>
+<p>
+Note on required-ness in practice: swift-docc's own hand-written <code>RESTResponse.init(from:)</code>
+decodes <code>reason</code>, <code>mimeType</code>, and <code>content</code> with
+<code>decodeIfPresent</code>, matching the schema's optional marking; <code>type</code> and
+<code>status</code> are decoded unconditionally. swift-docc's unit tests
+(<code>RESTResponseRenderSectionTests.testDecodingWithoutRESTResponseContent</code> and
+<code>testDecodingWithoutRESTResponseReason</code>) exercise exactly these two optional-field-omitted
+cases and pass, confirming the schema's optionality is authoritative and enforced by the authoring-side
+decoder as well.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+<code>RestResponses.vue</code>'s template root is a bare <code>&lt;section&gt;</code> (no class), containing
+a <code>&lt;LinkableHeading&gt;</code> (which renders as an <code>&lt;h2&gt;</code> in this context, with
+an <code>id</code> equal to the anchorized title and, when linkable, a <code>router-link</code> wrapper
+carrying class <code>header-anchor</code>) and the shared <code>ParametersTable</code>.
+<code>ParametersTable.vue</code> renders <code>&lt;div class="parameters-table"&gt;</code> containing one
+<code>GridRow</code> (<code>&lt;div class="row param"&gt;</code>, plus <code>changed changed-{added|removed|modified}</code>
+when API-diffing is active) per response, each split into two <code>GridColumn</code>s
+(<code>&lt;div class="col param-symbol"&gt;</code> and <code>&lt;div class="col param-content"&gt;</code>).
+</p>
+<p>
+Inside the symbol column, <code>RestResponses.vue</code>'s own scoped SCSS (in the same
+<code>.vue</code> file) adds <code>.response-name</code> (bold status/reason line) and
+<code>.response-reason</code> (bold reason line shown only in the description column on small
+breakpoints, via <code>@include breakpoint(small) { display: none / initial }</code> toggles on
+<code>.response-reason</code> and <code>.response-name &gt; code &gt; .reason</code> respectively &mdash;
+this is the mechanism that moves the reason phrase between the two columns responsively). Type tokens are
+rendered by <code>PossiblyChangedType.vue</code> as
+<code>&lt;DeclarationTokenGroup class="property-metadata property-type"&gt;</code>, which consumes the
+CSS custom property <code>--color-figure-gray-secondary</code> for its muted text color.
+</p>
+<p>
+SCSS files involved: <code>RestResponses.vue</code> (scoped, imports
+<code>docc-render/styles/_core.scss</code>), <code>ParametersTable.vue</code> (scoped, same import, defines
+the <code>.param</code>/<code>.param-symbol</code>/<code>.param-content</code> spacing and the
+<code>change-highlight-target</code>/<code>change-highlight-end-spacing</code> mixins used when a
+diff/API-changes overlay is active), and <code>PossiblyChangedType.vue</code> (scoped). Custom properties
+consumed across this chain include <code>--spacing-param</code>, <code>--color-figure-gray-secondary</code>,
+and (only under the diffing/"changed" state) <code>--colors-grid</code>/<code>--color-grid</code> by way of
+the shared <code>_core.scss</code> mixins.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+The actual JS/Vue behavior here is (1) a one-time, render-time dispatch from the JSON discriminator string
+<code>"restResponses"</code> to the <code>RestResponses</code> component in
+<code>PrimaryContent.vue</code>'s literal lookup object, and (2) inside <code>RestResponses.vue</code>, a
+pure per-row computed decision (<code>shouldShiftType</code>) about which of two already-rendered slots
+should display the type declaration, plus a CSS breakpoint toggle (<code>.response-reason</code> /
+<code>.response-name &gt; code &gt; .reason</code>) that already <em>is</em> plain CSS
+(<code>@include breakpoint(small) { display: none / initial }</code> media-query rules, not JS state).
+None of this is a user-driven interactive widget with hidden/revealed state — there is no click-to-expand,
+tab, or modal behavior anywhere in this component tree; every response row and its full content is always
+present in the DOM and simply laid out into columns. Because there is no client-side interactive state to
+replace, none of <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, a radio+<code>:checked</code>
+sibling selector, <code>:target</code>, the Popover API, or <code>&lt;dialog&gt;</code> apply here; the one
+piece of "state" that exists (the responsive column-to-row reflow of the reason text) is already
+implemented with a native mechanism, plain CSS media-query breakpoints, so there is nothing left to port.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

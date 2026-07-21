@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: plistDetails — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>plistDetails</code></h1>
+<p class="wire-value">Wire value: <code>"details"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+This is one of the "primary content" section kinds attached to a symbol's <code>primaryContentSections</code>
+array — specifically the one used for documenting a property-list key or entitlement key (for example, an
+Info.plist key or a <code>.entitlements</code> key). The dispatch happens in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L127"><code>PrimaryContent.vue</code></a>,
+which keys a lookup table on <code>section.kind</code> via the <code>SectionKind</code> constant map (defined in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L12-L27"><code>constants/PrimaryContentSection.js</code></a>,
+where <code>details: 'details'</code> is the literal wire value). For <code>SectionKind.details</code> it selects
+the <code>PropertyListKeyDetails</code> component and passes through the section's <code>details</code> object as
+a prop:
+</p>
+<pre><code>componentFor(section) {
+  return {
+    ...
+    [SectionKind.details]: PropertyListKeyDetails,
+    ...
+  }[section.kind];
+},
+propsFor(section) {
+  const { ..., details, ... } = section;
+  return {
+    ...
+    [SectionKind.details]: { details },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+The actual rendering happens in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PropertyListKeyDetails.vue#L11-L41"><code>PropertyListKeyDetails.vue</code></a>.
+Its template root is a <code>&lt;section class="details"&gt;</code> containing a heading (via the shared
+<code>LinkableHeading</code> component, anchored to <code>"details"</code> per
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/ContentSectionAnchors.js#L42-L46"><code>ContentSectionAnchors.js</code></a>)
+followed by a single definition list (<code>&lt;dl&gt;</code>) that conditionally emits up to three key/value pairs
+depending on the <code>details.titleStyle</code> field:
+</p>
+<pre><code>&lt;section class="details"&gt;
+  &lt;LinkableHeading :anchor="contentSectionData.anchor"&gt;
+    {{ $t(contentSectionData.title) }}
+  &lt;/LinkableHeading&gt;
+  &lt;dl&gt;
+    &lt;template v-if="isSymbol"&gt;
+      &lt;dt class="detail-type"&gt;{{ $t('metadata.details.name') }}&lt;/dt&gt;
+      &lt;dd class="detail-content"&gt;{{ details.ideTitle }}&lt;/dd&gt;
+    &lt;/template&gt;
+    &lt;template v-if="isTitle"&gt;
+      &lt;dt class="detail-type"&gt;{{ $t('metadata.details.key') }}&lt;/dt&gt;
+      &lt;dd class="detail-content"&gt;{{ details.name }}&lt;/dd&gt;
+    &lt;/template&gt;
+    &lt;dt class="detail-type"&gt;{{ $t('metadata.details.type') }}&lt;/dt&gt;
+    &lt;dd class="detail-content"&gt;
+      &lt;PropertyListKeyType :types="details.value" /&gt;
+    &lt;/dd&gt;
+  &lt;/dl&gt;
+&lt;/section&gt;</code></pre>
+<p>
+The <code>isSymbol</code>/<code>isTitle</code> computed properties read <code>details.titleStyle</code>
+(<code>"symbol"</code> vs. <code>"title"</code>) together with the presence of <code>details.ideTitle</code> to
+decide which extra row to show: when the raw key itself is the displayed title (<code>titleStyle === 'symbol'</code>),
+it shows a "Name" row with the human-friendly <code>ideTitle</code>; when a friendly display name is the title
+instead (<code>titleStyle === 'title'</code>), it shows a "Key" row with the raw <code>details.name</code>. The
+"Type" row always renders, delegating to a small child component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/PropertyListKeyType.vue#L11-L13"><code>PropertyListKeyType.vue</code></a>,
+which turns the <code>value</code> array of <code>{ baseType, arrayMode }</code> objects into an English phrase
+such as <code>"array of strings or a number"</code> (joining with commas and a trailing "or", and pluralizing
+<code>baseType</code> when <code>arrayMode</code> is true).
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>swift-docc</code>'s test suite includes a full rendered plist-key RenderNode fixture at
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/plist-symbol.json</code> (lines 84&ndash;101), used by
+<code>PlistSymbolTests.swift</code>. The excerpt below is that fixture's <code>details</code> section, unmodified.
+</p>
+<pre><code>{
+  "kind": "details",
+  "title": "Details",
+  "details": {
+      "name": "com.apple.developer.networking.wifi",
+      "value": [
+        {
+          "baseType": "string",
+          "arrayMode": true
+        },
+        {
+          "baseType": "number"
+        }
+      ],
+      "platforms": ["iOS", "macOS"],
+      "ideTitle": "WiFi access",
+      "titleStyle": "title"
+  }
+}</code></pre>
+<div class="mockup">
+  <div id="mockup-details">Details</div>
+  <dl>
+    <dt class="detail-type">Key</dt>
+    <dd class="detail-content">com.apple.developer.networking.wifi</dd>
+    <dt class="detail-type">Type</dt>
+    <dd class="detail-content">array of strings or a number</dd>
+  </dl>
+</div>
+<p>
+Because <code>titleStyle</code> is <code>"title"</code> here, the mockup shows a "Key" row holding the raw
+<code>name</code> (the symbol's displayed title is presumably the friendlier <code>ideTitle</code>, "WiFi access",
+shown elsewhere on the page as the page heading — not repeated inside this section). The <code>platforms</code>
+array from the fixture is not rendered by <code>PropertyListKeyDetails.vue</code> at all; see the data sheet below.
+</p>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Per <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object <code>DetailsRenderSection</code>
+(lines 2956&ndash;2975) plus its nested <code>DetailsSection</code> object (lines 2976&ndash;3011) and the shared
+<code>TypeDetails</code> object (lines 3225&ndash;3238). Cross-checked against the generated
+<code>Components.Schemas.DetailsRenderSection</code> struct in <code>Sources/DocCArchive/generated/Types.swift</code>
+(lines 6628&ndash;6660), its nested <code>Components.Schemas.DetailsSection</code> (lines 6661&ndash;6712), and
+<code>Components.Schemas.TypeDetails</code> (lines 7057&ndash;7079).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>["details"]</code> (single-value enum)</td><td>Discriminator value; matches <code>RenderSectionKind.plistDetails</code> in swift-docc's Swift model (<code>case plistDetails = "details"</code>).</td></tr>
+<tr><td><code>title</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>swift-docc's <code>PropertyListDetailsRenderSection</code> defaults this to <code>"Details"</code> and the translator never overrides it; the Vue component also supplies its own localized heading text (<code>sections.details</code> &rarr; "Details") rather than reading this field, so in practice it is redundant on the wire.</td></tr>
+<tr><td><code>details</code></td><td><code>DetailsSection</code> object</td><td>yes</td><td>&mdash;</td><td>The single property-list-key description; unlike some sibling section kinds this is one object, not an array.</td></tr>
+<tr><td><code>DetailsSection.name</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>The raw property-list key (e.g. <code>"com.apple.developer.networking.wifi"</code>). Wire key is <code>name</code>; swift-docc's Swift model calls the equivalent field <code>rawKey</code> via a custom <code>CodingKeys</code> mapping (<code>case rawKey = "name"</code>).</td></tr>
+<tr><td><code>DetailsSection.value</code></td><td>array of <code>TypeDetails</code></td><td>yes</td><td>&mdash;</td><td>Acceptable value type(s) for this key; usually one entry, but can list several (e.g. "string or number").</td></tr>
+<tr><td><code>DetailsSection.platforms</code></td><td>array of string</td><td>yes</td><td>&mdash;</td><td>Platform names the key applies to (e.g. <code>["iOS", "macOS"]</code>). Present on the wire and required by the schema, but <strong>not read</strong> by <code>PropertyListKeyDetails.vue</code> — no platform information is rendered in this section as of the pinned commit.</td></tr>
+<tr><td><code>DetailsSection.ideTitle</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Optional human-friendly display name for the key (e.g. "WiFi access"). Wire key is <code>ideTitle</code>; swift-docc's Swift model calls the equivalent field <code>displayName</code> via <code>case displayName = "ideTitle"</code>. Shown as the "Name" row only when <code>titleStyle == "symbol"</code>.</td></tr>
+<tr><td><code>DetailsSection.rawName</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Present in the JSON Schema and generated Swift type but has <strong>no corresponding field</strong> in swift-docc's own <code>PropertyListDetailsRenderSection.Details</code> struct and is not read anywhere in <code>PropertyListKeyDetails.vue</code>. Appears to be vestigial/unused on both the producer and consumer sides as of the pinned commits.</td></tr>
+<tr><td><code>DetailsSection.titleStyle</code></td><td>string</td><td>yes</td><td><code>["title", "symbol"]</code></td><td>Controls which extra row the Vue component shows (see section 1). Matches swift-docc's <code>PropertyListTitleStyle</code> enum (<code>useRawKey = "symbol"</code>, <code>useDisplayName = "title"</code>).</td></tr>
+<tr><td><code>TypeDetails.baseType</code></td><td>string, nullable</td><td>no</td><td>&mdash;</td><td>e.g. <code>"string"</code>, <code>"number"</code>, <code>"boolean"</code>, <code>"array"</code>, <code>"dictionary"</code>; free-text on the wire, but <code>PropertyListKeyType.vue</code> only special-cases <code>"array"</code>, <code>"number"</code>, <code>"string"</code>, and <code>"dictionary"</code> for pluralization, defaulting unrecognized/absent values to <code>"*"</code> for display.</td></tr>
+<tr><td><code>TypeDetails.arrayMode</code></td><td>boolean, nullable</td><td>no</td><td>&mdash;</td><td>When true, the type is rendered as "array of &lt;baseType&gt;s" instead of the bare base type.</td></tr>
+</tbody>
+</table>
+<p>
+Source-of-truth alignment: swift-docc's own Swift model for this section lives at
+<code>Sources/SwiftDocC/Model/Rendering/Symbol/PropertyListDetailsRenderSection.swift</code> (lines 27&ndash;70),
+defining <code>public struct PropertyListDetailsRenderSection: RenderSection, Equatable</code> with a nested
+<code>Details</code> struct. The struct's field names (<code>rawKey</code>, <code>value</code>, <code>platforms</code>,
+<code>displayName</code>, <code>titleStyle</code>) differ cosmetically from the vendored JSON Schema/generated Swift
+names (<code>name</code>, <code>value</code>, <code>platforms</code>, <code>ideTitle</code>, <code>titleStyle</code>)
+purely via <code>CodingKeys</code> remapping — the wire JSON is identical either way. The <code>rawName</code> field
+noted above is the one field present on the wire schema with no corresponding Swift-model property at all.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li><code>&lt;section class="details"&gt;</code> — root element, scoped styles live entirely inline in
+<code>PropertyListKeyDetails.vue</code>'s own <code>&lt;style scoped lang="scss"&gt;</code> block (there is no
+separate dedicated SCSS partial for this kind).</li>
+<li>Heading — rendered by the shared <code>LinkableHeading</code> component
+(<code>src/components/ContentNode/LinkableHeading.vue</code>) as an <code>&lt;h2&gt;</code> (per
+<code>ContentSectionAnchors.js</code>'s <code>level: 2</code> for <code>SectionKind.details</code>), with
+<code>id="details"</code> set from the <code>anchor</code> prop, enabling deep-linking such as <code>#details</code>.</li>
+<li><code>&lt;dl&gt;</code> — the key/value list; no dedicated class.</li>
+<li><code>&lt;dt class="detail-type"&gt;</code> — the localized row label ("Name", "Key", or "Type"); styled with
+<code>font-weight: $font-weight-semibold</code>, <code>padding-left: 1rem</code>, and
+<code>padding-top: var(--spacing-param)</code> (collapsed to <code>0</code> for the first item via
+<code>&amp;:first-child</code>).</li>
+<li><code>&lt;dd class="detail-content"&gt;</code> — the row's value (plain text, or the nested
+<code>&lt;div class="type"&gt;</code> from <code>PropertyListKeyType.vue</code> for the Type row); styled with
+<code>padding-left: 2rem</code>.</li>
+<li>Responsive behavior: at the <code>small</code> breakpoint (mixin <code>@include breakpoint(small)</code> from
+the shared <code>docc-render/styles/_core.scss</code> import), the left padding on both <code>.detail-type</code>
+and <code>.detail-content</code> collapses to <code>0</code>.</li>
+<li><code>PropertyListKeyType.vue</code> contributes its own tiny scoped rule: <code>.type::first-letter { text-transform: capitalize; }</code>, capitalizing the first letter of the generated English type phrase.</li>
+<li>CSS custom property consumed: <code>--spacing-param</code>, declared globally in
+<code>src/styles/base/_typography.scss</code> (<code>--spacing-param: #{rem(28px)}</code>) and overridden per-view in
+<code>DocumentationTopic.vue</code>'s root style block to track the surrounding topic page's stacked-content
+spacing scale.</li>
+<li>SCSS files involved: <code>PropertyListKeyDetails.vue</code>'s own scoped block, <code>PropertyListKeyType.vue</code>'s
+own scoped block, and the shared <code>docc-render/styles/_core.scss</code> import (for the breakpoint mixin and
+font-weight variable).</li>
+</ul>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior: <code>PropertyListKeyDetails.vue</code> holds no component-local reactive state and has no
+click/toggle/expand-collapse handlers. It is a one-way template render: two computed properties
+(<code>isSymbol</code>, <code>isTitle</code>) derive a boolean directly from the immutable
+<code>details.titleStyle</code>/<code>details.ideTitle</code> props passed down from the parent, and
+<code>v-if</code> uses those booleans to decide, at render time, which of two mutually exclusive rows to include.
+This is conceptually a compile-time/data-driven conditional, not a runtime UI toggle a user can flip — there is no
+user interaction anywhere in this component (no click handler, no <code>v-model</code>, no <code>v-show</code>
+tied to a click). <code>PropertyListKeyType.vue</code> is likewise a pure, stateless string-formatting computed
+chain with no interactivity.
+</p>
+<p>
+Because there is no interactive state to reproduce (no expand/collapse, no active/inactive selection, no
+show/hide driven by user input), none of the native state-holding mechanisms
+(<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio+<code>:checked</code>, <code>:target</code>, the
+Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>, container queries, CSS anchor positioning,
+view-transitions) have anything to hold or replace for this kind. The one piece of "state" on the page — which
+of the two conditional rows is shown — is fully determined by the server-rendered JSON payload before the page
+ever reaches the browser, so it is not something CSS (native or otherwise) would ever need to manage.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

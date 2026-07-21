@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: endpointExample — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>endpointExample</code></h1>
+<p class="wire-value">Wire value: <code>"endpointExample"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>endpointExample</code> is one of the block-content kinds dispatched by the shared
+<code>renderNode()</code> function inside
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>components/ContentNode.vue</code></a>'s
+<code>BlockType</code> map (<code>endpointExample: 'endpointExample'</code>, line 40). The
+<code>switch (node.type)</code> case for it is:
+</p>
+<pre><code>case BlockType.endpointExample: {
+  const props = {
+    request: node.request,
+    response: node.response,
+  };
+  return createElement(EndpointExample, { props }, renderChildren(node.summary || []));
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L283-L289"><code>src/components/ContentNode.vue#L283-L289</code></a>).
+Only <code>request</code> and <code>response</code> (each a <code>CodeExample</code> object, see
+section 3) are passed through as props, untouched; the optional <code>summary</code> array of
+<code>RenderBlockContent</code> is recursively rendered via <code>renderChildren</code> and handed to
+the component's default <code>&lt;slot&gt;</code>, exactly like the sibling <code>dictionaryExample</code>
+kind. There is no <code>metadata</code>/<code>renderFigure</code> branch here either &mdash; an
+<code>endpointExample</code> node is always rendered as an <code>EndpointExample</code> component.
+</p>
+<p>
+The leaf component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/EndpointExample.vue#L11-L47"><code>components/ContentNode/EndpointExample.vue</code></a>,
+is where the interesting behavior lives. Its template:
+</p>
+<pre><code>&lt;Row class="endpoint-example"&gt;
+  &lt;Column class="example-code"&gt;
+    &lt;slot /&gt;
+    &lt;Tabnav v-model="currentTab"&gt;
+      &lt;TabnavItem :value="Tab.request"&gt;{{ $t('tab.request') }}&lt;/TabnavItem&gt;
+      &lt;TabnavItem :value="Tab.response"&gt;{{ $t('tab.response') }}&lt;/TabnavItem&gt;
+    &lt;/Tabnav&gt;
+    &lt;div class="output"&gt;
+      &lt;div v-if="isCurrent(Tab.request)" class="code"&gt;
+        &lt;CollapsibleCodeListing v-bind="request" :collapsed="isCollapsed" showLineNumbers /&gt;
+      &lt;/div&gt;
+      &lt;div v-if="isCurrent(Tab.response)" class="code"&gt;
+        &lt;CollapsibleCodeListing v-bind="response" :collapsed="isCollapsed" showLineNumbers /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="controls" v-if="isCollapsible"&gt;&hellip;&lt;/div&gt;
+  &lt;/Column&gt;
+&lt;/Row&gt;</code></pre>
+<p>
+Two independent pieces of client-side state drive this component's <code>data()</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/EndpointExample.vue#L11-L47"><code>EndpointExample.vue#L64-L69</code></a>):
+</p>
+<ul>
+<li>
+<strong>Tab selection.</strong> <code>currentTab</code> starts at <code>Tab.request</code>
+(<code>"Request"</code>). It is bound via <code>v-model</code> to a
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tabnav.vue"><code>components/Tabnav.vue</code></a>,
+which provides <code>selectTab</code>/<code>activeTab</code> to its injected
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TabnavItem.vue"><code>TabnavItem.vue</code></a>
+children; each <code>TabnavItem</code> is an <code>&lt;a href="#" class="tabnav-link"&gt;</code>
+whose <code>@click.prevent</code> handler calls <code>tabnavData.selectTab(value)</code>, which emits
+an <code>input</code> event that <code>Tabnav</code>'s <code>v-model</code> turns back into a
+<code>currentTab</code> mutation on <code>EndpointExample</code>. Only one of the two
+<code>v-if="isCurrent(Tab.request)"</code> / <code>v-if="isCurrent(Tab.response)"</code>
+<code>&lt;div class="code"&gt;</code> blocks is ever mounted at a time &mdash; this is a real
+add/remove-from-DOM toggle, not a CSS visibility switch.
+</li>
+<li>
+<strong>Collapse/expand.</strong> <code>isCollapsed</code> starts <code>true</code>. The
+computed <code>isCollapsible</code> checks whether any <code>CodeExampleContent</code> chunk in the
+<em>currently selected</em> tab's content array has <code>collapsible: true</code>; if so, a
+"more"/"less" toggle link (with a plus/minus icon) is shown, and clicking it calls
+<code>showMore()</code>/<code>showLess()</code>, which flip <code>isCollapsed</code> and are passed
+straight through as the <code>:collapsed</code> prop to <code>CollapsibleCodeListing</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CollapsibleCodeListing.vue#L11-L30"><code>CollapsibleCodeListing.vue#L11-L30</code></a>),
+where it combines with each chunk's own <code>collapsible</code> flag to add/remove the
+<code>.collapsed</code> class (which renders an <code>⋯</code> placeholder via generated CSS
+content instead of the chunk's lines).
+</li>
+</ul>
+<p>
+Unlike <code>dictionaryExample</code>'s call site, <code>EndpointExample.vue</code> always passes a
+real (initially <code>true</code>) <code>collapsed</code> prop, so the collapse/expand toggle is
+live and reachable here, not dead code.
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/rest-symbol.json</code> in the
+pinned swift-docc checkout, found inside the REST symbol's discussion (<code>ContentRenderSection</code>)
+content array, and exercised by
+<code>Tests/SwiftDocCTests/Rendering/RESTSymbolsTests.swift</code>'s
+<code>testDecodeRESTSymbol()</code>.
+</p>
+<pre><code>{
+  "type": "endpointExample",
+  "summary": [
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "The summary of this endpoint example."
+        }
+      ]
+    }
+  ],
+  "request": {
+    "type": "file",
+    "syntax": "http",
+    "content": [
+      {
+        "collapsible": false,
+        "code": ["Request content"]
+      }
+    ]
+  },
+  "response": {
+    "type": "file",
+    "syntax": "json",
+    "content": [
+      {
+        "collapsible": true,
+        "code": ["Response content"]
+      }
+    ]
+  }
+}</code></pre>
+<p>
+As with <code>dictionaryExample</code>, note the fixture's <code>request.type</code> /
+<code>response.type</code> fields (<code>"file"</code>) reflect swift-docc's internal
+<code>CodeExample.type</code> property
+(<code>Sources/SwiftDocC/Model/Rendering/Symbol/RESTExampleRenderSection.swift:24</code>) but are
+<em>not</em> declared on the vendored wire schema's <code>CodeExample</code> object (section 3); a
+strict decode against the generated <code>Components.Schemas.CodeExample</code> would ignore that
+key.
+</p>
+<div class="mockup">
+  <div style="border:1px solid #ddd; border-radius:6px; padding:10px 14px; max-width:420px;">
+    <p style="margin:0 0 10px 0;">The summary of this endpoint example.</p>
+    <div style="display:flex; gap:16px; border-bottom:1px solid #ddd; margin-bottom:8px;">
+      <span style="font-weight:bold; border-bottom:2px solid #0070c9; padding-bottom:4px;">Request</span>
+      <span style="color:#888; padding-bottom:4px;">Response</span>
+    </div>
+    <div style="background:#1e1e24; color:#ddd; font-family:monospace; font-size:0.9em; border-radius:6px; padding:8px 12px;">
+      Request content
+    </div>
+    <div style="text-align:right; margin-top:6px; font-size:0.85em; color:#0070c9;">+ More</div>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema object: <code>#/components/schemas/EndpointExample</code> in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json:1142-1167</code>, one of the variants
+referenced from the <code>RenderBlockContent</code> discriminated union (spec line 474). It
+references <code>#/components/schemas/CodeExample</code> (spec line 1125-1141) twice (for
+<code>request</code> and <code>response</code>), which in turn references
+<code>#/components/schemas/CodeExampleContent</code> (spec line 1107-1124). Generated Swift:
+<code>Components.Schemas.EndpointExample</code>, a <code>Codable, Hashable, Sendable</code> struct at
+<code>Sources/DocCArchive/generated/Types.swift:4731-4768</code>; its <code>request</code>/<code>response</code>
+fields are each typed <code>Components.Schemas.CodeExample</code>
+(<code>Types.swift:4708-4729</code>), whose <code>content</code> field is
+<code>[Components.Schemas.CodeExampleContent]</code> (<code>Types.swift:4685-4706</code>). The
+Swift-side authoring model, <code>RenderBlockContent.EndpointExample</code>, is declared at
+<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift:509-523</code>.
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"endpointExample"</code></td><td>Discriminator; generated as <code>_TypePayload</code> with the single case <code>.endpointExample</code>.</td></tr>
+<tr><td><code>summary</code></td><td>[RenderBlockContent]</td><td>no</td><td>&mdash;</td><td>Optional introductory content, rendered into the component's default slot ahead of the tab navigator.</td></tr>
+<tr><td><code>request</code></td><td>CodeExample</td><td>yes</td><td>&mdash;</td><td>Bound to the "Request" tab's <code>CollapsibleCodeListing</code>.</td></tr>
+<tr><td><code>response</code></td><td>CodeExample</td><td>yes</td><td>&mdash;</td><td>Bound to the "Response" tab's <code>CollapsibleCodeListing</code>.</td></tr>
+<tr><td><code>CodeExample.syntax</code></td><td>string</td><td>no</td><td>&mdash;</td><td>Declared on the wire schema but not read anywhere in <code>EndpointExample.vue</code> / <code>CollapsibleCodeListing.vue</code> &mdash; no per-language highlighting is driven by it in this render path.</td></tr>
+<tr><td><code>CodeExample.content</code></td><td>[CodeExampleContent]</td><td>yes</td><td>&mdash;</td><td>One array element per visually-groupable chunk of lines; bound via <code>v-bind="request"</code>/<code>v-bind="response"</code> so the whole object's keys become props on <code>CollapsibleCodeListing</code>.</td></tr>
+<tr><td><code>CodeExampleContent.collapsible</code></td><td>boolean</td><td>yes</td><td>&mdash;</td><td>Drives both the <code>.collapsible</code> styling class and, combined with <code>EndpointExample</code>'s own <code>isCollapsed</code> state, the <code>isCollapsible</code> computed that shows/hides the "more"/"less" toggle for the <em>currently selected</em> tab.</td></tr>
+<tr><td><code>CodeExampleContent.code</code></td><td>[string]</td><td>yes</td><td>&mdash;</td><td>The chunk's source lines, one array element per line (no embedded newlines).</td></tr>
+</table>
+<p>
+Note swift-docc's own <code>CodeExample</code> Swift model
+(<code>Sources/SwiftDocC/Model/Rendering/Symbol/RESTExampleRenderSection.swift:14-29</code>) declares
+an additional optional <code>type: String?</code> field that is present in the real fixture (section
+2) but absent from the vendored JSON schema and generated Swift type in this repository &mdash; a gap
+between swift-docc's authoring-side model and the wire schema DocCArchive vendors.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift:242-254</code>) are still stub placeholders that operate
+on a whole <code>RenderNode</code> and return a hardcoded HTML comment / empty string respectively, so
+an <code>endpointExample</code> block encountered while walking a parsed archive would decode
+correctly into <code>Components.Schemas.EndpointExample</code> but has no dedicated conversion logic
+in this repository today.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Root elements: <code>&lt;Row class="endpoint-example"&gt;&lt;Column class="example-code"&gt;</code>
+(<code>GridRow</code>/<code>GridColumn</code> wrappers,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/EndpointExample.vue#L11-L47"><code>EndpointExample.vue#L12-L13</code></a>).
+Inside it:
+</p>
+<ul>
+<li><code>&lt;nav class="tabnav"&gt;&lt;ul class="tabnav-items"&gt;</code> from
+<code>Tabnav.vue</code>, containing one <code>&lt;li class="tabnav-item"&gt;&lt;a class="tabnav-link"
+:class="{ active }"&gt;</code> per <code>TabnavItem</code> (the "Request"/"Response" labels, i18n via
+<code>$t('tab.request')</code>/<code>$t('tab.response')</code>).</li>
+<li><code>&lt;div class="output"&gt;</code> wraps whichever single <code>&lt;div class="code"&gt;</code>
+is currently mounted.</li>
+<li>Inside that, <code>CollapsibleCodeListing.vue</code>'s own root
+(<code>&lt;div class="collapsible-code-listing"&gt;</code>, optionally <code>.single-line</code>)
+and its <code>&lt;pre&gt;&lt;CodeBlock&gt;&hellip;&lt;/CodeBlock&gt;&lt;/pre&gt;</code> structure of
+<code>.container-general</code> / <code>.code-line-container</code> / <code>.code-number</code> /
+<code>.code-line</code> &mdash; identical markup shape to the one used by <code>dictionaryExample</code>.</li>
+<li><code>&lt;div class="controls"&gt;</code> (only when <code>isCollapsible</code>) with an
+<code>&lt;a class="toggle"&gt;</code> containing an inline plus/minus icon and localized "more"/"less"
+text, styled by <code>EndpointExample.vue</code>'s own scoped
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/EndpointExample.vue#L109-L125"><code>EndpointExample.vue#L109-L125</code></a>
+<code>&lt;style scoped lang="scss"&gt;</code> block.</li>
+</ul>
+<p>
+CSS spacing between an <code>endpointExample</code> block and its siblings is not handled by
+<code>EndpointExample.vue</code> itself but by the parent
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentNode.vue#L60"><code>components/DocumentationTopic/ContentNode.vue#L60</code></a>,
+whose <code>between-els('.endpoint-example')</code> selector adds
+<code>margin-top: var(--spacing-stacked-margin-xlarge)</code> whenever an
+<code>.endpoint-example</code> block is adjacent to another block-level sibling. CSS custom
+properties consumed at paint time (via <code>CollapsibleCodeListing.vue</code>'s scoped SCSS):
+<code>--background</code> / <code>--color-code-background</code>,
+<code>--colors-grid</code> / <code>--color-grid</code>,
+<code>--text</code> / <code>--color-code-plain</code>,
+<code>--color-code-collapsible-background</code> / <code>--color-code-collapsible-text</code>; and
+(via <code>EndpointExample.vue</code>'s own scoped SCSS, importing
+<code>docc-render/styles/_core.scss</code>) <code>--colors-text</code> / <code>--color-text</code>
+for the toggle link's color.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">Partial</span></p>
+<p>
+Current behavior, precisely: <code>EndpointExample.vue</code> holds <code>currentTab</code> in
+component <code>data()</code>, mutated through <code>Tabnav</code>'s <code>v-model</code> when a
+<code>TabnavItem</code>'s <code>@click.prevent</code> handler calls the injected
+<code>selectTab(value)</code>; the template then conditionally mounts/unmounts one of two
+<code>&lt;div v-if="isCurrent(Tab.request)"&gt;</code> / <code>v-if="isCurrent(Tab.response)"&gt;</code>
+panels. Separately, <code>isCollapsed</code> (also component <code>data()</code>) is flipped by
+<code>showMore()</code>/<code>showLess()</code> click handlers on a "more"/"less" link and passed as a
+<code>:collapsed</code> prop into <code>CollapsibleCodeListing</code>, which combines it with each
+line-chunk's own <code>collapsible</code> flag to add/remove a <code>.collapsed</code> class.
+</p>
+<p>
+The tab-switching half of this maps cleanly onto a native mechanism: a radio-input +
+<code>:checked</code> + general-sibling-selector pattern. Two hidden
+<code>&lt;input type="radio" name="endpoint-tab" id="tab-request" checked&gt;</code> /
+<code>&lt;input type="radio" name="endpoint-tab" id="tab-response"&gt;</code> elements placed before
+two <code>&lt;label for="tab-request"&gt;</code>/<code>&lt;label for="tab-response"&gt;</code> tab
+labels and two content panels would let
+<code>#tab-request:checked ~ .output .response-panel { display: none; }</code> (and the mirrored rule
+for the request panel) hold exactly the "only one panel visible" state that <code>currentTab</code>
+holds today, with the browser's native radio-group semantics (and default keyboard support) doing the
+exclusivity that <code>Tabnav</code>'s injected <code>selectTab</code> currently does in JavaScript.
+</p>
+<p>
+The collapse/expand half is a comparably clean fit for <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>:
+wrapping each <code>collapsible</code>-flagged <code>CodeExampleContent</code> chunk in its own
+<code>&lt;details&gt;</code> (with the "more"/"less" link becoming the native disclosure triangle) would
+let the browser hold the open/closed state per chunk instead of a single component-wide
+<code>isCollapsed</code> boolean &mdash; arguably a behavior improvement, since today one
+<code>isCollapsed</code> flag toggles every collapsible chunk in the visible tab at once via
+<code>:collapsed="isCollapsed"</code>, section 1.
+</p>
+<p>
+The verdict is "partial" rather than "applicable" because the two states are not fully independent in
+the current markup contract: <code>isCollapsible</code> is computed from whichever tab is
+<code>currentTab</code>-selected (it inspects <code>request.content</code> or
+<code>response.content</code> depending on the active tab), so a pure CSS reimplementation would need
+the collapse controls duplicated per tab-panel (each panel getting its own <code>&lt;details&gt;</code>
+elements) rather than a single shared toggle outside the radio-selected region &mdash; achievable, but
+it is a real structural change to the component, not a drop-in CSS swap of the existing DOM.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

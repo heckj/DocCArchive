@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: contentAndMediaGroup — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>contentAndMediaGroup</code></h1>
+<p class="wire-value">Wire value: <code>"contentAndMediaGroup"</code></p>
+<p class="appears-on">Not emitted on any page (see notes above).</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Short answer, stated honestly up front: a real, exhaustive grep of
+<code>swift-docc-render</code>'s <code>src/components/</code> and <code>src/views/</code> trees
+(including <code>src/components/Article/</code>, <code>src/components/Tutorial/</code>,
+<code>src/components/TutorialsOverview/</code>, and <code>src/views/</code>) for the literal
+string <code>"contentAndMediaGroup"</code> and for the case-insensitive substring
+<code>contentandmediagroup</code> found <strong>zero matches</strong>. No Vue component in
+this renderer dispatches on, imports, or otherwise names this kind. This is not a gap in the
+search — it reflects the actual state of the swift-docc translator, traced below.
+</p>
+<p>
+<code>contentAndMediaGroup</code> is declared as a case of
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderSection.swift#L14-L23"><code>RenderSectionKind</code></a>
+and backed by a real Swift payload type,
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Tutorials%20Overview/Sections/ContentAndMediaGroupSection.swift#L11-L32"><code>ContentAndMediaGroupSection</code></a>,
+which wraps an array of the singular <code>ContentAndMediaSection</code> plus a shared
+<code>layout</code>. It is registered in the decode dispatch table
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNode/CodableRenderSection.swift#L36-L37"><code>CodableRenderSection.swift</code></a>)
+and in the JSON-diffing machinery
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Diffing/AnyRenderSection.swift#L78-L79"><code>AnyRenderSection.swift</code></a>),
+so swift-docc can decode and diff it if a document happens to contain it.
+</p>
+<p>
+But grepping the full <code>RenderNodeTranslator.swift</code> for
+<code>ContentAndMediaGroupSection(</code> — the constructor call that would have to run for
+this kind to ever be <em>emitted</em> — turns up nothing. The translator's actual tutorial-overview
+path is:
+</p>
+<pre><code>public mutating func visitVolume(_ volume: Volume) -&gt; (any RenderTree)? {
+    var volumeSection = VolumeRenderSection(name: volume.name)
+    ...
+    volumeSection.chapters = volume.chapters.compactMap { visitChapter($0) } as? [VolumeRenderSection.Chapter] ?? []
+    return volumeSection
+}
+
+public mutating func visitChapter(_ chapter: Chapter) -&gt; (any RenderTree)? {
+    ...
+    var renderChapter = VolumeRenderSection.Chapter(name: chapter.name)
+    renderChapter.content = visitMarkupContainer(chapter.content) as! [RenderBlockContent]
+    renderChapter.tutorials = chapter.topicReferences.map { visitTutorialReference($0) } as! [RenderReferenceIdentifier]
+    ...
+    return renderChapter
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift#L504-L536"><code>RenderNodeTranslator.swift#L504-L536</code></a>)
+<code>VolumeRenderSection.Chapter.content</code> is a flat <code>[RenderBlockContent]</code>, not
+a <code>ContentAndMediaGroupSection</code>. Likewise, the singular
+<code>visitContentAndMedia(_:)</code> — the function that actually constructs
+<code>ContentAndMediaSection</code> values — is called directly for tutorial-page
+<code>@Section</code>/<code>@Stack</code> content
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift#L1006-L1014"><code>RenderNodeTranslator.swift#L1006-L1014</code></a>),
+and its results are stored one at a time as
+<code>TutorialSectionsRenderSection.Section.contentSection</code>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift#L155"><code>RenderNodeTranslator.swift#L155</code></a>)
+— never batched into a <code>contentAndMediaGroup</code> wrapper. In short:
+<code>contentAndMediaGroup</code> is a decodable-but-dead kind in the current pipeline — present
+in the enum and in decode/diff plumbing for backward compatibility, but not constructed by any
+code path that produces new render trees, and consequently never something a current DocC build
+writes into a <code>.doccarchive</code>, and never something swift-docc-render needs to draw.
+</p>
+<p>
+Because there is no render-side consumer, this page cannot cite a component, template, or SCSS
+file for <code>contentAndMediaGroup</code> itself in section&nbsp;4 below; it instead documents
+where the closely related, actually-rendered singular <code>contentAndMedia</code> kind is
+consumed, for context (see the separate <code>contentAndMedia</code> reference page for the full
+Vue-side treatment).
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<p class="synthesized-note">
+No real fixture exists anywhere that was searched. DocCArchive's fixtures
+(<code>ExampleDocs.doccarchive</code>, <code>SampleLibrary.doccarchive</code>) contain no
+occurrence of <code>contentAndMediaGroup</code> at all (grepped directly, zero hits). swift-docc's
+test suite (<code>Tests/SwiftDocCTests/</code>) also has no JSON or Swift-literal fixture
+constructing a <code>ContentAndMediaGroupSection</code> — the one incidental hit in that tree
+(<code>Utility/NearMissTests.swift</code>) is an unrelated "did-you-mean" string-similarity test,
+not a fixture. The example below is hand-written to satisfy the Swift model
+(<code>ContentAndMediaGroupSection</code> + <code>ContentAndMediaSection</code>) exactly, since no
+JSON Schema for it exists in DocCArchive's vendored spec to check against (see
+<a href="#data-sheet">section 3</a> for why).
+</p>
+<pre><code>{
+  "kind": "contentAndMediaGroup",
+  "layout": "horizontal",
+  "sections": [
+    {
+      "kind": "contentAndMedia",
+      "layout": "horizontal",
+      "title": "Attach the sensor",
+      "eyebrow": "Step 1",
+      "media": "media-attach-sensor",
+      "mediaPosition": "trailing",
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Mount the accelerometer to the development board." }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "contentAndMedia",
+      "layout": "horizontal",
+      "title": "Calibrate the reading",
+      "eyebrow": "Step 2",
+      "media": "media-calibrate",
+      "mediaPosition": "trailing",
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Run the calibration routine before recording data." }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <p style="display:flex; gap:16px; align-items:flex-start; margin-bottom:12px;">
+    <span style="flex: 0 0 60%;">
+      <span style="display:block; font-size:0.85em; color: var(--color-text-secondary);">Step 1</span>
+      <strong>Attach the sensor</strong><br>
+      Mount the accelerometer to the development board.
+    </span>
+    <span style="flex: 0 0 35%; border:1px dashed var(--color-border); border-radius:6px; padding:20px; text-align:center; color: var(--color-text-secondary);">
+      [ media-attach-sensor ]
+    </span>
+  </p>
+  <p style="display:flex; gap:16px; align-items:flex-start;">
+    <span style="flex: 0 0 60%;">
+      <span style="display:block; font-size:0.85em; color: var(--color-text-secondary);">Step 2</span>
+      <strong>Calibrate the reading</strong><br>
+      Run the calibration routine before recording data.
+    </span>
+    <span style="flex: 0 0 35%; border:1px dashed var(--color-border); border-radius:6px; padding:20px; text-align:center; color: var(--color-text-secondary);">
+      [ media-calibrate ]
+    </span>
+  </p>
+  <p><em>Speculative mockup only: two contentAndMedia entries stacked as this group's model
+  implies, using the sibling ContentAndMedia.vue layout for each entry. No swift-docc-render
+  component actually renders a contentAndMediaGroup wrapper element around them &mdash; see
+  section 1.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+DocCArchive's vendored <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> was
+searched for <code>"contentAndMediaGroup"</code> and for a schema object titled
+<code>ContentAndMediaGroup</code>: <strong>no match exists</strong>. The spec defines a
+<code>ContentAndMedia</code> object (singular kind only; required keys
+<code>kind</code>/<code>content</code>/<code>media</code>/<code>mediaPosition</code>) but has no
+corresponding group/wrapper schema. Consistent with that, grepping the generated
+<code>Sources/DocCArchive/generated/Types.swift</code> for <code>contentAndMediaGroup</code> or
+<code>ContentAndMediaGroup</code> also returns nothing; the only generated case is
+<code>case contentAndMedia = "contentAndMedia"</code>. There is therefore no
+<code>doccArchiveType</code> for this kind — DocCArchive cannot decode a
+<code>contentAndMediaGroup</code> section today; if one appeared in a
+<code>.doccarchive</code>'s render node JSON, the OpenAPI-generated decoder would not recognize
+it as this specific case (behavior depends on how the surrounding open/undiscriminated section
+list is typed, but no dedicated struct exists to receive it).
+</p>
+<p>
+The table below is therefore built from swift-docc's authoring-side Swift model only — it is a
+description of the payload's <em>shape as swift-docc could still decode/construct it</em>, not a
+wire-format guarantee, since DocCArchive's schema authority (step 2 of this page's research) has
+nothing to say about this kind.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"contentAndMediaGroup"</code> (fixed)</td>
+<td>Default-initialized to <code>.contentAndMediaGroup</code> in the Swift struct; not present at all in DocCArchive's vendored JSON Schema.</td>
+</tr>
+<tr>
+<td><code>layout</code></td>
+<td>string enum (<code>ContentAndMediaSection.Layout</code>)</td>
+<td>no</td>
+<td><code>"horizontal"</code>, <code>"vertical"</code></td>
+<td>Derived from the first element of <code>sections</code> at construction time; the memberwise initializer asserts (debug-only) that every section shares the same <code>layout</code>.</td>
+</tr>
+<tr>
+<td><code>sections</code></td>
+<td>array of <code>ContentAndMediaSection</code></td>
+<td>yes</td>
+<td>&mdash; (precondition: non-empty)</td>
+<td>The grouped child sections; each is itself a full <code>contentAndMedia</code>-kind payload (own <code>title</code>, <code>eyebrow</code>, <code>content</code>, <code>media</code>, <code>mediaPosition</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>
+Source for the table: <code>ContentAndMediaGroupSection</code> struct at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Tutorials%20Overview/Sections/ContentAndMediaGroupSection.swift#L11-L31">ContentAndMediaGroupSection.swift#L11-L31</a>,
+cross-checked against <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (no match)
+and <code>Sources/DocCArchive/generated/Types.swift</code> (no match) as of the pinned commits
+in the footer.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+There is no HTML/CSS mapping to document for <code>contentAndMediaGroup</code> itself: no
+template, class, id, or SCSS partial in <code>swift-docc-render</code> names or dispatches on
+this kind (see section 1). There is nothing to map because there is nothing rendered.
+</p>
+<p>
+For descriptive context only: the individual <code>contentAndMedia</code> sections that this
+kind would group are, when they occur directly (unwrapped) in tutorial content, rendered by
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Article/Layouts/ContentAndMedia.vue#L11-L16"><code>ContentAndMedia.vue</code></a>
+as <code>div.content-and-media</code> (with modifier classes <code>media-leading</code> /
+<code>media-trailing</code>), using SCSS from that component's own
+<code>&lt;style scoped lang="scss"&gt;</code> block and the shared
+<code>docc-render/styles/_core.scss</code> partial. See the dedicated
+<code>contentAndMedia</code> reference page for the full breakdown of that component; none of it
+is specific to the group wrapper, which simply does not exist on the render side.
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+(documented in <code>Sources/DocCArchive/Documentation.docc/DocCArchive/MyHTMLTransformer.md</code>
+and <code>MyMarkdownTransformer.md</code>, implemented inline in
+<code>Sources/DocCArchive/DocCArchive.swift</code>) are still stub placeholders with no
+kind-specific handling for any render section, and in any case DocCArchive's generated types
+have no case to represent <code>contentAndMediaGroup</code> for a transformer to switch on.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: there is no current JS/Vue behavior to describe. This kind is not
+constructed by swift-docc's render-node translator (section 1) and is not consumed by any
+swift-docc-render component (grepped, zero matches) — there is no interactive, stateful, or even
+purely presentational behavior in the shipping renderer to hold state for or replace. Its would-be
+children (individual <code>contentAndMedia</code> sections) are themselves stateless, static
+flex layouts when they do appear directly (see the <code>contentAndMedia</code> page's own
+"modern CSS" verdict, also "not applicable," for the same reason at that level).
+</p>
+<p>
+Naming a native mechanism (<code>&lt;details&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>, container
+queries, anchor positioning, view-transitions) would require a concrete selector or attribute
+that is actually holding some piece of UI state today, and none exists for a kind that is never
+emitted or rendered. The honest conclusion is that this kind has nothing to modernize because it
+has no live implementation to modernize.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

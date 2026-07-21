@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: tile — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>tile</code></h1>
+<p class="wire-value">Wire value: <code>"tile"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<strong>Important caveat found during research:</strong> <code>tile</code> is declared as a case of
+<code>RenderSectionKind</code> in swift-docc
+(<code>Sources/SwiftDocC/Model/Rendering/RenderSection.swift:17</code>, <code>case hero, intro, tasks,
+assessments, volume, contentAndMedia, contentAndMediaGroup, callToAction, tile, articleBody,
+resources</code>), but there is <strong>no</strong> <code>RenderSection</code>-conforming struct anywhere in
+swift-docc whose <code>kind</code> is <code>"tile"</code>, and no <code>"kind": "tile"</code> literal appears
+anywhere in the wire format. Searching <code>AnyRenderSection.swift</code> and
+<code>CodableRenderSection.swift</code> (the two places that switch over every <code>RenderSectionKind</code>
+case to decode a section) turns up no reference to <code>.tile</code> at all. The enum case appears to be
+reserved/vestigial.
+</p>
+<p>
+What DocC actually emits under the name "tile" is <code>RenderTile</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Tutorials Overview/Resources/RenderTile.swift</code>) — a plain
+<code>Codable</code> struct with <em>no <code>kind</code> field of its own</em>. It is never a top-level
+section; it only appears as an element of the <code>tiles</code> array inside
+<code>ResourcesRenderSection</code>, whose own discriminator is <code>"kind": "resources"</code>, not
+<code>"tile"</code>. This page therefore documents <code>RenderTile</code>/<code>tile</code> as an embedded
+object type, consistent with how the JSON schema (step 2 below) models it — as an inline, untagged object
+under <code>ResourcesRenderSection.tiles</code>, not as its own discriminated section.
+</p>
+<p>
+Tracing how swift-docc-render actually renders this data, starting from the top of a tutorial overview
+page: <code>LearningPath.vue</code> receives the render node's top-level <code>sections</code> array and
+keeps a small <code>SectionKind</code> lookup (<code>{ resources: 'resources', volume: 'volume' }</code>).
+Anything whose <code>section.kind</code> is <code>"resources"</code> is routed to
+<code>Resources.vue</code>, and only <code>content</code> and <code>tiles</code> are forwarded as props:
+</p>
+<pre><code>const SectionKind = { resources: 'resources', volume: 'volume' };
+...
+componentFor: ({ kind }) => ({
+  [SectionKind.resources]: Resources,
+  [SectionKind.volume]: Volume,
+}[kind]),
+propsFor: ({ chapters, content, image, kind, name, tiles }) => ({
+  [SectionKind.resources]: { content, tiles },
+  [SectionKind.volume]: { chapters, content, image, name },
+}[kind]),</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/LearningPath.vue#L38-L105">LearningPath.vue#L38-L105</a>
+for the dispatch table and prop-forwarding.
+</p>
+<p>
+<code>Resources.vue</code>'s template is a two-line wrapper: a <code>VolumeName</code> heading (labelled
+"Resources") followed by a <code>TileGroup</code> bound directly to the <code>tiles</code> prop:
+</p>
+<pre><code>&lt;section class="resources" id="resources" tabindex="-1"&gt;
+  &lt;VolumeName :name="$t('sections.resources')" :content="content" /&gt;
+  &lt;TileGroup :tiles="tiles" /&gt;
+&lt;/section&gt;</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/Resources.vue#L11-L59">Resources.vue#L11-L59</a>.
+<code>TileGroup</code> is a local alias for <code>ResourcesTileGroup.vue</code>.
+</p>
+<p>
+<code>ResourcesTileGroup.vue</code> loops the array with <code>v-for="tile in tiles"</code>, forwarding
+exactly the four fields the wire format defines (<code>action</code>, <code>content</code>,
+<code>identifier</code>, <code>title</code>) as props to one <code>Tile</code> component instance per
+array element — this is the actual per-item dispatch site for an individual tile object:
+</p>
+<pre><code>&lt;div class="tile-group" :class="countClass"&gt;
+  &lt;Tile v-for="tile in tiles" v-bind="propsFor(tile)" :key="tile.title" /&gt;
+&lt;/div&gt;
+...
+propsFor: ({ action, content, identifier, title }) =&gt; ({ action, content, identifier, title }),</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/ResourcesTileGroup.vue#L11-L46">ResourcesTileGroup.vue#L11-L46</a>.
+<code>Tile</code> here is a local alias for <code>ResourcesTile.vue</code> — the component that actually
+renders one tile's markup.
+</p>
+<p>
+<code>ResourcesTile.vue</code> renders the tile's icon (chosen from <code>identifier</code>), title,
+body content (delegated to the generic <code>ContentNode</code> block-content renderer), and an optional
+call-to-action link:
+</p>
+<pre><code>&lt;div class="tile"&gt;
+  &lt;div v-if="identifier" class="icon"&gt;
+    &lt;component :is="iconComponent" /&gt;
+  &lt;/div&gt;
+  &lt;div class="title"&gt;{{ title }}&lt;/div&gt;
+  &lt;ContentNode :content="content" /&gt;
+  &lt;DestinationDataProvider v-if="action" :destination="action" v-slot="{ url, title }"&gt;
+    &lt;Reference class="link" :url="url"&gt;
+      {{ title }}
+      &lt;InlineChevronRightIcon class="link-icon icon-inline" /&gt;
+    &lt;/Reference&gt;
+  &lt;/DestinationDataProvider&gt;
+&lt;/div&gt;</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/TutorialsOverview/ResourcesTile.vue#L11-L96">ResourcesTile.vue#L11-L96</a>.
+<code>identifier</code> selects the icon component from a fixed map
+(<code>documentation</code>&rarr;<code>DocumentIcon</code>, <code>downloads</code>&rarr;<code>DownloadIcon</code>,
+<code>forums</code>&rarr;<code>ForumIcon</code>, <code>sampleCode</code>&rarr;<code>CurlyBracketsIcon</code>,
+<code>videos</code>&rarr;<code>PlayIcon</code>; the sixth wire value, <code>featured</code>, has no icon and
+falls through to <code>undefined</code>, so no icon renders). <code>action</code>, when present, is resolved
+through <code>DestinationDataProvider</code>/<code>Reference</code> to a real link with a trailing chevron
+icon.
+</p>
+<p>
+Note: there is a separate, unrelated <code>.tile</code> CSS class in
+<code>Volume.vue</code> (a "chapter" card in the same tutorials-overview page) — same class name, different
+component and different wire kind (<code>volume.chapters[]</code>, not <code>ResourcesRenderSection.tiles[]</code>).
+It is not connected to this page's <code>tile</code> and is out of scope here.
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+No fixture in DocCArchive's test archives (<code>ExampleDocs.doccarchive</code>,
+<code>SampleLibrary.doccarchive</code> — both are documentation-only archives with no tutorial/resources
+content) or in swift-docc's JSON test corpus contains a raw <code>"tiles"</code> or
+<code>"kind": "resources"</code> literal. swift-docc's own coverage of this data
+(<code>Tests/SwiftDocCTests/Model/SemaToRenderNodeTests.swift</code>, around line 661) asserts against
+decoded Swift values, not an embedded JSON literal, built from a real authoring-side fixture,
+<code>Tests/SwiftDocCTests/Test Bundles/LegacyBundle_DoNotUseInNewTests.docc/TestOverview.tutorial</code>,
+whose <code>@Resources</code> block is:
+</p>
+<pre><code>@Resources {
+   Find the tools and a comprehensive set of resources for creating AR experiences on iOS.
+
+   @Documentation(destination: "https://www.example.com/documentation/technology") {
+      Browse and search detailed API documentation.
+      - &lt;doc://org.swift.docc.example/TestTutorial&gt;
+      - &lt;doc://org.swift.docc.example/TestTutorial2&gt;
+   }
+   @SampleCode(destination: "https://www.example.com/documentation/technology") {
+      Browse and search detailed sample code.
+      - &lt;doc://org.swift.docc.example/TestTutorial&gt;
+      - &lt;doc://org.swift.docc.example/TestTutorial2&gt;
+   }
+   @Downloads(destination: "https://www.example.com/download") {
+      Download Xcode 10, which includes the latest tools and SDKs.
+   }
+   @Videos(destination: "https://www.example.com/videos") {
+      See AR presentation from WWDC and other events.
+   }
+   @Forums(destination: "https://www.example.com/forums") {
+      Discuss AR with Apple engineers and other developers.
+   }
+}</code></pre>
+<p class="synthesized-note">
+This is the "what an author writes to produce this" side: each nested directive
+(<code>@Documentation</code>, <code>@SampleCode</code>, <code>@Downloads</code>, <code>@Videos</code>,
+<code>@Forums</code>) becomes exactly one <code>RenderTile</code>, with the directive name mapping to the
+tile's <code>identifier</code> and the directive's title-cased name (or an explicit title) becoming
+<code>title</code>. The JSON below is hand-written to match the schema in the data sheet, using the same
+titles/content that <code>SemaToRenderNodeTests.swift</code> asserts this exact fixture decodes to
+(<code>tiles[0].title == "Documentation"</code>, <code>tiles[2].title == "Xcode and SDKs"</code>, etc.), but
+the raw JSON text itself does not exist verbatim in either repository, so it is marked as synthesized.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "resources",
+  "content": [
+    { "type": "paragraph", "inlineContent": [
+      { "type": "text", "text": "Find the tools and a comprehensive set of resources for creating AR experiences on iOS." }
+    ] }
+  ],
+  "tiles": [
+    {
+      "identifier": "documentation",
+      "title": "Documentation",
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "Browse and search detailed API documentation." }
+        ] },
+        { "type": "unorderedList", "items": [
+          { "content": [ { "type": "paragraph", "inlineContent": [
+            { "type": "reference", "identifier": "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorial", "isActive": true }
+          ] } ] },
+          { "content": [ { "type": "paragraph", "inlineContent": [
+            { "type": "reference", "identifier": "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorial2", "isActive": true }
+          ] } ] }
+        ] }
+      ]
+    },
+    {
+      "identifier": "sampleCode",
+      "title": "Sample Code",
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "Browse and search detailed sample code." }
+        ] },
+        { "type": "unorderedList", "items": [
+          { "content": [ { "type": "paragraph", "inlineContent": [
+            { "type": "reference", "identifier": "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorial", "isActive": true }
+          ] } ] },
+          { "content": [ { "type": "paragraph", "inlineContent": [
+            { "type": "reference", "identifier": "doc://org.swift.docc.example/tutorials/Test-Bundle/TestTutorial2", "isActive": true }
+          ] } ] }
+        ] }
+      ]
+    },
+    {
+      "identifier": "downloads",
+      "title": "Xcode and SDKs",
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "Download Xcode 10, which includes the latest tools and SDKs." }
+        ] }
+      ],
+      "action": { "type": "reference", "identifier": "https://www.example.com/download", "isActive": true }
+    },
+    {
+      "identifier": "videos",
+      "title": "Videos",
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "See AR presentation from WWDC and other events." }
+        ] }
+      ],
+      "action": { "type": "reference", "identifier": "https://www.example.com/videos", "isActive": true }
+    },
+    {
+      "identifier": "forums",
+      "title": "Forums",
+      "content": [
+        { "type": "paragraph", "inlineContent": [
+          { "type": "text", "text": "Discuss AR with Apple engineers and other developers." }
+        ] }
+      ],
+      "action": { "type": "reference", "identifier": "https://www.example.com/forums", "isActive": true }
+    }
+  ]
+}</code></pre>
+<p>Rendered mockup approximating the resulting tile grid (5 tiles &rarr; a 6-column/2-row layout per <code>.tile-group.count-5</code>):</p>
+<div class="mockup">
+  <div class="mockup-tile-group" style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+    <div class="mockup-tile" style="border:1px solid #ccc; padding:10px;">
+      <p><strong>Documentation</strong></p>
+      <p>Browse and search detailed API documentation.</p>
+      <ul><li>Test Tutorial</li><li>Test Tutorial 2</li></ul>
+    </div>
+    <div class="mockup-tile" style="border:1px solid #ccc; padding:10px;">
+      <p><strong>Sample Code</strong></p>
+      <p>Browse and search detailed sample code.</p>
+      <ul><li>Test Tutorial</li><li>Test Tutorial 2</li></ul>
+    </div>
+    <div class="mockup-tile" style="border:1px solid #ccc; padding:10px;">
+      <p><strong>Xcode and SDKs</strong></p>
+      <p>Download Xcode 10, which includes the latest tools and SDKs.</p>
+      <p>&rarr; View downloads</p>
+    </div>
+    <div class="mockup-tile" style="border:1px solid #ccc; padding:10px;">
+      <p><strong>Videos</strong></p>
+      <p>See AR presentation from WWDC and other events.</p>
+      <p>&rarr; Watch videos</p>
+    </div>
+    <div class="mockup-tile" style="border:1px solid #ccc; padding:10px;">
+      <p><strong>Forums</strong></p>
+      <p>Discuss AR with Apple engineers and other developers.</p>
+      <p>&rarr; View forums</p>
+    </div>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+There is no standalone <code>TileRenderSection</code> schema object. The relevant schema is
+<code>ResourcesRenderSection</code> in <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> lines
+360-406, whose <code>tiles</code> field is an array of an <em>inline, unnamed</em> object schema (no
+<code>$ref</code>) with no <code>kind</code>/discriminator property of its own. The corresponding generated
+Swift type in <code>Sources/DocCArchive/generated/Types.swift</code> lines 3466-3546 is
+<code>Components.Schemas.ResourcesRenderSection</code>, and the per-tile type — because the schema gave it
+no name — is synthesized by swift-openapi-generator as the nested type
+<code>Components.Schemas.ResourcesRenderSection.TilesPayloadPayload</code>.
+</p>
+<h3><code>ResourcesRenderSection</code> (the enclosing section)</h3>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>"resources"</code> (only value)</td><td>Section discriminator; generated as <code>KindPayload</code> single-case enum. Not <code>"tile"</code>.</td></tr>
+<tr><td><code>tiles</code></td><td>array of inline object</td><td>yes</td><td>—</td><td>The array documented below; generated as <code>TilesPayload = [TilesPayloadPayload]</code>.</td></tr>
+</tbody>
+</table>
+<h3><code>ResourcesRenderSection.tiles[]</code> (the "tile" object — <code>TilesPayloadPayload</code>)</h3>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>identifier</code></td><td>string</td><td>yes</td><td><code>"featured" | "documentation" | "sampleCode" | "downloads" | "videos" | "forums"</code></td><td>Generated as <code>IdentifierPayload</code>; selects the icon component in <code>ResourcesTile.vue</code> (no icon for <code>featured</code>).</td></tr>
+<tr><td><code>title</code></td><td>string</td><td>yes</td><td>—</td><td>Rendered verbatim as the tile heading.</td></tr>
+<tr><td><code>content</code></td><td>array of <code>RenderBlockContent</code></td><td>yes</td><td>—</td><td>Tile body, delegated to <code>ContentNode</code>.</td></tr>
+<tr><td><code>action</code></td><td><code>RenderInlineContent</code></td><td>no</td><td>—</td><td>Call-to-action link/reference; when present, rendered as a chevron-suffixed link via <code>DestinationDataProvider</code>.</td></tr>
+<tr><td><code>media</code></td><td>string (reference id), nullable</td><td>no</td><td>—</td><td>Declared in the JSON schema (<code>"format": "reference", "nullable": true</code>); generated as an optional <code>Swift.String?</code>. Not read anywhere in <code>ResourcesTile.vue</code>/<code>ResourcesTileGroup.vue</code>/<code>Resources.vue</code> — present in the wire format but currently unused by the render UI.</td></tr>
+</tbody>
+</table>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> lines 360-406
+(<code>ResourcesRenderSection</code>, including the inline <code>tiles</code> item schema); generated types
+at <code>Sources/DocCArchive/generated/Types.swift</code> lines 3466-3546. For comparison, the
+authoring-side Swift model in swift-docc is <code>RenderTile</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Tutorials Overview/Resources/RenderTile.swift</code>), which has
+the identical four fields (<code>identifier</code>, <code>title</code>, <code>content</code>, <code>action</code>,
+<code>media</code>) plus its own nested <code>Identifier</code> enum with the same six raw values.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li><code>section#resources.resources</code> — root of the whole resources block, rendered by
+<code>Resources.vue</code>; carries a scroll-margin <code>tabindex="-1"</code> for the on-page navigation
+anchor.</li>
+<li><code>.tile-group</code> (on the wrapping <code>&lt;div&gt;</code> from <code>ResourcesTileGroup.vue</code>) —
+a CSS grid whose column/row layout is chosen entirely by a <code>count-N</code> modifier class
+(<code>count-1</code> through <code>count-6</code>, one class per possible tile count 1-6), each with its
+own <code>grid-template-columns</code>/<code>grid-template-rows</code>; e.g. <code>count-5</code> uses a
+6-column grid where the first two tiles span 3 columns and the rest span 2. <code>$tile-margin</code> comes
+from the SCSS variable <code>$tutorials-overview-tile-margin-single-side</code>
+(<code>src/styles/core/_vars.scss:29</code>, currently <code>2px</code>).</li>
+<li><code>.tile</code> (on each tile's root <code>&lt;div&gt;</code>, from <code>ResourcesTile.vue</code>) —
+background <code>var(--color-tutorials-overview-fill-secondary, dark-color(fill-secondary))</code>,
+text color <code>var(--color-tutorials-overview-content-alt)</code>, fixed padding.</li>
+<li><code>.icon</code> — fixed 25px square icon slot; SVG fill uses
+<code>var(--color-tutorials-overview-icon)</code>, and any stroke paths use
+<code>var(--color-tutorials-overview-content-alt)</code>.</li>
+<li><code>.title</code> — tile heading, <code>font-styles(tutorials-overview-chapter-title)</code>.</li>
+<li><code>.content</code> — tile body wrapper around the nested <code>ContentNode</code> output;
+un-ordered lists inside it have bullets suppressed (<code>list-style-type: none</code>) with a zero-width
+space injected via <code>li:before</code> purely to keep list semantics for assistive tech.</li>
+<li><code>.link</code> / <code>.link-icon</code> — the optional call-to-action row, colored via
+<code>var(--colors-link, var(--color-tutorials-overview-link))</code>, with a small trailing
+<code>InlineChevronRightIcon</code>.</li>
+<li>Breakpoint behavior: at the <code>small</code> breakpoint every <code>count-N</code> grid collapses to a
+single column (<code>grid-template-columns: 1fr</code>); between the "medium" and "nav-medium" breakpoints
+the grid is similarly forced to one column.</li>
+<li>SCSS files involved: <code>ResourcesTileGroup.vue</code> (scoped style block, the grid/count-N rules),
+<code>ResourcesTile.vue</code> (scoped style block, the card look), plus shared
+<code>src/styles/core/_vars.scss</code> (tile margin) and <code>src/styles/core/colors/_light.scss</code> /
+<code>_dark.scss</code> (the color custom properties below).</li>
+<li>CSS custom properties consumed: <code>--color-tutorials-overview-fill-secondary</code>,
+<code>--color-tutorials-overview-content-alt</code>, <code>--color-tutorials-overview-icon</code>,
+<code>--colors-link</code>/<code>--color-tutorials-overview-link</code>.</li>
+</ul>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: none of the three components involved (<code>ResourcesTileGroup.vue</code>,
+<code>ResourcesTile.vue</code>, <code>Resources.vue</code>) hold any component <code>data()</code>, watch any
+reactive state, or attach any event listeners. <code>ResourcesTileGroup.vue</code>'s only logic is a
+computed <code>countClass</code> derived once from the static prop <code>tiles.length</code>, and
+<code>ResourcesTile.vue</code>'s only logic is a computed <code>iconComponent</code> lookup from the static
+prop <code>identifier</code>. Both are pure, one-shot derivations from server-supplied JSON at mount time —
+there is no click handler, toggle, tab switch, or any other run-time interaction to hold state for.
+</p>
+<p>
+Because there is no interactive behavior in this kind at all — it is a static, read-only grid of link
+cards — there is no state-holding mechanism (native or JS) to replace. The grid layout itself
+(<code>grid-template-columns</code> chosen by a <code>count-N</code> class) is already plain CSS, not a
+candidate for further "modernization" via <code>:has()</code>, <code>&lt;details&gt;</code>, or any other
+native interactive primitive; those mechanisms exist to replace scripted state transitions, and this kind
+has none.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

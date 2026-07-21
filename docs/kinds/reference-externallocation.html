@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: externalLocation — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>externalLocation</code></h1>
+<p class="wire-value">Wire value: <code>"externalLocation"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+There is no Vue component, and no line of code anywhere under
+<code>swift-docc-render/src/</code>, that tests a reference's <code>type</code> for the literal string
+<code>"externalLocation"</code> — a full grep of <code>src/components/</code> and <code>src/views/</code>
+for that string returns nothing. <code>externalLocation</code> is not a distinct rendering path; it is
+an alternate wire-format value for the <em>same</em> reference object swift-docc-render already
+handles as a <code>download</code> reference (see section 3 for why the schema groups them together).
+Wherever that shared object is consumed, only its <code>url</code> and <code>identifier</code> fields
+are read — the <code>type</code> discriminator itself is never branched on downstream of the Swift
+decode step.
+</p>
+<p>
+The one call site that actually renders one of these download-family references is the "sample code
+download" button on a documentation page:
+</p>
+<ul>
+<li>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L64-L70"><code>components/DocumentationTopic.vue#L64-L70</code></a> —
+if the RenderNode has a top-level <code>sampleCodeDownload</code> object, it renders
+<code>&lt;DownloadButton :action="sampleCodeDownload.action" linksToAsset /&gt;</code>, where
+<code>DownloadButton</code> is a local alias for <code>CallToActionButton</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L251"><code>DocumentationTopic.vue#L251</code></a>).
+<code>sampleCodeDownload.action</code> is a <code>reference</code>-type action object holding an
+<code>identifier</code> string — not the reference payload itself.
+</li>
+<li>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/CallToActionButton.vue#L11-L21"><code>components/CallToActionButton.vue#L11-L21</code></a> —
+wraps the action in <code>&lt;DestinationDataProvider :destination="action" v-slot="{ url, title }"&gt;</code>
+and passes the resolved <code>url</code>/<code>title</code> straight into
+<code>&lt;ButtonLink :url="normalizeUrl(url)" ... &gt;{{ title }}&lt;/ButtonLink&gt;</code>.
+</li>
+<li>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DestinationDataProvider.vue#L61-L76"><code>components/DestinationDataProvider.vue#L61-L76</code></a> —
+this is the actual lookup: <code>reference: ({ references, destination }) =&gt; (references[destination.identifier] || {})</code>
+resolves the identifier against the RenderNode's top-level <code>references</code> map. Since
+<code>destination.type === 'reference'</code>, <code>linkUrl</code> resolves to
+<code>reference.url</code> and <code>linkTitle</code> to
+<code>destination.overridingTitle || reference.title</code>. No branch here inspects whether
+<code>reference.type</code> is <code>"download"</code> or <code>"externalLocation"</code> — both
+shapes carry a <code>url</code> field and neither carries a <code>title</code> field, so
+<code>linkTitle</code> falls back entirely to the caller-supplied <code>overridingTitle</code>
+(populated server-side from the authored <code>@CallToAction</code> button label; see section 3).
+</li>
+<li>
+Note the one place <code>type</code> <em>is</em> read on this component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DestinationDataProvider.vue#L49-L54"><code>DestinationDataProvider.vue#L49-L54</code></a>'s
+<code>isExternal</code> computed — it only matches the unrelated <code>link</code> destination/reference
+type (for the deprecated inline-URL call-to-action form), so an <code>externalLocation</code> (or
+<code>download</code>) reference is never treated as "external" for the purposes of appending
+<code>"(opens in browser)"</code> to the button's aria-label, even though the URL it points at is, in
+the <code>externalLocation</code> case, off-site by definition.
+</li>
+</ul>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/CallToActionButton.vue#L36-L39"><code>CallToActionButton.vue#L36-L39</code></a>'s
+<code>normalizeUrl</code> only rewrites relative paths through the asset-normalization helpers when
+<code>linksToAsset</code> is set and the URL is not already absolute
+(<code>isAbsoluteUrl</code>); an <code>externalLocation</code>'s URL is normally already an absolute
+<code>https://…</code> URL (see section 3), so in practice this early-returns the URL unchanged. The
+resulting <code>&lt;ButtonLink&gt;</code> then swaps in a <code>Reference</code> (plain anchor)
+component whenever a <code>url</code> is present
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ButtonLink.vue#L44-L47"><code>ButtonLink.vue#L44-L47</code></a>).
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+A real fixture exists in swift-docc's own test suite:
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/external-location-custom-url.json</code>
+(pinned commit <code>8b8d8268aa</code>). The relevant <code>references</code> entry and the
+<code>sampleCodeDownload</code> block that points at it are reproduced verbatim below (trimmed to the
+fields relevant to this page):
+</p>
+<pre><code>{
+  "references": {
+    "doc://org.swift.docc.example/downloads/sample.zip": {
+      "identifier": "ExternalLocation.zip",
+      "url": "https://example.com/ExternalLocation.zip",
+      "type": "externalLocation"
+    }
+  },
+  "sampleCodeDownload": {
+    "action": {
+      "identifier": "doc://org.swift.docc.example/downloads/sample.zip",
+      "isActive": true,
+      "overridingTitle": "Download",
+      "type": "reference"
+    }
+  }
+}</code></pre>
+<p>
+(Fixture provenance: real file, not synthesized — see path above.)
+</p>
+<div class="mockup">
+  <div style="font-family:-apple-system,sans-serif; max-width:360px;">
+    <p style="color:#666; font-size:0.85em; margin-bottom:6px;">Wifi Access</p>
+    <p style="margin-bottom:10px;">A <code>WiFi access</code> abstract description.</p>
+    <a href="https://example.com/ExternalLocation.zip" style="display:inline-block; background:#0a84ff; color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:0.9em;">Download</a>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema object: <code>#/components/schemas/DownloadRenderReference</code>,
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json:1882-1904</code>. This is a single object
+schema shared by two wire values — <code>"download"</code> and <code>"externalLocation"</code> are
+both listed in the <code>type</code> property's <code>enum</code> — rather than
+<code>externalLocation</code> having its own schema object. In the generated Swift, OpenAPI Generator's
+deduplication produced three related-but-distinct structs from this schema as it recurs at different
+points in the merged spec: <code>Components.Schemas.DownloadRenderReference</code>
+(<code>Types.swift:619-657</code>, <code>type</code> enum restricted to only <code>.download</code>,
+<code>checksum</code> non-optional — this is the copy used by the tutorials-overview
+<code>CallToActionSection</code> shape) and
+<code>Components.Schemas.DownloadRenderReference1</code> (a second, differently-scoped duplicate,
+also <code>.download</code>-only). The one that actually carries <code>externalLocation</code> as a
+valid case is <code>Components.Schemas.DownloadRenderReference2</code>
+(<code>Types.swift:5132-5171</code>), whose nested <code>_TypePayload</code> enum has both
+<code>case download = "download"</code> and <code>case externalLocation = "externalLocation"</code>
+(<code>Types.swift:5135-5138</code>) and whose <code>checksum</code> field is optional
+(<code>Swift.String?</code>) — matching the spec, where <code>checksum</code> is listed under
+<code>properties</code> but not under <code>required</code>. This struct is one arm of the generated
+<code>RenderReference1</code> discriminated union (<code>Types.swift:4802-4821</code>, case
+<code>.DownloadRenderReference2</code> at line 4817), which is the element type of the RenderNode's
+top-level <code>references</code> dictionary (<code>[String: Components.Schemas.RenderReference1]</code>,
+e.g. <code>Types.swift:2963</code> / <code>5332</code>). Decoding tries each arm's initializer in
+declared order and keeps the first that succeeds (<code>Types.swift:4822-4878</code>), so a JSON object
+with <code>"type": "externalLocation"</code> is accepted here (case 7,
+<code>DownloadRenderReference2</code>) even though the earlier-tried arms
+(<code>ImageRenderReference</code>, <code>VideoRenderReference2</code>, <code>FileRenderReference</code>,
+<code>FileTypeRenderReference</code>, <code>XcodeRequirementRenderReference</code>,
+<code>TopicRenderReference1</code>) do not have a <code>type</code> enum case matching that string, so
+their decode attempts throw and are skipped.
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"download"</code> | <code>"externalLocation"</code></td><td>Discriminator. Both values decode to the same Swift model on the swift-docc authoring side (<code>DownloadReference</code>, see below) and to the same generated struct (<code>DownloadRenderReference2</code>) on the DocCArchive/OpenAPI side.</td></tr>
+<tr><td><code>identifier</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Key used to look this object up from the RenderNode's top-level <code>references</code> dictionary (e.g. the <code>sampleCodeDownload.action.identifier</code> value points here).</td></tr>
+<tr><td><code>url</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>The downloadable resource's location. For <code>externalLocation</code> this is expected to be an absolute, off-site URL written verbatim by the author; swift-docc-render does not distinguish it from a same-site <code>download</code> URL at render time (section 1).</td></tr>
+<tr><td><code>checksum</code></td><td>string</td><td>no</td><td>&mdash;</td><td>SHA-512 hex digest of the resource, when known. Not read anywhere in the swift-docc-render call path found in section 1 (no integrity check is surfaced in the UI).</td></tr>
+</table>
+<p>
+Swift-side model (authoring/encoding, secondary to the schema above per the priority order for this
+page): swift-docc's <code>RenderReferenceType</code> enum
+(<code>Sources/SwiftDocC/Model/Rendering/References/RenderReference.swift:29</code>) declares
+<code>case … download, link, externalLocation</code> as sibling raw-string cases of one enum, and both
+decode through the same <code>DownloadReference</code> struct
+(<code>Sources/SwiftDocC/Model/Rendering/Tutorial/References/DownloadReference.swift:14-94</code>):
+its decoding initializer (<code>DownloadReference.swift:72-79</code>) accepts whatever string is in the
+JSON's <code>type</code> field into its own <code>type</code> property without validating it against
+the enum's cases, and the shared reference-container decoder
+(<code>Sources/SwiftDocC/Model/Rendering/RenderNode/CodableRenderReference.swift:40-41</code>) routes
+<em>both</em> <code>.download</code> and <code>.externalLocation</code> to
+<code>DownloadReference.init(from:)</code>. Searching swift-docc's current sources for anywhere that
+constructs a reference with <code>type: .externalLocation</code> (as opposed to accepting it on
+decode) turns up nothing — <code>DownloadReference</code>'s <code>type</code> property defaults to
+<code>.download</code> (<code>DownloadReference.swift:23</code>), and the one production call site that
+builds a verbatim-URL download reference for an authored external link
+(<code>Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift:846-855</code>, backing the
+<code>@CallToAction(url:)</code> directive) uses the default <code>.download</code> type, not
+<code>.externalLocation</code>. As far as this codebase search can tell, <code>externalLocation</code>
+is a decode-accepted wire value for interoperability with render JSON produced by another encoder (or
+an earlier revision of swift-docc's own encoder) rather than a value swift-docc's current encoder emits
+itself — the <code>external-location-custom-url.json</code> fixture in section 2 is a hand-authored
+test input exercising the decode path, not a captured real-world encoder output.
+<code>AssetReferences.swift:16</code> confirms the two are still meant to be treated identically as
+"asset" references app-wide: <code>let assetTypes = [RenderReferenceType.image, .video, .file,
+.download, .externalLocation]</code>.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+There is no dedicated markup "for an <code>externalLocation</code> reference" — as established above,
+the object is pure data consumed generically as a URL + title pair, and the only DOM it produces is
+whatever the calling button component renders. For the one call site found (the sample-code download
+button):
+</p>
+<ul>
+<li><code>&lt;div&gt;</code> wrapper with no class, gated by <code>v-if="sampleCodeDownload"</code>, inside <code>DocumentationTopic.vue</code>'s hero (<code>DocumentationTopic.vue:64-70</code>).</li>
+<li><code>&lt;a class="button-cta"&gt;</code> (plus modifier class <code>is-dark</code> when applicable) — the root element rendered by <code>ButtonLink.vue</code> once a <code>url</code> is resolved, additionally carrying the caller's <code>class="sample-download"</code> (<code>ButtonLink.vue:12-19</code>; the anchor itself comes from the <code>Reference</code> component swapped in via <code>resolvedComponent</code>).</li>
+</ul>
+<p>
+Styling: <code>DocumentationTopic.vue</code>'s scoped SCSS contributes only layout spacing for the
+wrapper (<code>.sample-download { margin-top: 20px; }</code>,
+<code>DocumentationTopic.vue:944-946</code>). The button's own look comes from
+<code>ButtonLink.vue</code>'s scoped <code>&lt;style scoped lang="scss"&gt;</code> block
+(<code>ButtonLink.vue:51-99</code>, importing <code>docc-render/styles/_core.scss</code>), which
+consumes the CSS custom properties <code>--colors-button-light-background</code> /
+<code>--color-button-background</code>, <code>--color-button-border</code>,
+<code>--button-border-radius</code>, <code>--button-border-style</code>,
+<code>--button-border-width</code>, <code>--colors-button-text</code> / <code>--color-button-text</code>,
+<code>--colors-button-light-backgroundActive</code> / <code>--color-button-background-active</code>, and
+<code>--colors-button-light-backgroundHover</code> / <code>--color-button-background-hover</code> (plus
+dark-mode variants <code>--colors-button-dark-background</code>,
+<code>--colors-button-dark-backgroundActive</code>, <code>--colors-button-dark-backgroundHover</code>
+under the <code>.is-dark</code> modifier). None of this styling varies based on whether the underlying
+reference's <code>type</code> was <code>"download"</code> or <code>"externalLocation"</code> — the CSS
+has no hook into that field at all.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: none of the JS touched in this page's render path holds any client-side UI
+state tied to this kind. <code>DestinationDataProvider.vue</code> is a stateless computed-properties
+lookup (object property access against the RenderNode's static <code>references</code> map, resolved
+once per render), <code>CallToActionButton.vue</code> and <code>ButtonLink.vue</code> are stateless
+presentational wrappers around a plain <code>&lt;a href="…"&gt;</code>, and the resulting anchor has no
+open/closed, selected/unselected, or tabbed state to hold — clicking it simply navigates or downloads,
+which the browser already does natively for a plain link. There is consequently no toggle, disclosure,
+tab set, or modal behavior anywhere in this kind's consumption for a mechanism like
+<code>&lt;details&gt;/&lt;summary&gt;</code>, a <code>:checked</code>-driven radio group, <code>:target</code>,
+the Popover API, or <code>&lt;dialog&gt;</code> to replace. The only thing worth flagging as a
+CSS-relevant nuance is the "(opens in browser)" aria-label suffix
+(<code>DestinationDataProvider.vue:60,85-87</code>) that swift-docc-render's <em>IDE</em> mode appends
+for <code>link</code>-type destinations — this is accessibility text generated in JS from a boolean
+computed property, not a CSS state, and as noted in section 1 it does not even apply to
+<code>externalLocation</code> references today.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

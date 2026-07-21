@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: table — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>table</code></h1>
+<p class="wire-value">Wire value: <code>"table"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'table'</code> lands on
+<code>src/components/ContentNode.vue</code>'s wire-constant table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>),
+whose <code>table</code> key holds <code>BlockType.table = 'table'</code>. That constant is matched in the
+<code>renderNode()</code> factory function's <code>switch (node.type)</code> dispatch table:
+</p>
+<pre><code>case BlockType.table: {
+  const children = renderTableChildren(
+    node.rows, node.header, node.extendedData, node.alignments,
+  );
+
+  if (node.metadata &amp;&amp; node.metadata.abstract) {
+    const { title } = node.metadata;
+    const position = title ? CaptionPosition.leading : CaptionPosition.trailing;
+    const tag = CaptionTag.caption;
+    children.unshift(createElement(Caption, {
+      props: { title, position, tag },
+    }, (
+      renderChildren(node.metadata.abstract)
+    )));
+  }
+
+  return createElement(Table, {
+    attrs: { id: node.metadata &amp;&amp; node.metadata.anchor },
+    props: { spanned: !!node.extendedData },
+  }, (
+    children
+  ));
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L314-L344"><code>ContentNode.vue#L314-L344</code></a>.)
+Unlike most other block kinds, table's actual cell layout is not produced inline in this switch arm — it is
+built by a dedicated helper, <code>renderTableChildren()</code>, defined earlier in the same file
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L146-L218"><code>ContentNode.vue#L146-L218</code></a>),
+which switches on <code>node.header</code> (one of the four <code>TableHeaderStyle</code> values
+<code>both</code>/<code>column</code>/<code>row</code>/<code>none</code>, defined at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L100-L105"><code>ContentNode.vue#L100-L105</code></a>)
+to decide, per cell, whether to emit a native <code>&lt;th&gt;</code> or <code>&lt;td&gt;</code>, and whether
+to wrap the first row/rows in a <code>&lt;thead&gt;</code>. A second helper,
+<code>renderTableCell()</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L132-L144"><code>ContentNode.vue#L132-L144</code></a>),
+looks up any <code>extendedData</code> entry keyed by <code>"{rowIndex}_{cellIndex}"</code>, forwards
+<code>colspan</code>/<code>rowspan</code> as real HTML attributes, returns <code>null</code> for the cell
+entirely if either value is <code>0</code> (meaning this cell is "spanned over" by a previous cell and must
+not be rendered at all), and adds a <code>left-cell</code>/<code>right-cell</code>/<code>center-cell</code>
+class from the per-column <code>alignments</code> array (constants at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L107-L112"><code>ContentNode.vue#L107-L112</code></a>).
+If <code>node.metadata.abstract</code> is present, a <code>&lt;caption&gt;</code> element (via the shared
+<code>Caption</code> child component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Caption.vue"><code>src/components/ContentNode/Caption.vue</code></a>,
+imported at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L20"><code>ContentNode.vue#L20</code></a>)
+is unshifted onto the children array so it becomes the table's first child (HTML requires
+<code>&lt;caption&gt;</code> to be the table's first child element). Finally the whole thing is wrapped by the
+<code>Table</code> child component
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Table.vue"><code>src/components/ContentNode/Table.vue</code></a>,
+imported at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L23"><code>ContentNode.vue#L23</code></a>),
+which receives <code>node.metadata.anchor</code> as a plain <code>id</code> attribute and a boolean
+<code>spanned</code> prop that is simply <code>!!node.extendedData</code> — true whenever any cell in the
+table carries colspan/rowspan data.
+</p>
+<p>
+<code>Table.vue</code>'s own template is a thin wrapper:
+</p>
+<pre><code>&lt;div class="table-wrapper"&gt;
+  &lt;table :class="{ spanned }"&gt;
+    &lt;slot /&gt;
+  &lt;/table&gt;
+&lt;/div&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Table.vue#L11-L17"><code>Table.vue#L11-L17</code></a>.)
+There is no client-side interactive state anywhere in this path: every table is rendered once, server/build
+time semantics aside, straight from the wire JSON into a static <code>&lt;table&gt;</code> element tree.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/tables.json</code> in the swift-docc
+repository, a <code>primaryContentSections</code> content array containing one <code>table</code> node with
+<code>header: "row"</code>, a <code>metadata</code> block (title/abstract/anchor), and a single row with two
+cells. Reproduced (trimmed to the table node itself) below:
+</p>
+<pre><code>{
+  "type": "table",
+  "metadata": {
+    "title": "Figure 1",
+    "abstract": [
+      { "type": "text", "text": "Tabulur data" }
+    ],
+    "anchor": "anchor"
+  },
+  "header": "row",
+  "rows": [
+    [
+      [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "cell 1:1" }
+          ]
+        }
+      ],
+      [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "cell 1:2" }
+          ]
+        }
+      ]
+    ]
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12); overflow:auto;">
+    <table style="border-collapse:collapse; width:100%;">
+      <caption style="text-align:left; font-size:0.9em; margin-bottom:8px;"><strong>Figure 1</strong>&nbsp;Tabulur data</caption>
+      <thead>
+        <tr>
+          <th scope="col" style="border:1px solid #d2d2d7; padding:8px 10px; font-weight:600; text-align:left;">cell 1:1</th>
+          <th scope="col" style="border:1px solid #d2d2d7; padding:8px 10px; font-weight:600; text-align:left;">cell 1:2</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
+  <p><em>mockup: this fixture's single row is entirely consumed as the header row because
+  <code>header: "row"</code> selects the <code>TableHeaderStyle.row</code> branch of
+  <code>renderTableChildren()</code>, which puts the first (and, here, only) row inside
+  <code>&lt;thead&gt;</code> with every cell rendered as <code>&lt;th scope="col"&gt;</code>, leaving
+  <code>&lt;tbody&gt;</code> empty. The <code>&lt;caption&gt;</code> is synthesized from
+  <code>metadata.title</code> + <code>metadata.abstract</code> and, because a <code>title</code> is present,
+  positioned above the table (<code>CaptionPosition.leading</code>) rather than below.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Table</code> (lines 999&ndash;1057), one arm of the <code>RenderBlockContent</code>
+discriminated union (<code>oneOf</code> entry at line 468), plus the separate
+<code>#/components/schemas/TableExtendedData</code> object (lines 1058&ndash;1067) referenced by
+<code>extendedData</code>'s <code>additionalProperties</code>. Cross-checked against
+<code>Components.Schemas.Table</code> and <code>Components.Schemas.TableExtendedData</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 4519&ndash;4609 and 4610&ndash;4632
+respectively); the enclosing union case is <code>Components.Schemas.RenderBlockContent.Table</code> at line
+3625.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"table"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case table = "table"
+}</code>, mapped from the Swift property <code>_type</code> back onto the wire key <code>"type"</code> via
+<code>CodingKeys._type = "type"</code> &mdash; the underscore-prefixed name exists because
+<code>type</code> collides with a reserved/ambiguous identifier in the generator's output style.</td>
+</tr>
+<tr>
+<td><code>header</code></td>
+<td>string enum</td>
+<td>yes</td>
+<td><code>"row" | "column" | "both" | "none"</code>, no wire-schema default (swift-docc's authoring model
+defaults absent values to <code>.none</code> via <code>RenderBlockContent.HeaderType</code>, but the JSON
+schema itself does not declare a default)</td>
+<td>Generated as <code>HeaderPayload: String, Codable, Hashable, Sendable, CaseIterable</code> with the four
+cases. Selects which of four layouts <code>renderTableChildren()</code> builds (see Section 1).</td>
+</tr>
+<tr>
+<td><code>alignments</code></td>
+<td>array of string enum</td>
+<td>no</td>
+<td>items: <code>"left" | "right" | "center" | "unset"</code></td>
+<td>Generated as <code>AlignmentsPayload = [AlignmentsPayloadPayload]</code>, optional. One entry per column,
+indexed positionally against each row's cells; a missing or <code>"unset"</code> entry adds no alignment
+class. swift-docc's own encoder additionally suppresses this key entirely on the wire when every alignment
+value is <code>.unset</code> (see Section 3's swift-docc note below) &mdash; that squashing happens before
+the JSON is written, so by the time DocCArchive decodes it, <code>alignments</code> is simply either absent
+or a fully meaningful array.</td>
+</tr>
+<tr>
+<td><code>rows</code></td>
+<td>array of array of array of <code>RenderBlockContent</code></td>
+<td>yes</td>
+<td>&mdash; (no minimum-count constraint in the wire schema)</td>
+<td>Generated as <code>[[[Components.Schemas.RenderBlockContent]]]</code>: outer array is rows, middle array
+is cells within a row, inner array is the block-content nodes making up that cell's content (typically a
+single <code>paragraph</code>, but any block content is legal, since cells recursively admit the full
+<code>RenderBlockContent</code> union &mdash; including nested tables).</td>
+</tr>
+<tr>
+<td><code>extendedData</code></td>
+<td>object (map)</td>
+<td>no</td>
+<td>keys match pattern <code>"{row}_{column}"</code> (zero-based); values are <code>TableExtendedData</code>
+objects</td>
+<td>Generated as an <code>ExtendedDataPayload</code> wrapper struct holding
+<code>additionalProperties: [String: Components.Schemas.TableExtendedData]</code>, since OpenAPI has no
+native "dynamic key" map type. swift-docc's own encoder (see below) only emits this key at all when the set
+is non-empty.</td>
+</tr>
+<tr>
+<td><code>extendedData</code> values: <code>colspan</code></td>
+<td>integer</td>
+<td>no (optional in the wire schema)</td>
+<td>&mdash;</td>
+<td>Generated as <code>Swift.Int?</code>. A value of <code>0</code> tells DocC-render this cell is "spanned
+over" by an earlier cell and must not be rendered at all (see <code>renderTableCell()</code>, Section 1);
+swift-docc's authoring-side <code>TableCellExtendedData</code> struct documents <code>1</code> as the
+implicit default when absent.</td>
+</tr>
+<tr>
+<td><code>extendedData</code> values: <code>rowspan</code></td>
+<td>integer</td>
+<td>no (optional in the wire schema)</td>
+<td>&mdash;</td>
+<td>Generated as <code>Swift.Int?</code>. Same "0 means spanned-over, else HTML rowspan attribute" semantics
+as <code>colspan</code>, but along the row axis.</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>RenderContentMetadata</code> object</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Fields <code>anchor</code>/<code>title</code>/<code>abstract</code>/<code>deviceFrame</code> (all
+optional). Only <code>anchor</code> (used as the table's DOM <code>id</code>) and
+<code>title</code>/<code>abstract</code> (used to synthesize a <code>&lt;caption&gt;</code>, only when
+<code>abstract</code> is present) are consulted by the table renderer; <code>deviceFrame</code> is ignored
+for this kind.</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the enclosing
+enum case is <code>case table(Table)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift</code>, line 63), and the nested
+struct is declared at the same file, lines 551&ndash;585:
+</p>
+<pre><code>public struct Table {
+    public var header: HeaderType
+    public var alignments: [ColumnAlignment]?
+    public var rows: [TableRow]
+    public var extendedData: Set&lt;TableCellExtendedData&gt;
+    public var metadata: RenderContentMetadata?
+}</code></pre>
+<p>
+This matches the wire schema field-for-field, but note the model-layer shapes differ slightly from the raw
+JSON layout: <code>extendedData</code> is a Swift <code>Set&lt;TableCellExtendedData&gt;</code> (each element
+carrying its own <code>rowIndex</code>/<code>columnIndex</code>) rather than a dictionary keyed by a composite
+string, and <code>Table</code> has a hand-written <code>Codable</code> conformance
+(<code>RenderBlockContent.swift</code> lines 911&ndash;995) specifically because "the encoding of
+<code>extendedData</code> does not follow from the struct layout" &mdash; it builds a
+<code>DynamicIndexCodingKey</code> whose <code>stringValue</code> is <code>"{row}_{column}"</code> to produce
+exactly the wire shape the JSON schema describes. That same encoder also suppresses the <code>alignments</code>
+key on the wire whenever every alignment is <code>.unset</code>
+(<code>RenderBlockContent.swift</code> line 979), and suppresses <code>extendedData</code> entirely when the
+set is empty (line 985) &mdash; both are swift-docc production behaviors, not wire-schema requirements, which
+is why the data sheet above lists both fields as merely optional rather than describing this omission logic
+as part of the schema itself. An author produces a table simply by writing a standard GitHub-Flavored-Markdown
+pipe table in a documentation comment or article; swift-docc's Markdown parser (swift-markdown) turns the
+leading <code>---/:--/--:/:-:</code> separator row into <code>header</code> and <code>alignments</code>, and
+there is no dedicated <code>@Table</code>-style DocC directive or catalog article describing bespoke
+authoring syntax for this kind, unlike, say, <code>@TabNavigator</code>.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>, lines 242&ndash;254)
+are still stub placeholders that return a hardcoded HTML comment and an empty string respectively for an
+entire <code>RenderNode</code>, with no per-block-kind switch reached yet &mdash; so a <code>table</code> node
+parsed via <code>Components.Schemas.Table</code> is available on the decoded model today, but nothing in this
+repository currently converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>table</code> node, in context:
+</p>
+<ul>
+<li><code>div.table-wrapper</code> (with an <code>overflow: auto</code> scroll container for wide tables) —
+the component root, from <code>Table.vue</code>.</li>
+<li><code>table</code> (with modifier class <code>spanned</code> when <code>extendedData</code> is present) —
+the actual table element, given the optional <code>id</code> attribute from
+<code>node.metadata.anchor</code>.</li>
+<li><code>caption</code> (only present when <code>node.metadata.abstract</code> is set), with modifier class
+<code>trailing</code> when there is no <code>title</code> — produced by the shared <code>Caption</code>
+component and always the table's first child, as HTML requires.</li>
+<li><code>thead</code> &gt; <code>tr</code> &gt; one <code>th[scope=col]</code> per column (present only for
+<code>header: "row"</code> or <code>"both"</code>), and/or a per-row <code>th[scope=row]</code> as the first
+cell of each body row (present only for <code>header: "column"</code> or <code>"both"</code>).</li>
+<li><code>tbody</code> &gt; one <code>tr</code> per remaining row &gt; one <code>td</code> (or, for
+header-column/both styles, one leading <code>th[scope=row]</code> plus trailing <code>td</code>s) per cell,
+each optionally carrying <code>colspan</code>/<code>rowspan</code> attributes copied straight from
+<code>extendedData</code>, and an alignment modifier class of <code>left-cell</code>, <code>right-cell</code>,
+or <code>center-cell</code> from the <code>alignments</code> array.</li>
+</ul>
+<p>
+SCSS: <code>Table.vue</code> carries its own scoped <code>&lt;style&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Table.vue#L31-L71"><code>Table.vue#L31-L71</code></a>):
+</p>
+<ul>
+<li><code>.table-wrapper { overflow: auto; -webkit-overflow-scrolling: touch; @include
+space-out-between-siblings(var(--spacing-stacked-margin-xlarge)); }</code> — horizontal scroll on narrow
+viewports plus vertical spacing from sibling content blocks via a shared mixin.</li>
+<li><code>table { border-style: hidden; }</code> — the outer table border is suppressed so only cell borders
+(below) are visible, avoiding doubled edges.</li>
+<li><code>:deep() { th { font-weight: $font-weight-semibold; word-break: keep-all; hyphens: auto; } }</code> —
+header cells get semibold weight and controlled line-breaking, penetrating into the slotted
+<code>&lt;thead&gt;</code>/<code>&lt;tbody&gt;</code> content via Vue's <code>:deep()</code> combinator (this
+component only renders a wrapper <code>&lt;table&gt;</code> around a <code>&lt;slot /&gt;</code>, so its
+scoped styles must explicitly pierce into slotted children).</li>
+<li><code>td, th { border-color: var(--color-fill-gray-tertiary); border-style: solid; border-width:
+var(--table-border-width, 1px 1px); padding: rem(10px); }</code> plus <code>&amp;.left-cell { text-align: left;
+}</code>, <code>&amp;.right-cell { text-align: right; }</code>, <code>&amp;.center-cell { text-align: center; }
+</code> — the actual cell grid lines and the column-alignment classes emitted by
+<code>renderTableCell()</code>.</li>
+</ul>
+<p>
+The synthesized <code>&lt;caption&gt;</code> is styled by <code>Caption.vue</code>'s own scoped block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Caption.vue#L61-L83"><code>Caption.vue#L61-L83</code></a>),
+notably <code>caption.trailing { caption-side: bottom; }</code> — a comment in that file explains this
+override exists specifically because a native <code>&lt;caption&gt;</code> element must be the table's first
+child in the DOM even when it is visually pinned to the bottom via <code>caption-side</code>.
+</p>
+<p>
+CSS custom properties consumed: <code>--color-fill-gray-tertiary</code> for cell border color,
+<code>--table-border-width</code> (falling back to <code>1px 1px</code>) for the border thickness, and the
+shared <code>--spacing-stacked-margin-xlarge</code>/<code>--spacing-stacked-margin-large</code> spacing
+tokens used by the wrapper and caption respectively; the caption's typography comes from the generic
+<code>font-styles(documentation-caption)</code> mixin rather than a raw custom property.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: there is none to replace. <code>ContentNode.vue</code>'s table path
+(<code>renderTableChildren()</code>/<code>renderTableCell()</code>, Section 1) and <code>Table.vue</code>
+(Section 4) together do nothing but a one-time, build/render-time transformation of wire JSON into a plain,
+static <code>&lt;table&gt;&lt;caption&gt;&lt;thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;th&gt;&lt;td&gt;</code> DOM
+tree. There is no component <code>data()</code>, no <code>v-model</code>, no click handler, no
+<code>v-show</code>/<code>v-if</code> toggling, and no watcher anywhere in this kind's rendering path — every
+piece of markup that ends up on the page is exactly the markup produced the first and only time
+<code>renderNode()</code> runs over the node. The only thing resembling "behavior" is the CSS-only horizontal
+scrollbar on <code>.table-wrapper { overflow: auto; }</code> for tables wider than their container, which is
+already a plain CSS mechanism today, not a JavaScript one needing replacement. Since this kind is stateless
+and has no interactive behavior in the current implementation, there is no state-holding mechanism (radio
+input, <code>:target</code>, <code>&lt;details&gt;</code>, or otherwise) to name as a "modern CSS equivalent"
+— the current implementation already is the CSS/HTML equivalent.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: codeVoice — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>codeVoice</code></h1>
+<p class="wire-value">Wire value: <code>"codeVoice"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'codeVoice'</code> lands on
+<code>src/components/ContentNode.vue</code>'s wire-constant table, where the <code>InlineType</code> object
+maps the key to itself:
+</p>
+<pre><code>const InlineType = {
+  codeVoice: 'codeVoice',
+  ...
+};</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>.)
+That constant is matched inside the module-level <code>renderNode()</code> factory function
+(defined at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L121"><code>ContentNode.vue#L121</code></a>),
+in its <code>switch (node.type)</code> dispatch table, immediately after the block-content
+<code>thematicBreak</code> arm:
+</p>
+<pre><code>case InlineType.codeVoice:
+  return createElement(CodeVoice, {
+    class: 'inline-code',
+  }, (
+    node.code
+  ));</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L431-L436"><code>ContentNode.vue#L431-L436</code></a>.)
+The wire node's single payload field, <code>code</code>, is forwarded directly as the default slot
+content&mdash;there is no intermediate transformation. The dispatch delegates to a dedicated child
+component, <code>CodeVoice</code>, imported at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L16"><code>ContentNode.vue#L16</code></a>
+from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeVoice.vue"><code>src/components/ContentNode/CodeVoice.vue</code></a>,
+whose entire template is:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;WordBreak tag="code"&gt;&lt;slot /&gt;&lt;/WordBreak&gt;
+&lt;/template&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeVoice.vue#L11-L13"><code>CodeVoice.vue#L11-L13</code></a>.)
+<code>CodeVoice</code> has no <code>props</code>, no <code>data()</code>, and no logic of its own beyond
+declaring its scoped <code>&lt;style&gt;</code> (covered in Section 4)&mdash;it delegates immediately to
+<code>WordBreak</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/WordBreak.vue"><code>src/components/WordBreak.vue</code></a>),
+a functional component that renders the requested <code>tag</code> (here, <code>code</code>) and, if the
+slotted content is a single raw text node, inserts <code>&lt;wbr&gt;</code> hints at safe character
+boundaries (camelCase transitions, after colons, before dots/underscores) so long identifiers like
+<code>CustomStringConvertible.description</code> can wrap on narrow viewports instead of overflowing.
+The final DOM is therefore a bare <code>&lt;code class="inline-code"&gt;&hellip;&lt;/code&gt;</code>
+element (with <code>&lt;wbr&gt;</code> nodes interleaved into its text) &mdash; there is no wrapping
+<code>&lt;pre&gt;</code>, no syntax highlighting, and no click/hover behavior. This one-line-of-code
+component is the simplest inline-content handler in the dispatch table alongside
+<code>thematicBreak</code>'s block-content counterpart.
+</p>
+<p>
+Separately, <code>ContentNode.vue</code> also reads the <code>codeVoice</code> discriminator directly (not
+through the dispatch table) inside its <code>plaintext</code> computed property, which walks the content
+tree and concatenates a plain-text equivalent of the whole node&mdash;used, for example, for building
+accessible/plaintext summaries elsewhere in the app:
+</p>
+<pre><code>if (node.type === InlineType.codeVoice) {
+  return `${text}${node.code}`;
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L686-L688"><code>ContentNode.vue#L686-L688</code></a>.)
+This confirms <code>code</code> is treated as literal text with no nested inline content or markup of its
+own&mdash;consistent with the schema in Section 3, where <code>code</code> is a plain string field, not an
+array of child <code>RenderInlineContent</code> nodes.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+A real fixture was found: <code>Tests/DocCArchiveTests/Fixtures/SampleLibrary.doccarchive/data/documentation/samplelibrary/samplestruct/description.json</code>,
+whose <code>abstract</code> array is a short run of inline content&mdash;plain text, a <code>codeVoice</code>
+span naming the inherited property, and trailing punctuation:
+</p>
+<pre><code>{
+  "abstract": [
+    {
+      "text": "Inherited from ",
+      "type": "text"
+    },
+    {
+      "code": "CustomStringConvertible.description",
+      "type": "codeVoice"
+    },
+    {
+      "text": ".",
+      "type": "text"
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+    <p style="margin:0; font-size:15px; color:#1d1d1f;">
+      Inherited from
+      <code style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background-color:rgba(0,0,0,0.06); padding:0.1em 0.3em; border-radius:4px; font-size:0.92em;">CustomStringConvertible.description</code>.
+    </p>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<table>
+<thead>
+<tr><th>field</th><th>type</th><th>required?</th><th>enum values / default</th><th>note</th></tr>
+</thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>["codeVoice"]</code></td><td>Discriminator; always the literal string <code>"codeVoice"</code>.</td></tr>
+<tr><td><code>code</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>The literal code text to render (e.g. a symbol name, variable, or operator). Plain text, not a nested array of <code>RenderInlineContent</code>&mdash;no formatting can be nested inside a <code>codeVoice</code> span.</td></tr>
+</tbody>
+</table>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, the <code>CodeVoice</code> schema
+object (around line 1295, inside the <code>RenderInlineContent</code> discriminated-union definitions).
+Cross-checked against the generated Swift type in
+<code>Sources/DocCArchive/generated/Types.swift</code>:
+</p>
+<pre><code>public struct CodeVoice: Codable, Hashable, Sendable {
+  @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+    case codeVoice = "codeVoice"
+  }
+  public var _type: Components.Schemas.CodeVoice._TypePayload
+  public var code: Swift.String
+  ...
+}</code></pre>
+<p>
+This struct is one case (<code>.CodeVoice</code>) of the generated
+<code>Components.Schemas.RenderInlineContent</code> discriminated union in the same file. On the
+authoring side, swift-docc's Swift model defines the equivalent case as
+<code>case codeVoice(code: String)</code> in
+<code>RenderInlineContent.swift</code> (an <code>enum</code>, not a struct&mdash;so no separate
+<code>swiftStructSite</code> exists upstream; the wire-level struct only exists in this repo's
+OpenAPI-generated code), with its own <code>Codable</code> conformance encoding the same two keys,
+<code>type</code> and <code>code</code>
+(<code>/Users/joeheck/src/swift-project/swift-docc/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift</code>,
+around line 34 for the case declaration).
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+The rendered DOM is <code>&lt;code class="inline-code"&gt;&hellip;&lt;/code&gt;</code>, produced by
+<code>CodeVoice.vue</code> wrapping its slot in a <code>WordBreak</code> that emits the requested
+<code>tag="code"</code> element (with <code>&lt;wbr&gt;</code> word-break hints interleaved into the text
+node, not wrapping elements). The scoped styles live directly in
+<code>src/components/ContentNode/CodeVoice.vue</code>:
+</p>
+<pre><code>code {
+  speak-punctuation: code;
+}
+
+.inline-code {
+  background-color: var(--color-inline-code-background);
+  padding: var(--inline-code-padding);
+  border-radius: var(--inline-code-border-radius);
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/CodeVoice.vue#L24-L34"><code>CodeVoice.vue#L24-L34</code></a>.)
+Three CSS custom properties are consumed:
+</p>
+<ul>
+<li><code>--color-inline-code-background</code> &mdash; defined in the color-theme partials
+<code>src/styles/core/colors/_light.scss</code> and <code>_dark.scss</code>, both setting it to
+<code>transparent</code> in this checkout.</li>
+<li><code>--inline-code-padding</code> and <code>--inline-code-border-radius</code> &mdash; consumed only
+at this one call site; a repo-wide search of <code>src/</code> for either name found no
+<code>&#8288;--inline-code-padding:</code> or <code>&#8288;--inline-code-border-radius:</code> definition
+anywhere in this checkout's SCSS/CSS/Vue sources. Either they are defined in a design-token layer not
+present in this snapshot, or they legitimately fall back to the CSS-wide initial value (effectively
+no padding/no rounding) unless overridden by a consuming app&mdash;this page states that gap honestly
+rather than guessing a value.</li>
+</ul>
+<p>
+The <code>speak-punctuation: code</code> declaration is a CSS Speech Module property (assistive-technology
+hint to read punctuation literally inside code spans); it is unscoped to <code>.inline-code</code> and
+applies to any <code>&lt;code&gt;</code> element rendered by this component. No other DocC-Render SCSS
+partial under <code>src/styles/</code> targets <code>.inline-code</code> or <code>CodeVoice</code>
+by name.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior, precisely: <code>CodeVoice.vue</code> holds no component state and no event handlers
+at all&mdash;it is a pure, stateless mapping from <code>{ type: 'codeVoice', code: '...' }</code> to a
+<code>&lt;code class="inline-code"&gt;</code> element containing the literal <code>code</code> string (via
+<code>WordBreak</code>'s render function, which only decides where to insert <code>&lt;wbr&gt;</code> break
+hints at render time). There is nothing to toggle, disclose, focus-trap, or navigate to: no
+<code>:checked</code>-style state, no tab/panel switching, no hidden content revealed on interaction. The
+entire "behavior" is a static text-formatting decision made once at render time based on the string's
+character boundaries.
+</p>
+<p>
+Because there is no interactive or stateful behavior in this kind to replace, none of the listed
+mechanisms (<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio-input
+<code>:checked</code> + sibling selectors, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+<code>:has()</code>, container queries, CSS anchor positioning, view-transitions) apply here. The one
+genuinely CSS-relevant fact is that the visual treatment (background, padding, border-radius) is already
+expressed purely through CSS custom properties consumed by a plain <code>&lt;code&gt;</code> element, which
+is already the idiomatic, framework-free way to style inline code&mdash;there is no JS-held state for a
+native mechanism to supersede.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

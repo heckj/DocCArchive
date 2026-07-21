@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: termList — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>termList</code></h1>
+<p class="wire-value">Wire value: <code>"termList"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+The dispatch table for block/inline content kinds lives in
+<code>src/components/ContentNode.vue</code>, in the module-level <code>renderNode()</code>
+factory function (defined at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L121">line 121</a>).
+That function returns a closure with a <code>switch (node.type)</code> statement
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L260">line 260</a>)
+which is mapped over every item in a <code>ContentNode</code>'s <code>content</code> array. The
+literal wire value <code>"termList"</code> is registered in the shared <code>BlockType</code>
+constant map used throughout the file:
+</p>
+<pre><code>export const BlockType = {
+  ...
+  table: 'table',
+  termList: 'termList',
+  unorderedList: 'unorderedList',
+  ...
+};</code></pre>
+<p class="citation">
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54">ContentNode.vue lines 37&ndash;54</a>
+</p>
+<p>
+The actual render case is a single, compact branch with no delegated child component &mdash;
+unlike <code>table</code> (which delegates to a <code>Table.vue</code> component) or
+<code>tabNavigator</code> (which delegates to <code>TabNavigator.vue</code>), <code>termList</code>
+is rendered directly as a native HTML description list:
+</p>
+<pre><code>case BlockType.termList:
+  return createElement('dl', {}, node.items.map(({ term, definition }) => [
+    createElement('dt', {}, (
+      renderChildren(term.inlineContent)
+    )),
+    createElement('dd', {}, (
+      renderChildren(definition.content)
+    )),
+  ]));</code></pre>
+<p class="citation">
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L345-L353">ContentNode.vue lines 345&ndash;353</a>
+</p>
+<p>
+Each item in <code>node.items</code> becomes one <code>&lt;dt&gt;</code>/<code>&lt;dd&gt;</code> pair
+inside a single <code>&lt;dl&gt;</code> that wraps the whole term list. The term's
+<code>inlineContent</code> (an array of <code>RenderInlineContent</code>, e.g. plain text, emphasis,
+strong, or a cross-reference) is rendered recursively via the same <code>renderChildren</code>
+helper used elsewhere in this file and placed inside <code>&lt;dt&gt;</code>. The definition's
+<code>content</code> (an array of full <code>RenderBlockContent</code> &mdash; so a definition can
+itself contain paragraphs, images, tables, code listings, etc.) is rendered into
+<code>&lt;dd&gt;</code>.
+</p>
+<p>
+<code>ContentNode.vue</code> also exposes tree-walking utilities (<code>map</code>,
+<code>forEach</code>) used elsewhere in docc-render (for example, to build search/plaintext
+indexes or to transform a content tree). Both utilities have explicit
+<code>BlockType.termList</code> cases that recurse into <em>both</em>
+<code>item.term.inlineContent</code> and <code>item.definition.content</code> for every item,
+confirming that a term list item is treated as a genuine two-part container rather than a
+single opaque leaf:
+</p>
+<pre><code>case BlockType.termList:
+  return fn({
+    ...node,
+    items: node.items.map(item => ({
+      ...item,
+      term: { inlineContent: $map(item.term.inlineContent) },
+      definition: { content: $map(item.definition.content) },
+    })),
+  });</code></pre>
+<p class="citation">
+<code>map()</code>: <a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L592-L600">lines 592&ndash;600</a>
+&middot;
+<code>forEach()</code>: <a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L641-L646">lines 641&ndash;646</a>
+</p>
+<p>
+No dedicated Vue component exists for term lists (no <code>TermList.vue</code> under
+<code>src/components/ContentNode/</code>); the entire behavior is the inline
+<code>createElement('dl', ...)</code> call shown above. The thin wrapper components
+<code>src/components/DocumentationTopic/ContentNode.vue</code> and
+<code>src/components/Article/ContentNode.vue</code> simply re-export the base
+<code>ContentNode.vue</code>'s props/methods and do not add any termList-specific behavior.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+The example below is trimmed (to two term/definition pairs) from a real swift-docc test
+fixture, <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/term-lists-1.json</code>, which
+exercises a <code>termList</code> block inside a symbol page's discussion content.
+</p>
+<pre><code>{
+  "type": "termList",
+  "items": [
+    {
+      "term": {
+        "inlineContent": [
+          { "type": "text", "text": "First term" }
+        ]
+      },
+      "definition": {
+        "content": [
+          {
+            "type": "paragraph",
+            "inlineContent": [
+              { "type": "text", "text": "A paragraph that spans multiple lines." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "term": {
+        "inlineContent": [
+          { "type": "text", "text": "Another term" }
+        ]
+      },
+      "definition": {
+        "content": [
+          {
+            "type": "paragraph",
+            "inlineContent": [
+              { "type": "text", "text": "Second definition." }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "inlineContent": [
+              { "type": "text", "text": "It has " },
+              {
+                "type": "emphasis",
+                "inlineContent": [
+                  { "type": "text", "text": "multiple" }
+                ]
+              },
+              { "type": "text", "text": " paragraphs." }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+<dl>
+<dt>First term</dt>
+<dd><p>A paragraph that spans multiple lines.</p></dd>
+<dt>Another term</dt>
+<dd><p>Second definition.</p><p>It has <em>multiple</em> paragraphs.</p></dd>
+</dl>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, objects
+<code>TermList</code> (line 941) and <code>TermListItem</code> (line 962), one of the
+discriminated members of the <code>RenderBlockContent</code> union (referenced at line 480).
+Generated Swift types: <code>Sources/DocCArchive/generated/Types.swift</code>,
+<code>Components.Schemas.TermList</code> (struct at line 4440) and
+<code>Components.Schemas.TermListItem</code> (struct at line 4467).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td>enum: <code>"termList"</code> (single value)</td><td>Discriminator for the <code>RenderBlockContent</code> union; generated as <code>Components.Schemas.TermList._TypePayload</code>, a single-case <code>String</code> enum.</td></tr>
+<tr><td><code>items</code></td><td>array of <code>TermListItem</code></td><td>yes</td><td>&mdash;</td><td>One entry per term/definition pair; order is preserved and rendered as sequential <code>&lt;dt&gt;</code>/<code>&lt;dd&gt;</code> pairs.</td></tr>
+<tr><td><code>TermListItem.term</code></td><td>object <code>{ inlineContent }</code></td><td>yes</td><td>&mdash;</td><td>Required sub-object; wraps the term's inline content.</td></tr>
+<tr><td><code>TermListItem.term.inlineContent</code></td><td>array of <code>RenderInlineContent</code></td><td>yes</td><td>&mdash;</td><td>The formatted term text (may contain <code>text</code>, <code>emphasis</code>, <code>strong</code>, <code>reference</code>, etc.); rendered inside <code>&lt;dt&gt;</code>.</td></tr>
+<tr><td><code>TermListItem.definition</code></td><td>object <code>{ content }</code></td><td>yes</td><td>&mdash;</td><td>Required sub-object; wraps the definition's block content.</td></tr>
+<tr><td><code>TermListItem.definition.content</code></td><td>array of <code>RenderBlockContent</code></td><td>yes</td><td>&mdash;</td><td>Full block content (paragraphs, lists, images, tables, etc.), not just inline text; rendered inside <code>&lt;dd&gt;</code>.</td></tr>
+</tbody>
+</table>
+<p>
+Note on Swift-side naming: the OpenAPI generator maps the JSON field <code>type</code> to a
+Swift property named <code>_type</code> (with <code>CodingKeys</code> mapping it back to
+<code>"type"</code> on the wire) because <code>type</code> collides with generator-reserved
+naming; this is purely a Swift ergonomics detail and does not change the wire format.
+</p>
+<p>
+DocCArchive transform status: as of this writing, <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> are both
+stub placeholders operating on the whole <code>RenderNode</code> (returning a hardcoded HTML
+comment and an empty string, respectively) with no per-block-kind switch at all, so a
+<code>Components.Schemas.TermList</code> value parsed by DocCArchive does not yet flow through
+any real HTML or Markdown conversion logic.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered structure: a single <code>&lt;dl&gt;</code> element (no <code>id</code> or
+<code>class</code> attribute is applied by the <code>termList</code> case itself), containing
+alternating <code>&lt;dt&gt;</code> (term) and <code>&lt;dd&gt;</code> (definition) elements &mdash;
+one pair per <code>items</code> entry. The whole tree of block content (including any
+<code>termList</code> nodes) is wrapped by the parent <code>ContentNode</code> component in a
+<code>&lt;div class="content"&gt;</code> (see
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L529-L535">ContentNode.vue lines 529&ndash;535</a>).
+</p>
+<p>
+No dedicated SCSS file targets <code>dl</code>/<code>dt</code>/<code>dd</code> specifically.
+The only rule touching these elements is the global reset in
+<code>src/styles/base/_reset.scss</code>, which zeroes their margin and padding alongside
+<code>body</code>, <code>ul</code>, <code>ol</code>, <code>li</code>, headings, and other block
+elements:
+</p>
+<pre><code>body,
+ul,
+ol,
+li,
+dl,
+dt,
+dd,
+h1, h2, h3, h4, h5, h6,
+...
+{
+  margin: 0;
+  padding: 0;
+}</code></pre>
+<p class="citation">
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_reset.scss#L26-L51">_reset.scss lines 26&ndash;51</a>
+</p>
+<p>
+Notably, <code>src/styles/base/_typography.scss</code> defines an inter-block spacing rule that
+adds top margin to any element that immediately follows a paragraph or list
+(<code>p, ul, ol { + * { margin-top: var(--spacing-stacked-margin-large); } }</code>,
+lines 93&ndash;100 of that file) &mdash; but <code>dl</code> is not included as either the trigger
+selector or explicitly targeted as the following sibling. In practice this means a
+<code>termList</code> block does not automatically receive the same
+<code>--spacing-stacked-margin-large</code> top-margin treatment other DocC block kinds get when
+they follow a paragraph or list; because the reset above already zeroes <code>dl</code>'s own
+margin, an author-adjacent <code>termList</code> can end up flush against the preceding block
+unless some other layout rule (not found in this search) supplies spacing. Beyond the reset,
+term list content inherits ordinary body typography (color via
+<code>var(--colors-text, var(--color-text))</code>, font via
+<code>var(--typography-html-font, ...)</code>, both set on <code>body</code>/<code>html</code> in
+<code>_typography.scss</code>) and whatever CodeVoice/Reference/emphasis styling applies to
+inline content nested inside the <code>&lt;dt&gt;</code>/<code>&lt;dd&gt;</code>.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+The current implementation is entirely stateless: <code>renderNode()</code>'s
+<code>BlockType.termList</code> branch is a pure, one-shot mapping from JSON
+(<code>node.items</code>) to a static <code>&lt;dl&gt;</code>/<code>&lt;dt&gt;</code>/<code>&lt;dd&gt;</code>
+tree at render time (<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L345-L353">ContentNode.vue lines 345&ndash;353</a>).
+There is no client-side interaction state to replace &mdash; no toggle, no visibility switch, no
+tab selection, and no JS event handler attached to the term list itself. It is a plain semantic
+HTML list, already using the native <code>&lt;dl&gt;</code> description-list element rather than
+a JS-driven substitute, so there is no click-handler/`v-show`/component-`data` state machine for
+a CSS-only mechanism (such as <code>:checked</code> + sibling selectors, <code>:target</code>, or
+<code>&lt;details&gt;</code>) to take over. The one legitimate "modern CSS" question for this kind
+is purely about the missing inter-block spacing noted in section 4 (the
+<code>p, ul, ol { + * {...} } </code> rule not covering <code>dl</code>), but that is a static
+layout/spacing gap, not an interactive-state gap, so it does not motivate any of the
+state-holding CSS mechanisms this section is scoped to evaluate.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

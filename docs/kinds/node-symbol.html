@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: symbol — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">node</p>
+<h1><code>symbol</code></h1>
+<p class="wire-value">Wire value: <code>"symbol"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>symbol</code> is one of the two possible values of the top-level <code>kind</code>
+discriminator on a documentation-reference render node (the other is <code>"article"</code>).
+Unlike block/inline content kinds — which are dispatched inside
+<code>ContentNode.vue</code>'s <code>renderNode()</code> lookup table — this is a
+<em>node-tier</em> discriminator, and swift-docc-render does not actually branch on its literal
+string value anywhere in the Vue layer. There is no <code>if (node.kind === 'symbol')</code> or
+component-lookup table keyed on <code>"symbol"</code> in the render app.
+</p>
+<p>
+Instead, both <code>kind: "symbol"</code> and <code>kind: "article"</code> render nodes are routed
+to the same Vue Router view,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L70-L151">
+<code>src/views/DocumentationTopic.vue</code></a>, which wraps the shared
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L1-L280">
+<code>src/components/DocumentationTopic.vue</code></a> component. That component's
+<code>extractProps(json)</code> method destructures the raw RenderNode JSON directly — it never
+reads <code>json.kind</code> at all. It instead reads discriminating sub-fields from
+<code>json.metadata</code> (<code>role</code>, <code>symbolKind</code>) and from
+<code>json.primaryContentSections</code> to decide what to show:
+</p>
+<pre><code>// src/components/DocumentationTopic.vue, extractProps(json)
+const {
+  ...
+  metadata: {
+    conformance,
+    ...
+    role,
+    symbolKind = '',
+    remoteSource,
+    ...
+  } = {},
+  primaryContentSections,
+  relationshipsSections,
+  ...
+} = json;</code></pre>
+<p>
+See
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L619-L705">
+<code>extractProps</code>, lines 619-705</a>. A page produced from a symbol render node
+typically has <code>metadata.role === "symbol"</code> (or a related role such as
+<code>containerSymbol</code>, <code>restRequestSymbol</code>, or <code>dictionarySymbol</code> —
+see the data sheet below), a non-empty <code>metadata.symbolKind</code> (e.g. <code>"property"</code>,
+<code>"class"</code>, <code>"func"</code>), and a <code>primaryContentSections</code> array whose
+first section is usually <code>kind: "declarations"</code>. An <code>article</code>-kind node
+instead has <code>metadata.role === "article"</code>, no <code>symbolKind</code>, and no
+declarations section — the same template conditionally renders (or omits) the
+<code>Declaration</code>, <code>RequirementMetadata</code>, and other symbol-specific
+sub-components based on the presence of that data, rather than on <code>kind</code> itself. This
+is visible in the template guards:
+</p>
+<pre><code>&lt;div v-if="declarations.length" class="declarations-container" ...&gt;
+  &lt;Declaration v-for="(declaration, index) in declarations" ... /&gt;
+&lt;/div&gt;
+...
+&lt;RequirementMetadata v-if="isRequirement" ... /&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L75-L108">lines 75-108</a>).
+The root template element for the whole page is
+<code>&lt;div class="doc-topic"&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L12-L15">lines 12-15</a>).
+</p>
+<p>
+Note: <code>src/constants/TopicTypes.js</code> also defines a string constant
+<code>symbol: 'symbol'</code>, but that is an unrelated, narrower concept — a topic-reference
+"role" tag used by cross-reference link rendering (e.g. in
+<code>ContentNode/Reference.vue</code> and <code>Navigator.vue</code>) to decide whether a
+<em>reference to</em> a symbol should be styled with inline code formatting. It is not the
+top-level RenderNode <code>kind</code> discriminator documented on this page, and should not be
+confused with it.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: both
+<code>MyHTMLTransformer.convert(node:)</code> and <code>MyMarkdownTransformer.convert(node:)</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the former
+returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment, the latter returns an empty
+string) regardless of whether <code>node.kind</code> is <code>.symbol</code> or anything else, so
+a <code>symbol</code> render node parsed via <code>Archive.parseRenderNode(dataPath:)</code>
+would decode correctly into <code>Components.Schemas.RenderNode</code> but produce no real
+HTML/Markdown output today.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/DocCArchiveTests/Fixtures/SampleLibrary.doccarchive/data/documentation/samplelibrary/samplestruct/score.json</code>
+in this repository — a minimal instance-property symbol page (trimmed here to the fields
+relevant to this page; the full fixture also carries a small <code>references</code> dictionary).
+</p>
+<pre><code>{
+  "kind": "symbol",
+  "identifier": {
+    "interfaceLanguage": "swift",
+    "url": "doc://SampleLibrary/documentation/SampleLibrary/SampleStruct/score"
+  },
+  "metadata": {
+    "externalID": "s:13SampleLibrary0A6StructV5scoreSdvp",
+    "fragments": [
+      { "kind": "keyword", "text": "let" },
+      { "kind": "text", "text": " " },
+      { "kind": "identifier", "text": "score" },
+      { "kind": "text", "text": ": " },
+      { "kind": "typeIdentifier", "preciseIdentifier": "s:Sd", "text": "Double" }
+    ],
+    "modules": [ { "name": "SampleLibrary" } ],
+    "role": "symbol",
+    "roleHeading": "Instance Property",
+    "symbolKind": "property",
+    "title": "score"
+  },
+  "primaryContentSections": [
+    {
+      "kind": "declarations",
+      "declarations": [
+        {
+          "languages": ["swift"],
+          "platforms": ["macOS"],
+          "tokens": [
+            { "kind": "keyword", "text": "let" },
+            { "kind": "text", "text": " " },
+            { "kind": "identifier", "text": "score" },
+            { "kind": "text", "text": ": " },
+            { "kind": "typeIdentifier", "preciseIdentifier": "s:Sd", "text": "Double" }
+          ]
+        }
+      ]
+    }
+  ],
+  "hierarchy": {
+    "paths": [
+      [
+        "doc://SampleLibrary/documentation/SampleLibrary",
+        "doc://SampleLibrary/documentation/SampleLibrary/SampleStruct"
+      ]
+    ]
+  },
+  "schemaVersion": { "major": 0, "minor": 3, "patch": 0 },
+  "sections": [],
+  "variants": [
+    {
+      "paths": ["/documentation/samplelibrary/samplestruct/score"],
+      "traits": [ { "interfaceLanguage": "swift" } ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+<p style="text-transform:uppercase;font-size:0.75rem;color:var(--color-text-secondary);letter-spacing:0.04em;">Instance Property</p>
+<div style="font-family:var(--font-mono);margin:4px 0 12px;">score</div>
+<pre style="margin:0 0 12px;"><code>let score: Double</code></pre>
+<p style="font-size:0.85rem;color:var(--color-text-secondary);">SampleLibrary &rsaquo; SampleStruct &rsaquo; score</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Authoritative schema object: <code>DocumentationRenderNode</code> in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (the sibling schema
+<code>TutorialsPageRenderNode</code> handles the <code>overview</code>/<code>project</code>/<code>article</code>-in-tutorials
+cases and is out of scope for this page). <code>RenderNode</code> itself is defined as
+<code>oneOf</code> [<code>TutorialsPageRenderNode</code>, <code>DocumentationRenderNode</code>].
+Cross-checked against the generated
+<code>Components.Schemas.DocumentationRenderNode</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (starting at line 5315), which matches the
+JSON schema field-for-field.
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>"symbol" | "article"</code></td><td>Discriminator for this schema object; this page covers the <code>"symbol"</code> case.</td></tr>
+<tr><td><code>identifier</code></td><td><code>ResolvedTopicReference</code></td><td>yes</td><td>—</td><td>Contains <code>interfaceLanguage</code> and the <code>url</code> (a <code>doc://</code> URL).</td></tr>
+<tr><td><code>schemaVersion</code></td><td><code>SchemaVersion</code></td><td>yes</td><td>—</td><td>major/minor/patch of the render-JSON schema.</td></tr>
+<tr><td><code>hierarchy</code></td><td><code>DocumentationHierarchy</code></td><td>yes</td><td>—</td><td>Breadcrumb path(s) from module root to this node.</td></tr>
+<tr><td><code>metadata</code></td><td><code>DocumentationMetadata</code></td><td>yes</td><td>—</td><td>See sub-table below; carries <code>role</code>, <code>symbolKind</code>, <code>title</code>, etc.</td></tr>
+<tr><td><code>sections</code></td><td>array of <code>RenderSection</code></td><td>yes</td><td>—</td><td>Generic tutorial-style sections; typically empty for symbol pages (see example).</td></tr>
+<tr><td><code>primaryContentSections</code></td><td>array of <code>DocumentationPrimaryRenderSection</code></td><td>no</td><td>—</td><td>Declarations, discussion, parameters, etc. First entry is usually <code>kind: "declarations"</code> for a symbol.</td></tr>
+<tr><td><code>references</code></td><td>map&lt;string, <code>RenderReference</code>&gt;</td><td>no</td><td>—</td><td>Keyed by <code>doc://</code> identifier; resolves links/cross-references used elsewhere in the node.</td></tr>
+<tr><td><code>abstract</code></td><td>array of <code>RenderInlineContent</code></td><td>no</td><td>—</td><td>Summary/abstract line shown under the title.</td></tr>
+<tr><td><code>topicSectionsStyle</code></td><td>string</td><td>no</td><td><code>list | compactGrid | detailedGrid | hidden</code>, default <code>list</code></td><td>Layout style for the Topics section.</td></tr>
+<tr><td><code>topicSections</code></td><td>array of <code>TasksGroupSection</code></td><td>no</td><td>—</td><td>Curated child-topic groups.</td></tr>
+<tr><td><code>seeAlsoSections</code></td><td>array of <code>TasksGroupSection</code></td><td>no</td><td>—</td><td>"See Also" groups.</td></tr>
+<tr><td><code>defaultImplementationsSections</code></td><td>array of <code>TasksGroupSection</code></td><td>no</td><td>—</td><td>Protocol default-implementation links.</td></tr>
+<tr><td><code>relationshipsSections</code></td><td>array of <code>RelationshipsGroupSection</code></td><td>no</td><td>—</td><td>Conforms-to / inherits-from etc.</td></tr>
+<tr><td><code>sampleCodeDownload</code></td><td><code>SampleDownload</code></td><td>no</td><td>—</td><td>Download link for associated sample project.</td></tr>
+<tr><td><code>downloadNotAvailableSummary</code></td><td>array of <code>RenderBlockContent</code></td><td>no</td><td>—</td><td>Shown when a sample download is unavailable.</td></tr>
+<tr><td><code>deprecationSummary</code></td><td>array of <code>RenderBlockContent</code></td><td>no</td><td>—</td><td>Deprecation notice content.</td></tr>
+<tr><td><code>diffAvailability</code></td><td>object (<code>beta</code>/<code>minor</code>/<code>major</code>/<code>sdk</code> &rarr; <code>DiffAvailabilityInfo</code>)</td><td>no</td><td>—</td><td>API-diff badges relative to other versions.</td></tr>
+<tr><td><code>variants</code></td><td>array of <code>RenderNodeVariant</code></td><td>no</td><td>—</td><td>Per-language/trait path variants for this node.</td></tr>
+<tr><td><code>variantOverrides</code></td><td>array of <code>VariantOverride</code></td><td>no</td><td>—</td><td>JSON-Patch overrides applied per trait (e.g. Objective-C variant).</td></tr>
+</tbody>
+</table>
+<p><strong>Selected <code>metadata</code> (<code>DocumentationMetadata</code>) fields:</strong></p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>title</code></td><td>string</td><td>yes</td><td>—</td><td>Page title, e.g. <code>"score"</code>.</td></tr>
+<tr><td><code>role</code></td><td><code>DocumentationRole</code> (string)</td><td>no</td><td><code>symbol | containerSymbol | restRequestSymbol | dictionarySymbol | pseudoSymbol | pseudoCollection | collection | collectionGroup | article | sampleCode | overview | table | codeListing | link | project | subsection | task</code></td><td>The practical discriminator swift-docc-render actually branches on (not <code>kind</code>).</td></tr>
+<tr><td><code>symbolKind</code></td><td><code>SymbolKind</code> (plain string, no enum constraint in the schema)</td><td>no</td><td>e.g. <code>property</code>, <code>class</code>, <code>func</code>, <code>struct</code></td><td>Drives <code>roleHeading</code> logic and conditionals like "is this a module page" in <code>DocumentationTopic.vue</code>.</td></tr>
+<tr><td><code>roleHeading</code></td><td>string</td><td>no</td><td>—</td><td>Human-readable kind label, e.g. <code>"Instance Property"</code>.</td></tr>
+<tr><td><code>required</code></td><td>boolean</td><td>no</td><td>—</td><td>Marks a protocol-requirement symbol.</td></tr>
+<tr><td><code>externalID</code></td><td>string</td><td>no</td><td>—</td><td>Compiler/USR-style symbol identifier.</td></tr>
+<tr><td><code>fragments</code></td><td>array of <code>DeclarationToken</code></td><td>no</td><td>—</td><td>Inline "signature" tokens shown in navigator/links.</td></tr>
+<tr><td><code>modules</code></td><td>array of <code>DocumentationMetadataModule</code></td><td>no</td><td>—</td><td>Owning module name(s).</td></tr>
+<tr><td><code>platforms</code></td><td>array of <code>PlatformAvailability</code></td><td>no</td><td>—</td><td>Per-platform availability/deprecation/beta info.</td></tr>
+<tr><td><code>conformance</code></td><td><code>ConformanceSection</code></td><td>no</td><td>—</td><td>"Available when ... conforms to ..." constraint text.</td></tr>
+</tbody>
+</table>
+<p class="see-concept">See also: <a href="../concepts/variants.html">variants &amp; variantOverrides</a> — the full trait-override mechanism behind the two fields in the table above.</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+The whole page renders inside a single root element,
+<code>&lt;div class="doc-topic"&gt;</code>, produced by
+<code>src/components/DocumentationTopic.vue</code>. Notable descendant hooks used by both
+symbol and article pages:
+</p>
+<ul>
+<li><code>#app-main</code> / <code>.main</code> — the <code>&lt;main&gt;</code> (or <code>&lt;div&gt;</code> under IDE targets) wrapper.</li>
+<li><code>.doc-content-wrapper</code> &gt; <code>.doc-content</code> — the primary content column.</li>
+<li><code>.declarations-container</code> — wraps one or more <code>&lt;Declaration&gt;</code> components; only rendered when <code>primaryContentSections</code> contains a <code>declarations</code> section (i.e., normally only for <code>kind: "symbol"</code>).</li>
+<li><code>.description</code> — wraps deprecation/download-unavailable <code>&lt;Aside&gt;</code> blocks and the abstract-adjacent content.</li>
+<li><code>.container</code> — wraps <code>PrimaryContent</code> (declarations/discussion/parameters/etc.).</li>
+<li><code>.declaration-list-menu</code> / <code>.declaration-list-toggle</code> — the "Show/Hide other declarations" control for multi-platform declarations.</li>
+</ul>
+<p>
+All SCSS for this component is co-located in a <code>&lt;style scoped lang="scss"&gt;</code>
+block inside <code>DocumentationTopic.vue</code> itself (no separate <code>.scss</code>
+partial) — see roughly
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L796-L1008">lines 796-1008</a>.
+CSS custom properties consumed/set there include <code>--doc-hero-right-offset</code>,
+<code>--spacing-stacked-margin-large</code>, <code>--spacing-stacked-margin-xlarge</code>,
+<code>--declaration-code-listing-margin</code>,
+<code>--declaration-conditional-constraints-margin</code>,
+<code>--declaration-source-link-margin</code>, <code>--code-block-style-elements-padding</code>,
+<code>--aside-border-radius</code>, <code>--code-border-radius</code>,
+<code>--content-table-title-border-width</code>, and the shared theme tokens
+<code>--colors-link</code> / <code>--color-link</code> and <code>--colors-grid</code> /
+<code>--color-grid</code>. Child components (<code>Declaration.vue</code>,
+<code>PrimaryContent.vue</code>, <code>Topics.vue</code>, <code>Relationships.vue</code>,
+<code>SeeAlso.vue</code>, <code>DefaultImplementations.vue</code>) each carry their own
+scoped styles that this page does not enumerate in full.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+The <code>symbol</code> node kind is not itself an interactive widget — it is a data-format
+discriminator that tells the renderer "build a reference-documentation page, and this page has
+declarations/availability/symbol metadata." The current JS/Vue behavior in play at this level is
+plain conditional template rendering: <code>DocumentationTopic.vue</code> uses ordinary Vue
+<code>v-if</code> directives (<code>v-if="declarations.length"</code>,
+<code>v-if="isRequirement"</code>, <code>v-if="primaryContentSectionsSanitized &amp;&amp;
+primaryContentSectionsSanitized.length"</code>, etc., lines 75-165) driven by which optional
+fields are present in the JSON payload. There is no client-side interactive state here (no
+toggle/tab/expand/collapse behavior gated on <code>kind</code> or <code>role</code> itself) for a
+CSS mechanism to replace — the one truly stateful, click-driven widget on the page,
+the "Show/Hide other declarations" toggle (<code>toggleDeclList</code>/<code>declListExpanded</code>,
+lines 706-708 and 118-128), belongs to the <code>declarations</code>
+primary-content-section kind, not to the <code>symbol</code> node kind itself, and should be
+assessed on that section's own reference page rather than here. At the node-kind level, the
+right characterization is simply: pick-one-of-two-templates-at-build-time based on a string
+field, which is inherently a server/build-time concern, not something a browser-side CSS
+selector could hold state for.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

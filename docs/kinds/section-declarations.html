@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: declarations — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>declarations</code></h1>
+<p class="wire-value">Wire value: <code>"declarations"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>declarations</code> is one of the <code>kind</code> values of the
+<code>DocumentationPrimaryRenderSection</code> union (a symbol page's
+<code>primaryContentSections</code> array). Unlike most primary-content-section kinds, it is not
+dispatched through <code>PrimaryContent.vue</code>'s generic section-kind switch. Instead
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L601-L602"><code>DocumentationTopic.vue</code></a>
+pulls every section with <code>kind === SectionKind.declarations</code> out of
+<code>primaryContentSections</code> into its own <code>declarations</code> computed property, and
+explicitly excludes that same kind from the array handed to the generic
+<code>PrimaryContentSectionsSanitized</code>/<code>PrimaryContent</code> path
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L593-L602"><code>lines 593&ndash;602</code></a>):
+</p>
+<pre><code>primaryContentSectionsSanitized({ primaryContentSections = [], symbolKind }) {
+  return primaryContentSections.filter(({ kind }) => {
+    if (kind === SectionKind.mentions) {
+      return symbolKind !== SymbolKind.module;
+    }
+    return kind !== SectionKind.declarations;
+  });
+},
+declarations({ primaryContentSections = [] }) {
+  return primaryContentSections.filter(({ kind }) => kind === SectionKind.declarations);
+},</code></pre>
+<p>
+The <code>SectionKind.declarations</code> constant itself is defined in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L12-L27"><code>src/constants/PrimaryContentSection.js</code></a>
+(<code>declarations: 'declarations'</code>). The reason for the special-case: declarations are
+promoted out of the normal in-page-content flow and rendered up in the page's hero/header region,
+not in the body. In the template
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L75-L88"><code>lines 75&ndash;88</code></a>),
+each extracted section is passed to a <code>Declaration</code> component inside a
+<code>div.declarations-container</code> that lives directly under <code>DocumentationHero</code>,
+right after the page's Availability block:
+</p>
+<pre><code>&lt;div
+  v-if="declarations.length"
+  class="declarations-container"
+  :class="{ 'minimized-container': enableMinimized }"
+&gt;
+  &lt;Declaration
+    v-for="(declaration, index) in declarations"
+    :key="index"
+    :conformance="conformance"
+    :declarations="declaration.declarations"
+    :source="remoteSource"
+    :declListExpanded.sync="declListExpanded"
+  /&gt;
+&lt;/div&gt;</code></pre>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/Declaration.vue#L11-L41"><code>Declaration.vue</code></a>
+is the per-section wrapper (a <code>&lt;section class="declaration"&gt;</code>): it either shows a
+<code>DeclarationDiff</code> (API-changes diff view, when the page has an unexpanded change) or, in
+the normal case, loops over the section's <code>declarations</code> array (one entry per
+platform/language variant) rendering a
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/DeclarationList.vue#L11-L40"><code>DeclarationList</code></a>
+for each, followed by an optional source-link and conditional-conformance-constraints footer.
+</p>
+<p>
+<code>DeclarationList.vue</code> is where the "other declarations" (overload) behavior lives. Its
+<code>declarationTokens</code> computed
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/DeclarationList.vue#L100-L123"><code>lines 100&ndash;123</code></a>)
+splices the current declaration into its sibling <code>otherDeclarations.declarations</code> array
+at <code>otherDeclarations.displayIndex</code>, then renders every entry as a
+<code>div.declaration-pill</code> wrapping a
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/DeclarationGroup.vue#L11-L25"><code>DeclarationGroup</code></a>,
+each pill wrapped in a <code>transition-expand</code> for the animated
+collapse/expand. Only the selected pill is shown until the "show all overloads" toggle
+(rendered by the parent <code>DocumentationTopic.vue</code> as
+<code>button.declaration-list-toggle</code>, driving the shared <code>declListExpanded</code>
+boolean) is clicked; clicking any other pill while expanded re-selects it and, after a short
+animation delay, routes to that symbol's own page via <code>this.$router.push</code>. Finally,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/DeclarationGroup.vue#L11-L25"><code>DeclarationGroup.vue</code></a>
+renders an optional platform-list caption and delegates the actual token array to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/DeclarationSource.vue#L11-L21"><code>DeclarationSource.vue</code></a>,
+which wraps a <code>CodeBlock</code>/<code>Token</code> sequence in a <code>&lt;pre&gt;</code>
+(applying, for Swift, some post-tokenization reflow logic to break long parameter lists onto
+their own lines &mdash; see <code>formattedSwiftTokens</code> in that file).
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture, from
+<code>Tests/DocCArchiveTests/Fixtures/SampleLibrary.doccarchive/data/documentation/samplelibrary/samplestruct/count.json</code>
+(the <code>declarations</code> entry of that RenderNode's <code>primaryContentSections</code>,
+documenting <code>SampleStruct.count: UInt</code>). This fixture does not exercise the optional
+<code>title</code> field or the <code>otherDeclarations</code> overload mechanism described above
+(no fixture JSON in either DocCArchive's or swift-docc's test suites was found with
+<code>otherDeclarations</code> present on the wire).
+</p>
+<pre><code>{
+  "kind": "declarations",
+  "declarations": [
+    {
+      "languages": [
+        "swift"
+      ],
+      "platforms": [
+        "macOS"
+      ],
+      "tokens": [
+        { "kind": "keyword", "text": "let" },
+        { "kind": "text", "text": " " },
+        { "kind": "identifier", "text": "count" },
+        { "kind": "text", "text": ": " },
+        {
+          "kind": "typeIdentifier",
+          "preciseIdentifier": "s:Su",
+          "text": "UInt"
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="border:1px solid #d0d0d5; border-radius:8px; background:#f6f6f8; padding:16px 18px; font-family:ui-monospace,Menlo,monospace; font-size:0.95rem;">
+    <span style="color:#9b2393; font-weight:600;">let</span>
+    <span style="color:#000;">count</span>: <span style="color:#0b6125;">UInt</span>
+  </div>
+  <p><em>mockup: a single declaration pill (macOS/Swift) rendered as monospaced, syntax-colored
+  tokens inside <code>DeclarationSource.vue</code>'s <code>&lt;pre&gt;</code>. With no
+  <code>otherDeclarations</code>, there is exactly one pill and no expand/collapse toggle is shown
+  for this symbol; on a page with overloads, additional pills for other platforms/overloads would
+  stack below with a "Show All Declarations" toggle button.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema objects
+<code>#/components/schemas/DeclarationsRenderSection</code>,
+<code>#/components/schemas/Declaration</code>, <code>#/components/schemas/OtherDeclarations</code>,
+<code>#/components/schemas/OtherDeclaration</code>, and
+<code>#/components/schemas/DeclarationToken</code> (lines 2561&ndash;2676), cross-checked against
+the generated types in <code>Sources/DocCArchive/generated/Types.swift</code>
+(<code>Components.Schemas.DeclarationsRenderSection</code> at lines 6045&ndash;6077,
+<code>Components.Schemas.Declaration</code> at lines 6078&ndash;6106,
+<code>Components.Schemas.OtherDeclarations</code> at lines 6107&ndash;6129,
+<code>Components.Schemas.OtherDeclaration</code> at lines 6130&ndash;6158, and
+<code>Components.Schemas.DeclarationToken1</code>&mdash;note the generator-assigned
+<code>1</code> suffix, since a distinct top-level <code>DeclarationToken</code> schema also
+exists&mdash;at lines 6159&ndash;6201).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"declarations"</code></td>
+<td>Generated as a single-case <code>KindPayload</code> enum. Matches swift-docc's
+<code>DeclarationsRenderSection.kind: RenderSectionKind = .declarations</code> default.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Present in the wire schema, but swift-docc's own <code>DeclarationsRenderSection</code> Swift
+struct has no corresponding stored property (its documented default is a static, always-<code>nil</code>
+<code>title</code>) &mdash; no emitter of a populated value was found. Not read by any of the
+render-side Declaration components examined above.</td>
+</tr>
+<tr>
+<td><code>declarations</code></td>
+<td>array of <code>Declaration</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>One entry per platform/language declaration variant. Consumed by <code>Declaration.vue</code>
+as its <code>declarations</code> prop.</td>
+</tr>
+<tr>
+<td><code>Declaration.platforms</code></td>
+<td>array of string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Platform names this declaration variant applies to (e.g. <code>"macOS"</code>). Rendered as a
+caption above the code block by <code>DeclarationGroup.vue</code> when
+<code>shouldCaption</code> is true (i.e. when the page has more than one set of platforms
+represented across its declarations).</td>
+</tr>
+<tr>
+<td><code>Declaration.tokens</code></td>
+<td>array of <code>DeclarationToken</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The syntax-highlighted token stream, rendered by <code>DeclarationSource.vue</code>.</td>
+</tr>
+<tr>
+<td><code>Declaration.otherDeclarations</code></td>
+<td><code>OtherDeclarations</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Present only when this symbol has overloads. Drives the "show all declarations" expand/collapse
+UI in <code>DeclarationList.vue</code>.</td>
+</tr>
+<tr>
+<td><code>OtherDeclarations.declarations</code></td>
+<td>array of <code>OtherDeclaration</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The sibling overload declarations (excluding the current symbol itself, which gets spliced back
+in at <code>displayIndex</code>).</td>
+</tr>
+<tr>
+<td><code>OtherDeclarations.displayIndex</code></td>
+<td>integer</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Position at which the current declaration should be inserted among the <code>declarations</code>
+array to reconstruct display order.</td>
+</tr>
+<tr>
+<td><code>OtherDeclaration.tokens</code></td>
+<td>array of <code>DeclarationToken</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Token stream for the overload's own declaration.</td>
+</tr>
+<tr>
+<td><code>OtherDeclaration.identifier</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Reference identifier used to resolve the overload's URL (for routing on pill click) via the
+page's <code>references</code> map.</td>
+</tr>
+<tr>
+<td><code>OtherDeclaration.conformance</code></td>
+<td><code>ConformanceSection</code></td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Optional conditional-conformance metadata for that overload.</td>
+</tr>
+<tr>
+<td><code>DeclarationToken.text</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The literal token text.</td>
+</tr>
+<tr>
+<td><code>DeclarationToken.kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>keyword</code>, <code>attribute</code>, <code>number</code>, <code>string</code>,
+<code>identifier</code>, <code>typeIdentifier</code>, <code>genericParameter</code>,
+<code>text</code>, <code>internalParam</code>, <code>externalParam</code>, <code>label</code></td>
+<td>Drives the syntax-highlighting CSS class via <code>DeclarationToken.vue</code>.</td>
+</tr>
+<tr>
+<td><code>DeclarationToken.identifier</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Format-hinted as a reference into the page's <code>references</code> map (a
+<code>TopicRenderReference</code>) when the token is a known symbol, used to render it as a link.</td>
+</tr>
+<tr>
+<td><code>DeclarationToken.preciseIdentifier</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash;</td>
+<td>Symbol-graph precise identifier for the token's referenced symbol, e.g. <code>"s:Su"</code> for
+<code>UInt</code> in the example above.</td>
+</tr>
+<tr>
+<td><code>DeclarationToken.highlight</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"changed"</code></td>
+<td>Marks a token as changed for API-diff rendering; consumed by <code>DeclarationSource.vue</code>'s
+<code>extraClassesFor()</code> to add a <code>.highlighted</code> class.</td>
+</tr>
+</tbody>
+</table>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+<p>
+<strong>Gap between the wire schema and swift-docc's Swift model:</strong> swift-docc's actual
+<code>DeclarationRenderSection</code> struct (the Swift-side counterpart to the wire
+<code>Declaration</code> schema, defined at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Symbol/DeclarationsRenderSection.swift#L59-L72"><code>DeclarationsRenderSection.swift</code> lines 59&ndash;72</a>)
+also encodes an optional <code>languages: [String]?</code> field (the source languages this
+declaration variant applies to, e.g. <code>["swift"]</code> in the example above) that the vendored
+wire schema's <code>Declaration</code> object does not declare at all. It is visibly present on the
+wire in the real fixture used above, so it is genuinely emitted &mdash; but the generated
+<code>Components.Schemas.Declaration</code> Swift type in this repository has no
+<code>languages</code> property, and a DocCArchive consumer decoding through the generated type
+will silently drop it.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, assembled across the component chain in section 1:</p>
+<ul>
+<li><code>div.declarations-container</code> (optionally also <code>.minimized-container</code>) &mdash;
+the outer wrapper in <code>DocumentationTopic.vue</code>, placed inside the page hero, one per
+symbol page (not per <code>Declaration</code> instance &mdash; all declaration sections for a page
+share this single container).</li>
+<li><code>section.declaration</code> &mdash; one per <code>DeclarationsRenderSection</code> entry
+(<code>Declaration.vue</code>'s root).</li>
+<li><code>div.declaration-list</code> &mdash; one per platform/language variant
+(<code>DeclarationList.vue</code>'s root).</li>
+<li><code>div.declaration-pill</code> (plus conditionally <code>.declaration-pill--expanded</code>,
+a <code>changed changed-{added|deprecated|modified}</code> pair, and <code>.selected-declaration</code>)
+&mdash; one per visible declaration/overload token set, each wrapped in a
+<code>transition-expand</code> animation helper.</li>
+<li><code>div</code> or <code>button</code> <code>.declaration-group-wrapper</code> &mdash; a
+<code>div</code> when collapsed/unselected, a clickable <code>button</code> when the overload list
+is expanded (see <code>getWrapperComponent()</code> in <code>DeclarationList.vue</code>).</li>
+<li><code>div.declaration-group</code> (plus conditionally
+<code>declaration-group--changed declaration-group--{type}</code>) &mdash; wraps an optional
+<code>p.platforms</code> caption and the code block (<code>DeclarationGroup.vue</code>'s root).</li>
+<li><code>pre.source</code> (plus <code>.has-multiple-lines</code>/a multiple-lines modifier class)
+containing a <code>CodeBlock</code>-rendered <code>&lt;code&gt;</code> with one
+<code>Token</code> element per declaration token, each optionally classed <code>.highlighted</code>
+(<code>DeclarationSource.vue</code>'s root, via <code>DeclarationToken.vue</code>).</li>
+<li>Sibling elements inside <code>section.declaration</code>: an optional
+<code>DeclarationSourceLink</code> (link to source on a code host) and an optional
+<code>ConditionalConstraints</code> block (conformance requirements).</li>
+<li>Outside <code>Declaration.vue</code>, back in <code>DocumentationTopic.vue</code>:
+<code>div.declaration-list-menu &gt; button.declaration-list-toggle</code> &mdash; the "Show/Hide
+All Declarations" toggle, only rendered when <code>hasOtherDeclarations</code> is true and the
+page is not in minimized mode.</li>
+</ul>
+<p>
+SCSS lives inline in each component's own scoped <code>&lt;style lang="scss"&gt;</code> block
+(<code>DocumentationTopic.vue</code>, <code>Declaration.vue</code>, <code>DeclarationList.vue</code>,
+<code>DeclarationGroup.vue</code>, <code>DeclarationSource.vue</code>), all importing the shared
+<code>docc-render/styles/_core.scss</code>. Key CSS custom properties consumed:
+</p>
+<ul>
+<li><code>--color-code-background</code> and <code>--color-code-plain</code> (aliased via
+<code>--background</code>/<code>--text</code> fallbacks) on <code>pre.source</code>, defined per
+color scheme in <code>src/styles/core/colors/_light.scss</code> / <code>_dark.scss</code> (e.g.
+<code>_light.scss</code> lines 75 and 81).</li>
+<li><code>--color-other-decl-button</code> on <code>.declaration-list-toggle</code>'s background.</li>
+<li><code>--color-focus-border-color</code> on the selected pill's source border when the overload
+list is expanded.</li>
+<li><code>--color-syntax-highlighted</code> on <code>:deep(.highlighted)</code> token backgrounds
+inside an expanded pill.</li>
+<li><code>--declaration-conditional-constraints-margin</code> and
+<code>--declaration-code-listing-margin</code>, layout-spacing custom properties consumed by
+<code>Declaration.vue</code> and <code>DeclarationList.vue</code> respectively.</li>
+</ul>
+<p>
+DocCArchive transform status: not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> are still
+stub placeholders (the HTML transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code>
+comment and the Markdown transformer returns an empty string) &mdash; there is no kind-specific
+handling of <code>DeclarationsRenderSection</code> today, and given the <code>languages</code> field
+gap documented in section 3, a future implementation decoding via the generated type would need to
+either widen the vendored schema or fall back to raw JSON to reproduce that data faithfully.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">PARTIAL</span></p>
+<p>
+Current behavior: a single boolean, <code>declListExpanded</code>, lives in
+<code>DocumentationTopic.vue</code>'s component <code>data()</code> and is passed down via
+<code>.sync</code> to both <code>Declaration.vue</code> (as <code>isExpanded</code>, forwarded again
+via <code>.sync</code>) and ultimately to every <code>DeclarationList.vue</code> instance on the
+page, so that clicking the single <code>button.declaration-list-toggle</code> expands or collapses
+<em>all</em> overload lists on the page in lockstep. Inside an expanded list,
+<code>v-if="!hasOtherDeclarations || declaration.identifier === selectedIdentifier || isExpanded"</code>
+decides which pills are in the DOM at all, and a second piece of state,
+<code>selectedIdentifier</code> (local <code>data()</code> in <code>DeclarationList.vue</code>),
+tracks which pill is highlighted/active; clicking a non-selected pill while expanded updates
+<code>selectedIdentifier</code>, waits a tick, collapses the list again
+(<code>isExpanded = false</code>), waits ~500ms for the collapse animation, then performs a
+client-side route navigation to that overload's own page.
+</p>
+<p>
+The pure show/hide half of this &mdash; toggling between "one pill visible" and "all pills
+visible" &mdash; maps mechanically onto a checkbox/radio-driven CSS toggle: a hidden
+<code>&lt;input type="checkbox" id="decl-expand"&gt;</code> placed as a preceding sibling of
+<code>.declaration-list</code>, a <code>&lt;label for="decl-expand"&gt;</code> standing in for
+<code>button.declaration-list-toggle</code>, and a rule like
+<code>#decl-expand:checked ~ .declaration-list .declaration-pill { display: block; }</code>
+(paired with a default rule hiding all but the first/selected pill) would hold the expanded/collapsed
+state in the checkbox's own <code>:checked</code> attribute instead of in Vue's synced
+<code>declListExpanded</code> boolean &mdash; no JS required for that part, and the existing
+<code>transition-expand</code> height animation is approximable with a CSS
+<code>max-height</code>/<code>grid-template-rows</code> transition gated on the same
+<code>:checked</code> selector. The verdict is <strong>partial</strong>, not fully applicable,
+because the second behavior &mdash; selecting a different overload pill and then navigating the
+browser to that overload's own documentation page after the collapse animation finishes &mdash; is
+a real client-side-router side effect keyed off a value normally read from the DOM (a
+<code>data-href</code>/reference-map lookup), not a pure visual state; CSS has no mechanism to
+perform navigation after a delay, so <code>selectDeclaration()</code>'s
+<code>this.$router.push(...)</code> call (and its <code>waitFor(500)</code> animation-sequencing)
+would still need to remain in script even if the expand/collapse itself moved to CSS.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: restEndpoint — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>restEndpoint</code></h1>
+<p class="wire-value">Wire value: <code>"restEndpoint"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>restEndpoint</code> is one of the section kinds a REST-symbol page's
+<code>primaryContentSections</code> array can contain (alongside <code>restParameters</code>,
+<code>restHeaders</code>, <code>restCookies</code>, <code>restBody</code>,
+<code>restResponses</code>, and the ordinary symbol sections). The dispatch table lives in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L127"><code>PrimaryContent.vue</code></a>,
+which keys a <code>componentFor(section)</code> lookup and a parallel <code>propsFor(section)</code>
+lookup off <code>section.kind</code>, using the <code>SectionKind</code> constant map defined in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L11-L27"><code>constants/PrimaryContentSection.js</code></a>:
+</p>
+<pre><code>componentFor(section) {
+  return {
+    ...
+    [SectionKind.restEndpoint]: RestEndpoint,
+    ...
+  }[section.kind];
+},
+propsFor(section) {
+  const { tokens, title, ... } = section;
+  return {
+    ...
+    [SectionKind.restEndpoint]: { tokens, title },
+    ...
+  }[kind];
+},</code></pre>
+<p>
+Unlike <code>restBody</code>, there is no key renaming here &mdash; <code>tokens</code> and
+<code>title</code> pass straight through from the wire section object to component props. The
+target component is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/RestEndpoint.vue#L11-L47"><code>RestEndpoint.vue</code></a>,
+whose entire template is two elements:
+</p>
+<pre><code>&lt;section&gt;
+  &lt;LinkableHeading :anchor="anchor"&gt;{{ title }}&lt;/LinkableHeading&gt;
+  &lt;DeclarationSource :tokens="tokens" /&gt;
+&lt;/section&gt;</code></pre>
+<p>
+The heading text is the section's <code>title</code> (in practice always <code>"URL"</code> or
+<code>"Sandbox URL"</code>, see &sect;3), anchored via a local computed property
+<code>anchor: ({ title }) =&gt; anchorize(title)</code>. The <code>tokens</code> array is handed
+directly to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/DeclarationSource.vue#L11-L21"><code>DeclarationSource.vue</code></a>
+&mdash; the same component that renders ordinary Swift/Objective-C <code>declarations</code>
+sections &mdash; which wraps the tokens in a <code>&lt;pre&gt;&lt;code&gt;</code> block and maps
+each one through
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/DeclarationToken.vue#L20-L79"><code>DeclarationToken.vue</code></a>.
+That component's render function switches on <code>token.kind</code>, but its known cases are
+Swift declaration-token kinds (<code>keyword</code>, <code>identifier</code>,
+<code>typeIdentifier</code>, <code>attribute</code>, <code>added</code>/<code>removed</code>,
+etc.) &mdash; none of which match the REST-specific kinds <code>method</code>,
+<code>baseURL</code>, <code>path</code>, or <code>parameter</code> defined for this section's own
+token schema (see &sect;3). Those four therefore fall through to the <code>default</code> branch
+of the switch, which renders each token via
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/SyntaxToken.vue#L11-L30"><code>SyntaxToken.vue</code></a>:
+a bare <code>&lt;span class="token-{kind}"&gt;{text}&lt;/span&gt;</code>. The fifth REST token
+kind, <code>text</code>, does match a real <code>DeclarationToken</code> case and is instead
+rendered by <code>RawText.vue</code> as plain text with no wrapping element.
+</p>
+<p>
+The section also participates in on-this-page navigation: in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/mixins/onThisPageRegistrator.js#L77-L87"><code>onThisPageRegistrator.js</code></a>,
+<code>restEndpoint</code> is grouped with the other primary-content-anchor kinds
+(<code>properties</code>, <code>restBody</code>, <code>restCookies</code>, <code>restHeaders</code>,
+<code>restParameters</code>, <code>restResponses</code>) to register a level-2 on-this-page entry
+titled from the section's own <code>title</code> field, anchored via
+<code>anchorize(section.title)</code> &mdash; the same anchor computed inside
+<code>RestEndpoint.vue</code> itself for its <code>LinkableHeading</code>. A dedicated unit test,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/tests/unit/components/DocumentationTopic/PrimaryContent/RestEndpoint.spec.js#L11-L34"><code>RestEndpoint.spec.js</code></a>,
+confirms the component renders the title through <code>LinkableHeading</code> and forwards the
+<code>tokens</code> array unmodified to <code>DeclarationSource</code>.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture, from swift-docc's test suite:
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/rest-symbol.json</code> (the first entry of
+its <code>primaryContentSections</code> array), cross-checked against the assertions in
+<code>Tests/SwiftDocCTests/Rendering/RESTSymbolsTests.swift</code> (lines 52&ndash;63), which
+decodes this exact section and checks its 5 tokens' <code>text</code> values.
+</p>
+<pre><code>{
+  "kind": "restEndpoint",
+  "title": "URL",
+  "tokens": [
+    {
+      "kind": "method",
+      "text": "GET"
+    },
+    {
+      "kind": "text",
+      "text": " "
+    },
+    {
+      "kind": "baseURL",
+      "text": "https://www.example.com"
+    },
+    {
+      "kind": "path",
+      "text": "/v1/me/library/artists/"
+    },
+    {
+      "kind": "parameter",
+      "text": "{id}"
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="margin-top:0;">URL</div>
+  <pre style="background:var(--color-code-background,#f6f6f6); border:1px solid var(--color-border,#d2d2d7); border-radius:6px; padding:0.6rem 0.9rem; font-family:monospace; overflow-x:auto;"><span style="font-weight:700;">GET</span> <span>https://www.example.com</span><span>/v1/me/library/artists/</span><span style="opacity:0.75;">{id}</span></pre>
+  <p><em>mockup: an <code>h2</code>-level heading ("URL") followed by a single-line, monospaced
+  declaration block. Only the <code>method</code> token (<code>GET</code>) gets a dedicated bold
+  style from <code>DeclarationToken.vue</code>'s CSS; <code>baseURL</code>, <code>path</code>, and
+  <code>parameter</code> tokens render as plain <code>token-*</code>-classed spans with no
+  additional built-in color or weight.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/RESTEndpointRenderSection</code> (lines 2878&ndash;2899) and its child
+schema <code>#/components/schemas/EndpointToken</code> (lines 2901&ndash;2916), one branch of the
+<code>DocumentationPrimaryRenderSection</code> discriminated union (lines 2507&ndash;2546);
+cross-checked against the generated <code>Components.Schemas.RESTEndpointRenderSection</code> and
+<code>Components.Schemas.EndpointToken</code> structs in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6513&ndash;6576).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"restEndpoint"</code> (sole enum value)</td>
+<td>Discriminator. Generated as a dedicated <code>KindPayload</code> frozen enum with the single
+case <code>restEndpoint</code>. swift-docc's own <code>RenderSectionKind</code> enum
+(<code>Model/Rendering/RenderSection.swift</code> line 23) lists <code>restEndpoint</code>
+alongside the other REST section kinds, and
+<code>Model/Rendering/RenderNode/CodableContentSection.swift</code> (lines 60&ndash;61) dispatches
+decoding to <code>RESTEndpointRenderSection(from: decoder)</code> directly on this discriminator.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>No enum constraint in the schema, but in practice always exactly <code>"URL"</code> or
+<code>"Sandbox URL"</code> &mdash; swift-docc's
+<code>HTTPEndpointSectionTranslator</code> hard-codes one of those two literal strings depending on
+whether it is building the production or sandbox endpoint section (see &sect;1/&sect;3 authoring
+note below).</td>
+</tr>
+<tr>
+<td><code>tokens</code></td>
+<td>array of <code>EndpointToken</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The tokenized endpoint declaration, in display order. Generated as
+<code>[Components.Schemas.EndpointToken]</code>; swift-docc's own Swift-side model
+(<code>Model/Rendering/Symbol/RESTEndpointRenderSection.swift</code> line 56) types the equivalent
+field as <code>let tokens: [Token]</code>, a nested type with the identical two fields.</td>
+</tr>
+<tr>
+<td><code>EndpointToken.kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"method"</code>, <code>"baseURL"</code>, <code>"path"</code>, <code>"parameter"</code>,
+<code>"text"</code></td>
+<td>A closed 5-value enum, generated as its own frozen <code>KindPayload</code> enum on
+<code>EndpointToken</code>. This is a <em>different</em> token-kind vocabulary from the general
+<code>DeclarationToken.kind</code> enum used by ordinary <code>declarations</code> sections (which
+has values like <code>keyword</code>/<code>identifier</code>/<code>typeIdentifier</code> and does
+not include any of these five) &mdash; see &sect;1 for the rendering consequence of that
+mismatch.</td>
+</tr>
+<tr>
+<td><code>EndpointToken.text</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The literal text of this token (an HTTP method, a base URL, a path segment, a
+<code>{parameter}</code>-braced placeholder, or filler text such as the single space between
+method and URL).</td>
+</tr>
+</tbody>
+</table>
+<p>
+Authoring-side note: there is no Markdown/directive syntax an author writes directly to produce a
+<code>restEndpoint</code> section. swift-docc's
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderSectionTranslator/HTTPEndpointSectionTranslator.swift#L15-L78"><code>HTTPEndpointSectionTranslator</code></a>
+builds the section by reading a symbol's <code>httpEndpointSection</code> (populated from a
+SymbolGraph symbol mixin, typically produced by converting an OpenAPI specification into a symbol
+graph upstream of DocC) and tokenizing its <code>method</code>, <code>baseURL</code>
+(<code>endpoint.baseURL</code> for the production translator instance, or
+<code>endpoint.sandboxURL</code> for the sandbox instance &mdash; the translator is parameterized
+by an <code>endpointType: RESTEndpointType</code> of <code>.production</code> or
+<code>.sandbox</code>, which also selects the hard-coded <code>"URL"</code> vs.
+<code>"Sandbox URL"</code> title), and <code>path</code>, splitting any
+<code>{curly-brace}</code>-delimited dynamic segments out into their own <code>parameter</code>
+tokens via a regular expression (<code>tokensFor(method:baseURL:path:)</code>, lines 44&ndash;77).
+The underlying plain-data struct,
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Symbol/RESTEndpointRenderSection.swift#L37-L66"><code>RESTEndpointRenderSection.swift</code></a>,
+carries a doc comment with a fully worked example: for the endpoint
+<code>GET https://www.example.com/api/artists/{id}</code>, the token sequence is
+(method) <code>GET</code>, (baseURL) <code>https://www.example.com</code>, (path)
+<code>/api/artists/</code>, (parameter) <code>{id}</code> &mdash; matching the fixture in &sect;2
+exactly (that fixture additionally has an explicit (text) <code>" "</code> filler token between
+the method and the base URL, which the doc comment's prose description omits but the translator
+code inserts at line 49).
+</p>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> (lines 242&ndash;254) are still stub
+placeholders (the HTML transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment
+and the Markdown transformer returns an empty string) &mdash; neither has any kind-specific
+handling for <code>restEndpoint</code> (or any other render section) today. A future
+implementation would need to render the title as a heading and the token array as a single-line
+declaration-style code block, mapping each <code>EndpointToken.kind</code> to its own styling
+(mirroring <code>RestEndpoint.vue</code> and <code>DeclarationToken.vue</code>'s
+<code>default</code>/<code>SyntaxToken</code> fallback path).
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>Rendered DOM shape, from <code>RestEndpoint.vue</code>'s template and the
+<code>DeclarationSource.vue</code>/<code>DeclarationToken.vue</code>/<code>SyntaxToken.vue</code>
+chain it delegates to:</p>
+<ul>
+<li><code>section</code> &mdash; root element (unguarded; always rendered when this section kind is
+present).</li>
+<li>Child: whatever root element <code>LinkableHeading</code> renders (an <code>h2</code> by
+default, since <code>RestEndpoint.vue</code> does not pass a <code>level</code> prop), with
+<code>id</code> set to <code>anchorize(title)</code>, containing the section's <code>title</code>
+text (e.g. "URL").</li>
+<li>Child: <code>pre.source</code> (from <code>DeclarationSource.vue</code>), containing a
+<code>&lt;code&gt;</code> element (from the shared <code>CodeBlock.vue</code>) which in turn
+contains one child per token.</li>
+<li>Each token renders as either a bare text node (<code>kind: "text"</code>, via
+<code>RawText.vue</code>, no wrapping element) or a
+<code>&lt;span class="token-{kind}"&gt;{text}&lt;/span&gt;</code> (all four REST-specific kinds
+&mdash; <code>method</code>, <code>baseURL</code>, <code>path</code>, <code>parameter</code> &mdash;
+via <code>SyntaxToken.vue</code>'s catch-all render path, since none of them match a case in
+<code>DeclarationToken.vue</code>'s own switch statement).</li>
+</ul>
+<p>
+SCSS: <code>RestEndpoint.vue</code> itself has no <code>&lt;style&gt;</code> block at all &mdash;
+all visual styling comes from the components it delegates to.
+<code>DeclarationSource.vue</code>'s scoped SCSS (importing
+<code>docc-render/styles/_core.scss</code>) styles the <code>.source</code> root: background via
+<code>var(--background, var(--color-code-background))</code>, text color via
+<code>var(--text, var(--color-code-plain))</code>, a bordered/rounded box
+(<code>border-color: var(--color-grid)</code>, <code>border-radius: $large-border-radius</code>),
+and <code>padding: var(--code-block-style-elements-padding)</code>.
+<code>DeclarationToken.vue</code>'s own scoped SCSS defines <code>.token-method { font-weight:
+$font-weight-bold; }</code> plus rules for token kinds not used here (<code>.token-keyword</code>,
+<code>.token-string</code>, etc., driven by <code>--syntax-*</code> custom properties) &mdash; there
+is no dedicated <code>.token-baseURL</code>, <code>.token-path</code>, or
+<code>.token-parameter</code> rule anywhere in that stylesheet, so those three token kinds inherit
+plain text color from the surrounding <code>.source</code> block.
+</p>
+<p>
+CSS custom properties consumed: <code>--background</code>/<code>--color-code-background</code>
+and <code>--text</code>/<code>--color-code-plain</code> (code-block theming), <code>--color-grid</code>
+(border color), and <code>--code-block-style-elements-padding</code> (interior padding) &mdash;
+all consumed by <code>DeclarationSource.vue</code>'s <code>.source</code> rule and shared with
+every other declaration-style code block in DocC-Render, not specific to <code>restEndpoint</code>
+itself.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: <code>RestEndpoint.vue</code> is a pure, stateless template &mdash; two
+elements (<code>LinkableHeading</code>, <code>DeclarationSource</code>), both fed directly from
+props with no <code>v-if</code>, no computed toggle, and no event handler beyond what
+<code>LinkableHeading</code> itself provides for its permalink-scroll behavior (which is a
+navigation/anchor concern shared by every heading in DocC-Render, not something introduced by this
+section kind). The only JavaScript-driven decision specific to this component chain is
+<code>DeclarationToken.vue</code>'s render-time <code>switch</code> on <code>token.kind</code>,
+which selects which child component to instantiate per token &mdash; but that dispatch happens once,
+at render time, from static data; it is not a runtime state machine that responds to user
+interaction and has nothing to toggle after the page has rendered.
+</p>
+<p>
+Because there is no interactive state to hold or reveal/hide in response to a user action, none of
+the stateful-CSS mechanisms (<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, a checked
+radio input plus a general sibling selector, <code>:target</code>, the Popover API,
+<code>&lt;dialog&gt;</code>, <code>:has()</code>, container queries, CSS anchor positioning, view
+transitions) have anything to attach to here. A static HTML/CSS rendering of this section is simply
+a heading element followed by a <code>&lt;pre&gt;&lt;code&gt;</code> block with per-token
+<code>&lt;span&gt;</code>s carrying <code>token-{kind}</code> classes &mdash; entirely reproducible
+with plain markup and a handful of static CSS color/weight rules, no scripting or CSS pseudo-state
+trick required.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

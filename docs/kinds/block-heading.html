@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: heading — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>heading</code></h1>
+<p class="wire-value">Wire value: <code>"heading"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'heading'</code> lands, as with every
+other block/inline content kind on this reference site, on
+<code>src/components/ContentNode.vue</code>'s wire-constant table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>),
+whose <code>heading</code> key holds <code>BlockType.heading = 'heading'</code>. That constant is matched
+in the <code>renderNode()</code> factory function's <code>switch (node.type)</code> dispatch table:
+</p>
+<pre><code>case BlockType.heading: {
+  const props = {
+    anchor: node.anchor,
+    level: node.level,
+  };
+  return createElement(LinkableHeading, { props }, node.text);
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L290-L295"><code>ContentNode.vue#L290-L295</code></a>.)
+Unlike <code>paragraph</code>, a <code>heading</code> node is <em>not</em> turned into a bare native
+element inline — it delegates to a dedicated child component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/LinkableHeading.vue"><code>src/components/ContentNode/LinkableHeading.vue</code></a>,
+imported at the top of <code>ContentNode.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L15"><code>ContentNode.vue#L15</code></a>).
+Only two of the node's four wire fields are forwarded as props — <code>anchor</code> and
+<code>level</code> — while <code>text</code> is passed as the component's default slot content (a plain
+string, not run through <code>renderChildren()</code>, since <code>Heading.text</code> is a bare string on
+the wire, not an array of inline-content nodes). The <code>type</code> discriminator itself is consumed
+only by the <code>switch</code>, never forwarded.
+</p>
+<p>
+<code>LinkableHeading.vue</code>'s template resolves the actual tag dynamically from the <code>level</code>
+prop:
+</p>
+<pre><code>&lt;component :id="anchor" :is="`h${level}`"&gt;
+  &lt;router-link v-if="shouldLink" :to="linkWithAnchor" ... class="header-anchor"
+    @click="handleFocusAndScroll(anchor)"&gt;
+    &lt;slot /&gt;
+    &lt;LinkIcon class="icon" aria-hidden="true" /&gt;
+  &lt;/router-link&gt;
+  &lt;template v-else&gt;&lt;slot /&gt;&lt;/template&gt;
+&lt;/component&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/LinkableHeading.vue#L11-L30"><code>LinkableHeading.vue#L11-L30</code></a>.)
+The <code>level</code> prop defaults to <code>2</code> and is validated to the range 1&ndash;6
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/LinkableHeading.vue#L42-L51"><code>LinkableHeading.vue#L42-L51</code></a>), matching the native <code>h1</code>&ndash;<code>h6</code> range
+it maps onto via Vue's dynamic <code>:is</code> binding. Whether the heading text is wrapped in a
+<code>&lt;router-link&gt;</code> (producing the clickable "paragraph-style" anchor link with a chained
+<code>LinkIcon</code>) is a computed property, <code>shouldLink</code>: true only when an
+<code>anchor</code> string is present <em>and</em> the app is not running in "minimized" mode
+(<code>enableMinimized</code>, an injected flag used for embedded/quick-help presentations) <em>and</em>
+not targeting an IDE host (<code>isTargetIDE</code>)
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/LinkableHeading.vue#L61-L67"><code>LinkableHeading.vue#L61-L67</code></a>). Clicking the anchor link calls
+<code>handleFocusAndScroll</code> from the shared <code>scrollToElement</code> mixin
+(<code>src/mixins/scrollToElement.js</code>), which focuses the heading element and then smooth-scrolls
+the viewport to it, compensating for the fixed navigation bar's height.
+</p>
+<p>
+<code>LinkableHeading</code> is not a heading-block-only helper — the same component is reused directly
+(bypassing <code>ContentNode.vue</code>'s dispatch table) by several other section-level components that
+need a linkable section title, including <code>ContentTableSection.vue</code>, <code>TopicsTable.vue</code>,
+<code>ContentTable.vue</code>, and the REST/symbol primary-content partials (<code>PropertyTable.vue</code>,
+<code>Attributes.vue</code>, <code>Mentions.vue</code>, <code>Parameters.vue</code>, and others). Those call
+sites are not <code>RenderBlockContent.heading</code> nodes — they are page-chrome section titles the Vue
+app builds itself — but they confirm <code>LinkableHeading</code> is the single canonical "anchored heading"
+primitive across DocC-render, of which the <code>heading</code> block kind documented on this page is one
+producer.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive/data/documentation/exampledocs/examplearticle.json</code>,
+field <code>primaryContentSections[0].content[0]</code> — the first of two <code>heading</code> nodes in
+that article's rendered content array. This is the RenderNode swift-docc produced for an authored Markdown
+<code>## Overview</code> heading.
+</p>
+<pre><code>{
+  "type": "heading",
+  "text": "Overview",
+  "level": 2,
+  "anchor": "Overview"
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <div style="margin:0; display:flex; align-items:center; gap:6px; font-size:1.6em; font-weight:600;">
+      <a href="#Overview" style="color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        Overview
+        <span aria-hidden="true" style="font-size:0.6em; opacity:0.55;">&#128279;</span>
+      </a>
+    </div>
+  </div>
+  <p><em>mockup: <code>level: 2</code> becomes an <code>&lt;h2 id="Overview"&gt;</code> element (via
+  <code>LinkableHeading</code>'s dynamic <code>:is="`h${level}`"</code> binding); the presence of
+  <code>anchor</code> wraps the text in an in-page <code>&lt;router-link&gt;</code> whose href resolves to
+  <code>#Overview</code>, with a link-icon glyph revealed on hover/focus (see Section 4). If
+  <code>anchor</code> were omitted, the same <code>&lt;h2&gt;</code> would render as plain unlinked text.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Heading</code> (lines 760&ndash;782), cross-checked against
+<code>Components.Schemas.Heading</code> in <code>Sources/DocCArchive/generated/Types.swift</code>
+(lines 4177&ndash;4214). <code>Heading</code> is one arm of the <code>RenderBlockContent</code>
+discriminated union (referenced at spec line 453) that makes up the <code>content</code> array of a
+<code>ContentRenderSection</code> and of any other block-content-bearing container.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"heading"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case heading =
+"heading" }</code>, decoded/encoded under the Swift property name <code>_type</code> via an explicit
+<code>CodingKeys</code> mapping (<code>case _type = "type"</code>).</td>
+</tr>
+<tr>
+<td><code>level</code></td>
+<td>integer</td>
+<td>yes</td>
+<td>&mdash; (no schema-level range constraint)</td>
+<td>Generated as plain <code>Swift.Int</code>, unconstrained. The JSON schema places no min/max on it,
+though the consuming Vue component (<code>LinkableHeading</code>'s prop validator) clamps rendering to
+1&ndash;6 to match native <code>h1</code>&ndash;<code>h6</code>. swift-docc's Swift-side
+<code>Heading.level: Int</code> doc comment (see below) says level 1 is "the most prominence" and level 6
+"the least," mirroring HTML semantics, but the wire schema itself does not enforce that range.</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Plain string, not an inline-content array — a heading's title is flattened to text by swift-docc before
+being placed on the wire; it cannot contain nested formatting/links at this level.</td>
+</tr>
+<tr>
+<td><code>anchor</code></td>
+<td>string</td>
+<td>no</td>
+<td>&mdash; (absent when not linkable)</td>
+<td>Generated as <code>Swift.String?</code>. When present, DocC-render treats the heading as linkable (see
+Section 1); when absent, the heading renders as static text with no anchor id and no link wrapper.</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the
+enclosing enum case is <code>case heading(Heading)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift</code>, line 47), and the nested
+struct is declared at the same file, lines 439&ndash;456:
+</p>
+<pre><code>public struct Heading: Equatable {
+    public var level: Int
+    public var text: String
+    public var anchor: String?
+    public init(level: Int, text: String, anchor: String?) { ... }
+}</code></pre>
+<p>
+This matches the wire schema field-for-field (<code>level</code>, <code>text</code>, <code>anchor</code>);
+the only asymmetry is that the Swift model's <code>init</code> requires an explicit <code>anchor</code>
+argument (nilable, but not defaulted), whereas the generated wire type defaults it to <code>nil</code> when
+omitted from JSON. Authoring-side, a <code>heading</code> node is what swift-docc emits for any Markdown
+ATX heading (<code>##&nbsp;Overview</code>, <code>###&nbsp;Section header</code>, etc.) inside an article's
+or extension's body content; the heading level in the rendered node corresponds to the number of
+<code>#</code> characters written, and the <code>anchor</code> is a slug swift-docc derives from the
+heading text for in-page linking (subject to the heading-level-sequencing diagnostics swift-docc emits when
+authors skip levels, e.g. jumping from a level-2 to a level-4 heading).
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift</code>, lines
+242&ndash;254) are still stub placeholders that return a hardcoded HTML comment and an empty string
+respectively for an entire <code>RenderNode</code>, with no per-block-kind switch reached yet — so a
+<code>heading</code> node parsed via <code>Components.Schemas.Heading</code> is available on the decoded
+model today, but nothing in this repository currently converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>heading</code> node, in context:
+</p>
+<ul>
+<li><code>h{level}</code> — e.g. <code>h2</code>, the dynamic element created by <code>LinkableHeading</code>'s
+<code>&lt;component :is="`h${level}`"&gt;</code>, carrying <code>id="{anchor}"</code> when an anchor is
+present.</li>
+<li><code>a.header-anchor</code> (a Vue Router <code>&lt;router-link&gt;</code>, rendered as an
+<code>&lt;a&gt;</code>) — only present when <code>shouldLink</code> is true; wraps the slotted heading text
+and the trailing icon.</li>
+<li><code>svg.icon</code> (from <code>LinkIcon.vue</code>, <code>aria-hidden="true"</code>) — the link glyph
+inside <code>.header-anchor</code>, hidden by default and shown on hover/focus.</li>
+</ul>
+<p>
+SCSS: <code>LinkableHeading.vue</code> carries its own scoped <code>&lt;style&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/LinkableHeading.vue#L72-L104"><code>LinkableHeading.vue#L72-L104</code></a>),
+scoped to the <code>.header-anchor</code> class:
+</p>
+<ul>
+<li><code>.header-anchor { color: inherit; text-decoration: none; position: relative; padding-inline-end:
+$icon-size-default + $icon-margin; display: inline-block; }</code> — makes the link inherit the heading's
+own text color/weight (so it looks like plain heading text, not a conventional blue link) and reserves
+inline end-padding for the icon.</li>
+<li><code>.header-anchor::after { @include visuallyhidden; content: attr(data-after-text); }</code> — an
+sr-only string (localized via <code>$t('accessibility.in-page-link')</code>) announcing the link's purpose
+to assistive tech without affecting sighted layout.</li>
+<li><code>.header-anchor .icon { position: absolute; inset-inline-end: 0; bottom: .2em; display: none;
+height: $icon-size-default; margin-inline-start: $icon-margin; }</code> then
+<code>.header-anchor:hover .icon, .header-anchor:focus .icon { display: inline; }</code> — the link icon is
+absolutely positioned and hidden by <code>display: none</code> until the anchor is hovered or focused, at
+which point plain <code>:hover</code>/<code>:focus</code> pseudo-classes flip it to <code>display: inline</code>.
+This icon reveal is the only visual state <code>heading</code> rendering has, and it is pure CSS (no JS
+toggling <code>display</code>) — the JS side only handles the scroll/focus behavior on click, not the hover
+reveal.</li>
+</ul>
+<p>
+Beyond the component's own scoped rules, a rendered heading also inherits the site-wide heading rules in
+<code>src/styles/base/_typography.scss</code> (lines 72&ndash;91), which apply to every <code>h1</code>&ndash;
+<code>h6</code> regardless of whether they came from a <code>heading</code> RenderBlockContent node or from
+static template markup:
+</p>
+<pre><code>h1, h2, h3, h4, h5, h6 {
+  color: var(--colors-header-text, var(--color-header-text));
+  + * { margin-top: var(--spacing-stacked-margin-large); }
+  p + &amp;, ul + &amp;, ol + &amp; { margin-top: 1.6em; }
+}</code></pre>
+<p>
+CSS custom properties consumed: <code>--colors-header-text</code> (falling back to
+<code>--color-header-text</code>) for text color, and the generic stacking-spacing variables
+<code>--spacing-stacked-margin-large</code>; the icon geometry instead comes from the Sass constants
+<code>$icon-size-default</code> (<code>16px</code>, <code>src/styles/core/_vars.scss</code> line 40) and a
+local <code>$icon-margin: 7px</code> compiled directly into the scoped stylesheet, not exposed as runtime
+custom properties.
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">Partial</span></p>
+<p>
+Current behavior in play: <code>LinkableHeading.vue</code> has exactly one piece of interactive,
+non-navigational UI state — the link icon's hover/focus reveal — and it is already implemented with plain
+CSS <code>:hover</code>/<code>:focus</code> selectors toggling <code>display</code>
+(<code>.header-anchor:hover .icon, .header-anchor:focus .icon { display: inline; }</code>), so there is
+nothing to port there; it is already a "modern CSS" mechanism in the sense that no JavaScript drives it.
+The one piece of behavior that <em>is</em> JavaScript-driven is the click handler,
+<code>@click="handleFocusAndScroll(anchor)"</code>, which calls <code>element.focus({ preventScroll: true
+})</code> followed by an async, offset-compensated <code>scrollIntoView()</code> that accounts for the
+app's fixed navigation bar height (<code>src/mixins/scrollToElement.js</code>).
+</p>
+<p>
+That scroll/focus behavior overlaps substantially with what the native <code>:target</code> pseudo-class
+plus the browser's built-in fragment-navigation already provides for free: a plain <code>&lt;a
+href="#Overview"&gt;</code> pointing at an element with <code>id="Overview"</code> would, on click, let the
+browser jump to and (as of Scroll-to-Text/anchor-navigation focus semantics) make that element the
+document's active scroll target with no JS at all, and <code>#Overview:target { ... }</code> could apply a
+highlight style keyed on the URL fragment matching the element's id — this is the "one specific native
+mechanism" that could absorb part of the current behavior. It would not, however, replicate the fixed-nav-bar
+scroll offset compensation or the deliberate <code>element.focus()</code> call for keyboard-accessibility
+purposes that <code>handleFocusAndScroll</code> performs; CSS has no mechanism to call
+<code>Element.focus()</code>, and <code>scroll-margin-top</code> (a CSS property that <em>could</em>
+statically reserve space for a fixed header during native anchor scrolling) is not currently set anywhere
+in this component or its stylesheet, so the offset math would need to move into a CSS custom property
+consumed by <code>scroll-margin-top</code> rather than disappearing outright. The verdict is "partial": the
+hover-reveal is already CSS-only, and fragment navigation via <code>:target</code>/native anchor scrolling
+could replace the bulk of the click-triggered scroll, but the explicit focus-management call is behavior a
+CSS-only page cannot reproduce.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

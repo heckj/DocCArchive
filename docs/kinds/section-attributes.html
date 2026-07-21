@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: attributes — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>attributes</code></h1>
+<p class="wire-value">Wire value: <code>"attributes"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>attributes</code> is one case of <code>RenderSectionKind</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderSection.swift</code>, line 26 at the pinned commit),
+grouped there under the comment <code>// Plist</code> alongside <code>details</code> (encoded as
+<code>"details"</code>) and <code>possibleValues</code>. Despite that grouping comment, the
+translator that produces it (<code>AttributesSectionTranslator</code>) is generic over any symbol
+that carries SymbolGraph "constraint" metadata &mdash; minimum/maximum bounds, allowed value lists,
+allowed type lists, default values &mdash; so in practice it shows up not only for Info.plist keys
+but for any symbol whose declaration has such constraints attached.
+</p>
+<p>
+A <code>kind: "attributes"</code> object is a member of a symbol page's top-level
+<code>primaryContentSections</code> array. It is consumed by
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L89"><code>PrimaryContent.vue</code>'s <code>componentFor(section)</code> lookup table</a>, which maps
+<code>SectionKind.attributes</code> to the <code>Attributes</code> component, and by the sibling
+<code>propsFor(section)</code> table (same file,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L106-L107">lines 106&ndash;107</a>), which extracts just the section's <code>attributes</code> array as the
+prop:
+</p>
+<pre><code>[SectionKind.attributes]: Attributes,
+...
+[SectionKind.attributes]: { attributes },</code></pre>
+<p>
+<code>PrimaryContent.vue</code> is rendered from <code>DocumentationTopic.vue</code> (the top-level
+symbol/article page shell) for every section in the page's <code>primaryContentSections</code>, so
+an <code>attributes</code> section appears as one full-width block in the main content column of a
+symbol page, alongside <code>declarations</code>, <code>parameters</code>, <code>properties</code>,
+etc.
+</p>
+<p>
+The actual rendering is
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/Attributes.vue#L11-L18"><code>DocumentationTopic/PrimaryContent/Attributes.vue</code>, lines 11&ndash;18</a>. Its template root
+is a bare <code>&lt;section class="attributes"&gt;</code> containing a
+<code>LinkableHeading</code> (an anchored <code>&lt;h2&gt;</code>, since
+<code>PrimaryContentSectionAnchors[SectionKind.attributes]</code> pins
+<code>anchor: 'attributes'</code>, <code>level: 2</code>, title key <code>sections.attributes</code>)
+followed by a delegated <code>&lt;ParameterAttributes :attributes="attributes"&gt;</code>:
+</p>
+<pre><code>&lt;section class="attributes"&gt;
+  &lt;LinkableHeading :anchor="section.anchor" :level="section.level"&gt;
+    {{ $t(section.title) }}
+  &lt;/LinkableHeading&gt;
+  &lt;ParameterAttributes :attributes="attributes" /&gt;
+&lt;/section&gt;</code></pre>
+<p>
+All of the real per-attribute rendering logic lives one level down, in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParameterAttributes.vue#L11-L101"><code>ParameterAttributes.vue</code></a> &mdash; the same component that <code>PropertyTable.vue</code>
+and <code>RestParameters.vue</code>/<code>RestBody.vue</code> reuse for the per-row
+<code>attributes</code> arrays attached to individual properties/parameters (this doc's schema
+counterpart is <code>TypedProperty.attributes</code>, not the section-level payload, but it shares
+the exact same wire shape and the same rendering component). It first collapses the incoming array
+into a lookup object keyed by each attribute's own <code>kind</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParameterAttributes.vue#L141-L149"><code>attributesObject</code> computed property, lines 141&ndash;149</a>), then conditionally renders
+one <code>&lt;ParameterMetaAttribute&gt;</code> row per recognized kind &mdash; <code>default</code>,
+<code>minimum</code>, <code>minimumExclusive</code>, <code>minimumLength</code>,
+<code>maximum</code>, <code>maximumExclusive</code>, <code>maximumLength</code>,
+<code>allowedTypes</code>, <code>allowedValues</code> &mdash; via
+<code>v-if="shouldRender(kind)"</code>. Each row's label text is localized
+(<code>$t('parameters.minimum')</code>, etc.) with an optional per-attribute <code>title</code>
+override, and the value is rendered in a <code>&lt;code&gt;</code> element, with
+<code>allowedTypes</code> further delegating each declaration fragment to
+<code>DeclarationToken.vue</code> for token-level styling/linking.
+</p>
+<p>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ParameterMetaAttribute.vue#L11-L21"><code>ParameterMetaAttribute.vue</code></a> is the leaf: it wraps its value in a
+<code>RenderChanged</code> component (so an API-diff badge can be shown if this attribute changed
+between versions) and renders a <code>&lt;div class="property-metadata"&gt;</code> containing
+whatever the parent slot template produces.
+</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: swift-docc's
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/plist-symbol.json</code> (lines 188&ndash;198
+at the pinned commit) contains a genuine top-level <code>attributes</code> section for a plist-key
+symbol page, alongside sibling <code>properties</code> and <code>possibleValues</code> sections on
+the same page:
+</p>
+<pre><code>{
+    "title": "Attributes",
+    "kind": "attributes",
+    "attributes": [
+      {
+        "kind": "default",
+        "title": "Default",
+        "value": "AABBCC"
+      }
+    ]
+}</code></pre>
+<p class="synthesized-note">
+That fixture only exercises the <code>default</code> attribute kind. To show the other two wire
+shapes (<code>ArrayAttribute</code> and <code>TypesAttribute</code>) that the schema also allows in
+this array, here is a synthesized, schema-valid extension of the same fixture's symbol
+(a hypothetical plist key with a numeric range, an enumerated value list, and an allowed-type list):
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+    "title": "Attributes",
+    "kind": "attributes",
+    "attributes": [
+      { "kind": "minimum", "title": "Minimum", "value": "1" },
+      { "kind": "maximum", "title": "Maximum", "value": "10" },
+      {
+        "kind": "allowedValues",
+        "title": "Possible Values",
+        "values": ["none", "some", "all"]
+      },
+      {
+        "kind": "allowedTypes",
+        "title": "Possible Types",
+        "values": [
+          [ { "kind": "identifier", "text": "String" } ],
+          [ { "kind": "identifier", "text": "Int" } ]
+        ]
+      }
+    ]
+}</code></pre>
+<div class="mockup">
+  <div style="margin:0 0 8px; font-size:1.1rem;">Attributes</div>
+  <div style="padding-left:1rem; color:#a9a9a9; font-size:0.9rem; line-height:1.6;">
+    <div>Default: <code style="color:#f5f5f5;">AABBCC</code></div>
+    <div>Minimum: <code style="color:#f5f5f5;">1</code></div>
+    <div>Maximum: <code style="color:#f5f5f5;">10</code></div>
+    <div>Possible Values: <code style="color:#f5f5f5;">none, some, all</code></div>
+    <div>Possible Types: <code style="color:#f5f5f5;">String, Int</code></div>
+  </div>
+  <p><em>mockup: an "Attributes" H2 (anchor <code>#attributes</code>) followed by one line per
+  recognized attribute kind, each rendered as a localized label, a colon, and the value in
+  monospace &mdash; matching <code>ParameterAttributes.vue</code>'s fixed row order
+  (default, minimum, minimumExclusive, minimumLength, maximum, maximumExclusive, maximumLength,
+  allowedTypes, allowedValues), not necessarily the array's original order.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/AttributesSection</code> (lines 3048&ndash;3069), which references
+<code>#/components/schemas/Attribute</code> (lines 3070&ndash;3082, a <code>oneOf</code> over
+<code>StringAttribute</code>, <code>ArrayAttribute</code>, and <code>TypesAttribute</code>, lines
+3083&ndash;3151). Cross-checked against the generated
+<code>Components.Schemas.AttributesSection</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6772&ndash;6952).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"attributes"</code> (single-case enum)</td>
+<td>Generated as <code>AttributesSection.KindPayload</code>, one case. Discriminator for this
+section type within <code>primaryContentSections</code>.</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td><code>AttributesSectionTranslator</code> always sets this to the literal string
+<code>"Attributes"</code> (<code>AttributesSectionTranslator.swift</code>, line 43); the render-side
+heading actually shown to users comes not from this field but from the localized string key
+<code>sections.attributes</code> pinned by <code>PrimaryContentSectionAnchors</code>.</td>
+</tr>
+<tr>
+<td><code>attributes</code></td>
+<td>array of <code>Attribute</code></td>
+<td>no</td>
+<td>default omitted (optional)</td>
+<td>Generated as <code>[Components.Schemas.Attribute]?</code>. The Swift-side
+<code>AttributesRenderSection.attributes</code> is also optional, but
+<code>AttributesSectionTranslator</code> only ever emits a section at all when this array is
+non-empty (it returns <code>nil</code> for the whole section otherwise) &mdash; so a materialized
+<code>attributes</code> section in a real archive should always have at least one entry in
+practice, even though the schema itself does not enforce that minimum.</td>
+</tr>
+<tr>
+<td><code>Attribute</code> (oneOf member) — <code>StringAttribute.kind</code></td>
+<td>string enum</td>
+<td>yes</td>
+<td><code>"default" | "minimum" | "minimumExclusive" | "maximum" | "maximumExclusive"</code></td>
+<td><strong>Schema/source drift:</strong> the vendored JSON schema's <code>StringAttribute</code>
+enum omits <code>minimumLength</code> and <code>maximumLength</code>, which the hand-written Swift
+<code>RenderAttribute.Kind</code> enum in <code>AttributesRenderSection.swift</code> (line 59)
+<em>does</em> include, and which <code>ParameterAttributes.vue</code> also explicitly renders
+(<code>AttributeKind.minimumLength</code> / <code>maximumLength</code>). A wire payload using either
+length kind is valid per swift-docc's Swift encoder and is rendered correctly by
+swift-docc-render, but would not validate against this vendored
+<code>RenderNode.spec.json</code>'s stricter <code>StringAttribute.kind</code> enum as pinned in
+this repository.</td>
+</tr>
+<tr>
+<td><code>StringAttribute.title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Human-readable label, e.g. <code>"Default value"</code>, <code>"Minimum"</code>; swift-docc's
+<code>RenderAttribute.title</code> computed property supplies these strings when constructing the
+attribute (<code>AttributesRenderSection.swift</code>, lines 82&ndash;94).</td>
+</tr>
+<tr>
+<td><code>StringAttribute.value</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The scalar bound/default, always encoded as a string even for numeric constraints (e.g.
+<code>"1.0"</code>), matching <code>RenderAttribute.default(String)</code> / <code>.minimum(String)</code>
+etc.</td>
+</tr>
+<tr>
+<td><code>ArrayAttribute.kind</code></td>
+<td>string enum</td>
+<td>yes</td>
+<td><code>"allowedValues"</code> (single case)</td>
+<td>Corresponds to Swift <code>RenderAttribute.allowedValues([String])</code>.</td>
+</tr>
+<tr>
+<td><code>ArrayAttribute.values</code></td>
+<td>array of string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The enumerated allowed literal values, e.g. plist-key possible values.</td>
+</tr>
+<tr>
+<td><code>TypesAttribute.kind</code></td>
+<td>string enum</td>
+<td>yes</td>
+<td><code>"allowedTypes"</code> (single case)</td>
+<td>Corresponds to Swift <code>RenderAttribute.allowedTypes([[DeclarationRenderSection.Token]])</code>.</td>
+</tr>
+<tr>
+<td><code>TypesAttribute.values</code></td>
+<td>array of array of <code>DeclarationToken</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Each inner array is one allowed type's declaration-token sequence (so a compound type can be
+rendered with syntax highlighting/links, not just plain text); rendered by
+<code>ParameterAttributes.vue</code> via nested <code>DeclarationToken</code> components joined with
+commas.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<ul>
+<li><code>&lt;section class="attributes"&gt;</code> &mdash; root element from
+<code>Attributes.vue</code>'s template; scoped SCSS in that same file (importing
+<code>docc-render/styles/_core.scss</code>) applies exactly two rules: <code>.parameter-attributes {
+margin-left: 1rem; }</code> and a <code>:deep(.property-metadata) { color: currentColor; }</code>
+override that forces the nested metadata rows to inherit the ambient text color (e.g. inside a
+deprecated/beta-colored context) rather than keeping their own gray.</li>
+<li><code>&lt;div class="parameter-attributes"&gt;</code> &mdash; root of
+<code>ParameterAttributes.vue</code>, indented via the parent's <code>margin-left: 1rem</code> rule
+above.</li>
+<li><code>&lt;div class="property-metadata"&gt;</code> &mdash; root of each
+<code>ParameterMetaAttribute.vue</code> row; its own scoped style sets
+<code>color: var(--color-figure-gray-secondary);</code>, i.e. it consumes the CSS custom property
+<code>--color-figure-gray-secondary</code> (defined per color scheme in
+<code>src/styles/core/colors/_light.scss</code> / the matching dark-scheme partial). This is the one
+CSS custom property specific to this kind's rendering; <code>Attributes.vue</code>'s
+<code>:deep()</code> override described above exists specifically to neutralize this color in
+certain ancestor contexts.</li>
+<li>No dedicated top-level <code>.scss</code> partial file exists for this component &mdash; all
+styling is inline in each component's own scoped <code>&lt;style&gt;</code> block
+(<code>Attributes.vue</code>, <code>ParameterMetaAttribute.vue</code>); <code>ParameterAttributes.vue</code>
+and <code>ParameterMetaAttribute.vue</code>'s slot templates ship no styling of their own beyond
+what's noted above.</li>
+<li>The section heading is rendered by the shared <code>LinkableHeading.vue</code> component (an
+<code>&lt;h2&gt;</code> here, since <code>PrimaryContentSectionAnchors.attributes.level</code> is
+<code>2</code>) with <code>id="attributes"</code> from its <code>anchor</code> prop, making
+<code>#attributes</code> a stable deep-link target into the page.</li>
+</ul>
+<p>
+DocCArchive transform status: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub placeholders (the HTML
+transformer returns a hardcoded comment, the Markdown transformer returns an empty string); neither
+has any kind-specific handling for <code>AttributesSection</code> or its nested
+<code>Attribute</code> payloads today.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior: none of the components on this path (<code>Attributes.vue</code>,
+<code>ParameterAttributes.vue</code>, <code>ParameterMetaAttribute.vue</code>) hold any client-side
+UI state. <code>ParameterAttributes.vue</code>'s only "logic" is a pure computed transform
+(<code>attributesObject</code>, array &rarr; keyed object) and a pure predicate
+(<code>shouldRender(kind)</code>, an <code>Object.prototype.hasOwnProperty</code> check) used purely
+to decide which <code>v-if</code> rows are present in the rendered output; there is no toggle, no
+tab, no expand/collapse, and no click handler anywhere in this component tree. The only dynamic
+behavior involved is <code>RenderChanged.vue</code>'s optional "this value changed in a newer OS
+version" diff badge, which is driven by data already present in the page's JSON
+(<code>changes</code> prop), not by any user interaction. Because there is no interactive state to
+replace, no native mechanism (<code>&lt;details&gt;</code>, <code>:checked</code>, <code>:target</code>,
+<code>:has()</code>, the Popover API, etc.) has anything to hold in place of JavaScript here &mdash;
+this kind is a static, server-renderable list of label/value rows from first render to last.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

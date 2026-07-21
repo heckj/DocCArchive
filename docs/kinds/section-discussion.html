@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: discussion — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">section</p>
+<h1><code>discussion</code></h1>
+<p class="wire-value">Wire value: <code>"discussion"</code></p>
+<p class="appears-on">Not emitted on any page (see notes above).</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+This page documents a kind value that, as far as the pinned commits show, is <strong>declared but never
+actually emitted</strong> by current swift-docc, and would be <strong>rejected</strong> by current
+swift-docc-render if it ever appeared. That negative finding is itself the useful fact here, so this
+section explains how it was established rather than pointing to a component that renders it.
+</p>
+<p>
+<code>RenderSectionKind</code> lists <code>discussion</code> as one of several "Symbol render sections"
+alongside <code>content</code>:
+</p>
+<pre><code>public enum RenderSectionKind: String, Codable {
+    // Article render sections
+    case hero, intro, tasks, assessments, volume, contentAndMedia, contentAndMediaGroup, callToAction, tile, articleBody, resources
+
+    // Symbol render sections
+    case mentions, discussion, content, taskGroup, relationships, declarations, parameters, sampleDownload, row
+    ...
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderSection.swift#L15-L20"><code>RenderSection.swift#L15-L20</code></a>,
+the pinned <code>swiftCaseSite</code>.) The section that actually produces a symbol's "Discussion"/
+"Overview" prose is <code>DiscussionSectionTranslator</code>, and it hardcodes the emitted kind to
+<code>.content</code>, not <code>.discussion</code>:
+</p>
+<pre><code>return ContentRenderSection(kind: .content, content: discussionContent.capitalizingFirstWord(), heading: title)</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderSectionTranslator/DiscussionSectionTranslator.swift#L45"><code>DiscussionSectionTranslator.swift#L45</code></a>.)
+<code>git log -p --follow</code> on that file shows every historical revision of this line has always
+written <code>kind: .content</code>; a full-history <code>git log -S"kind: .discussion"</code> search
+across swift-docc found zero commits that ever constructed a render section with
+<code>kind: .discussion</code>. The decoder side keeps <code>.discussion</code> alive purely for
+backward-compatible reading: <code>CodableContentSection</code>'s kind switch maps both
+<code>.discussion</code> and <code>.content</code> to the same <code>ContentRenderSection</code> type —
+</p>
+<pre><code>switch kind {
+    case .discussion:
+        section = try ContentRenderSection(from: decoder)
+    case .content:
+        section = try ContentRenderSection(from: decoder)
+    ...
+}</code></pre>
+<p>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderNode/CodableContentSection.swift#L41-L45</code>) — so
+<code>discussion</code> reads as a legacy/reserved alias for the exact same payload shape as
+<code>content</code>, kept so that older archives (if any ever used it) still decode, while every current
+encoder writes <code>content</code> instead.
+</p>
+<p>
+On the render side, a grep of <code>src/components/</code> and <code>src/views/</code> for the literal
+string <code>"discussion"</code> in swift-docc-render turns up exactly one hit, and it is unrelated to
+this <code>RenderSectionKind</code> case: a named Vue <code>&lt;slot name="discussion"&gt;</code> in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentTableSection.vue#L23-L27"><code>ContentTableSection.vue#L23-L27</code></a>,
+filled in by
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/TopicsTable.vue#L32-L34"><code>TopicsTable.vue#L32-L34</code></a>
+from a Topics <em>task group's own</em> <code>discussion</code> field (the wire type
+<code>TasksGroupSection.discussion</code>, itself typed as a <code>ContentRenderSection</code> — see
+Section 3). That is a same-named but structurally different concept: a task group's optional intro blurb,
+not the page-level Discussion/Overview section this page is about.
+</p>
+<p>
+The actual page-level Discussion/Overview content — whatever <code>kind</code> value it carries — is
+dispatched by <code>PrimaryContent.vue</code>, which validates every incoming section's <code>kind</code>
+against a hardcoded <code>SectionKind</code> lookup object
+(<code>src/constants/PrimaryContentSection.js</code>) that has <strong>no <code>discussion</code>
+entry at all</strong> — only <code>content</code>:
+</p>
+<pre><code>export const SectionKind = {
+  attributes: 'attributes',
+  content: 'content',
+  declarations: 'declarations',
+  mentions: 'mentions',
+  details: 'details',
+  parameters: 'parameters',
+  possibleValues: 'possibleValues',
+  properties: 'properties',
+  restBody: 'restBody',
+  restCookies: 'restCookies',
+  restEndpoint: 'restEndpoint',
+  restHeaders: 'restHeaders',
+  restParameters: 'restParameters',
+  restResponses: 'restResponses',
+};</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/constants/PrimaryContentSection.js#L12-L27"><code>PrimaryContentSection.js#L12-L27</code></a>.)
+<code>PrimaryContent.vue</code>'s <code>sections</code> prop carries a validator that runs this exact
+check against every section before rendering:
+</p>
+<pre><code>sections: {
+  type: Array,
+  required: true,
+  validator: sections => sections.every(({ kind }) => (
+    Object.prototype.hasOwnProperty.call(SectionKind, kind)
+  )),
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L55-L62"><code>PrimaryContent.vue#L55-L62</code></a>.)
+A section with <code>kind: "discussion"</code> would fail
+<code>hasOwnProperty.call(SectionKind, 'discussion')</code> (it is not a key of that object), triggering a
+Vue prop-validation warning, and then <code>componentFor(section)</code>'s own lookup table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L74-L90"><code>PrimaryContent.vue#L74-L90</code></a>,
+which is likewise keyed only by <code>SectionKind.content</code>, never a <code>discussion</code> key)
+would resolve to <code>undefined</code>, rendering nothing for that section. In short: the render layer is
+built to handle <code>content</code>, and has no branch reserved for <code>discussion</code> — consistent
+with the production translator never emitting it.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+No fixture anywhere searched contains the literal JSON <code>"kind": "discussion"</code>. A grep of
+<code>Tests/DocCArchiveTests/Fixtures/</code> (both <code>ExampleDocs.doccarchive</code> and
+<code>SampleLibrary.doccarchive</code>) for <code>"kind": "discussion"</code> found zero hits in any
+render-node JSON (the only fixture hits for the bare string <code>discussion</code> are inside those
+archives' bundled, minified <code>documentation-topic.048469da.js</code> runtime script — swift-docc-render's
+own compiled JS, not RenderNode data). A grep of swift-docc's own
+<code>Tests/SwiftDocCTests/</code> for the same literal also found zero hits. This is expected, given
+Section 1's finding that no current code path emits this kind value.
+</p>
+<p>
+What DocCArchive's fixtures <em>do</em> contain, in real archive data, is the sibling
+<code>kind: "content"</code> shape — the exact same <code>ContentRenderSection</code> payload structure
+that <code>discussion</code> would have used, straight from
+<code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive/data/documentation/exampledocs/examplearticle.json</code>:
+</p>
+<pre><code>{
+  "kind": "content",
+  "content": [
+    { "type": "heading", "level": 2, "text": "Overview", "anchor": "Overview" },
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        { "type": "text", "text": "Description of what the article is about - the problem being solved, etc." }
+      ]
+    },
+    { "type": "codeListing", "syntax": "swift", "code": ["func main() {", "    print(\"hello world\")", "}"] },
+    { "type": "heading", "level": 3, "text": "Section header", "anchor": "Section-header" },
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        { "type": "text", "text": "Details, step by step, or explanations grouped by section headers." }
+      ]
+    }
+  ]
+}</code></pre>
+<p class="synthesized-note">
+That fixture is real but, per Section 1, uses <code>"content"</code>, not <code>"discussion"</code>, as
+its <code>kind</code> value — because that is what current swift-docc actually writes. To show the exact
+shape <code>kind: "discussion"</code> would take if a decoder chose to honor it (per
+<code>CodableContentSection</code>'s decode-time alias, Section 1), here is a minimal synthetic example:
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "discussion",
+  "content": [
+    { "type": "heading", "level": 2, "text": "Discussion", "anchor": "discussion" },
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        { "type": "text", "text": "Further detail about this symbol, beyond the one-line abstract." }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:10px; padding:24px 32px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <div style="margin-top:0;">Discussion</div>
+    <p>Further detail about this symbol, beyond the one-line abstract.</p>
+  </div>
+  <p><em>mockup: were this reached by <code>PrimaryContent.vue</code>, it would render exactly like a
+  <code>content</code> section — plain flowing prose from <code>ContentNode.vue</code>, no
+  discussion-specific chrome. In current swift-docc-render, per Section 1, a section literally tagged
+  <code>"discussion"</code> instead fails the <code>SectionKind</code> validator and renders nothing.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/ContentRenderSection</code> (lines 2717&ndash;2735), cross-checked against
+<code>Components.Schemas.ContentRenderSection</code> in
+<code>Sources/DocCArchive/generated/Types.swift</code> (lines 6274&ndash;6300). No
+<code>DiscussionRenderSection</code> or similarly-named type exists anywhere in the vendored spec or the
+generated types — the vendored schema only ever declares a <code>ContentRenderSection</code>, and its
+<code>kind</code> field is constrained to a single literal value.
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"content"</code> (single-value enum) &mdash; <strong><code>"discussion"</code> is not a legal
+value in the vendored schema</strong></td>
+<td>Vendored JSON Schema: <code>"kind": { "type": "string", "enum": ["content"] }</code>. Generated Swift:
+<code>KindPayload: String, Codable, Hashable, Sendable, CaseIterable { case content = "content" }</code> —
+a frozen, single-case enum. A DocCArchive consumer decoding a hypothetical archive whose JSON literally
+contains <code>"kind": "discussion"</code> would fail to decode that value into
+<code>Components.Schemas.ContentRenderSection.KindPayload</code>, because OpenAPI Generator only emitted
+the one case actually present in the vendored spec. This is a real gap relative to swift-docc's own
+<code>RenderSectionKind</code> Swift enum (Section 1), which still declares <code>.discussion</code> as a
+valid (if unused) case for decode-time compatibility.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>array of <code>RenderBlockContent</code></td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>Arbitrary block-level content (headings, paragraphs, code listings, asides, etc.) — the parsed
+Markdown of the symbol's Discussion/Overview doc comment or an article's body prose. Matches swift-docc's
+own <code>ContentRenderSection.content: [RenderBlockContent]</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Symbol/ContentRenderSection.swift#L16</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>
+Related but distinct field: <code>TasksGroupSection.discussion</code> (vendored spec lines
+2736&ndash;2767; generated <code>Types.swift</code> lines 6301&ndash;6342) is a property named
+<code>discussion</code>, typed as an optional <code>ContentRenderSection</code>, attached to a Topics task
+group. It is not a <code>RenderSectionKind</code> discriminator value; it is the wire counterpart to the
+<code>&lt;slot name="discussion"&gt;</code> usage found in Section 1's <code>TopicsTable.vue</code>/
+<code>ContentTableSection.vue</code> trail, and it is out of scope for this page's <code>kind: discussion</code>
+subject.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Because current swift-docc never emits <code>kind: "discussion"</code> (Section 1) and the vendored
+schema does not even allow that literal to decode (Section 3), there is no DOM/CSS mapping to document
+for a section actually tagged that way — there is nothing in the render tree keyed on the string
+<code>"discussion"</code> as a <code>RenderSectionKind</code>.
+</p>
+<p>
+What does exist, and what a symbol's Discussion/Overview prose actually renders as today (under
+<code>kind: "content"</code>), is documented on the sibling <code>content</code>/<code>articleBody</code>
+pages of this reference: <code>PrimaryContent.vue</code> mounts a bare
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent/ContentNode.vue"><code>PrimaryContent/ContentNode.vue</code></a>
+for a <code>content</code>-kind section, which itself is a thin passthrough
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/ContentNode.vue#L11-L26"><code>DocumentationTopic/ContentNode.vue#L11-L26</code></a>)
+to the shared block/inline renderer <code>src/components/ContentNode.vue</code>, which turns each
+<code>RenderBlockContent</code> item into ordinary heading/paragraph/code-listing HTML with no
+discussion-specific wrapper element, id, or CSS class of its own — spacing between sections comes from
+<code>PrimaryContent.vue</code>'s own scoped style block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/PrimaryContent.vue#L132-L155"><code>PrimaryContent.vue#L132-L155</code></a>),
+via the <code>$section-spacing-single-side</code> SCSS variable and the CSS custom property
+<code>--colors-grid</code> (falling back to <code>--color-grid</code>) used for the optional top border.
+</p>
+<p>
+DocCArchive transform status: not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub
+placeholders — the HTML transformer returns a hardcoded <code>&lt;!-- what? --&gt;</code> comment
+regardless of input, and the Markdown transformer returns an empty string — so there is no code today that
+would notice or act on either the <code>content</code>/<code>discussion</code> kind ambiguity described
+above.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">NOT APPLICABLE</span></p>
+<p>
+Current behavior in play: there is no current behavior to describe, because no live code path in the
+pinned commits ever produces or consumes a render section literally tagged <code>kind: "discussion"</code>
+(Section 1). The nearest real behavior — <code>PrimaryContent.vue</code>'s <code>kind</code>-keyed
+component lookup for the <code>content</code> section that actually carries this prose — is, like the
+<code>articleBody</code> case documented elsewhere in this reference, a one-time, non-interactive
+template-render dispatch: a static object lookup performed once per section at mount time, with no
+click handler, no <code>v-show</code>/<code>v-if</code> toggle, and no later state change. There is
+consequently no interactive/stateful behavior anywhere in this kind's story to replace with
+<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio+<code>:checked</code>,
+<code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>, container
+queries, CSS anchor positioning, or view-transitions. The honest, concrete reason this verdict is
+"not applicable" rather than merely "no interactivity": the kind itself is effectively dead wire syntax in
+current tooling — a reserved decode-time alias with no emitter and no matching consumer branch — so there
+is no shipped behavior at all to translate to CSS, modern or otherwise.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

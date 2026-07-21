@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: step — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>step</code></h1>
+<p class="wire-value">Wire value: <code>"step"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Unlike most block-tier kinds, <code>step</code> is <em>not</em> handled inside the generic
+<code>renderNode()</code> dispatch table in <code>ContentNode.vue</code> &mdash; a grep of that file for
+<code>"step"</code>/<code>BlockType.step</code> turns up nothing. Instead, <code>step</code> nodes only ever
+appear inside the <code>content</code> array of a tutorial section, and a dedicated component,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue"><code>SectionSteps.vue</code></a>,
+walks that array itself and special-cases the <code>step</code> type directly, via its own
+<code>isStepNode</code> helper at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L164-L166"><code>SectionSteps.vue#L164-L166</code></a>:
+</p>
+<pre><code>isStepNode({ type }) {
+  return type === 'step';
+},</code></pre>
+<p>
+<code>SectionSteps</code> is registered as the <code>Steps</code> component in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Section.vue#L28-L39"><code>Section.vue#L28-L39</code></a>
+and mounted whenever a tutorial section's <code>stepsSection</code> content is non-empty
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Section.vue#L18-L24"><code>Section.vue#L18-L24</code></a>).
+Its <code>contentNodes</code> computed property
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L122-L149"><code>SectionSteps.vue#L122-L149</code></a>)
+reduces over the raw content array: any node where <code>isStepNode</code> is true is assigned the
+<code>Step</code> component (with a running <code>stepNumber</code> counter, its array <code>index</code>,
+<code>numberOfSteps</code>, and <code>sectionNumber</code> injected as props); every other node
+(interstitial prose, asides, images between steps) falls through to a plain <code>ContentNode</code> for
+generic block rendering. So the dispatch on the literal wire value <code>"step"</code> happens once, in
+this reduce, rather than in a switch statement.
+</p>
+<p>
+Each matched node is rendered by
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Step.vue"><code>Step.vue</code></a>.
+Its template root is a <code>&lt;div class="step-container"&gt;</code> wrapping a
+<code>&lt;div class="step"&gt;</code> that holds a localized <code>"Step {number}"</code> label followed by
+a nested <code>&lt;ContentNode :content="content"&gt;</code> for the step's instructional body, and
+(conditionally) a second <code>&lt;ContentNode&gt;</code> for the <code>caption</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Step.vue#L11-L22"><code>Step.vue#L11-L22</code></a>).
+Alongside that, a sibling <code>&lt;div class="media-container"&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Step.vue#L25-L42"><code>Step.vue#L25-L42</code></a>)
+renders the step's <code>media</code> reference as an <code>&lt;Asset&gt;</code> and its <code>code</code>
+reference (paired with an optional <code>runtimePreview</code>) as a <code>&lt;MobileCodePreview&gt;</code>
+&mdash; but that container is CSS-hidden except at the small breakpoint, because on wider viewports the
+same <code>media</code>/<code>code</code>/<code>runtimePreview</code> triple is instead shown once, on the
+side, by the parent.
+</p>
+<p>
+That "on the side" rendering is <code>SectionSteps.vue</code>'s own job: it keeps a single
+<code>visibleAsset</code> (<code>{ media, code, runtimePreview }</code>) in component data, seeded from the
+first step
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L93-L111"><code>SectionSteps.vue#L93-L111</code></a>),
+and swaps it via <code>onFocus(key)</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L186-L199"><code>SectionSteps.vue#L186-L199</code></a>)
+whenever the "active" step changes. The active step index (<code>activeStep</code>, passed down to every
+<code>Step</code> as <code>currentIndex</code>) is driven by scroll position: <code>SectionSteps</code> mixes
+in <code>onIntersect</code> and registers each step's DOM node as an IntersectionObserver target
+(<code>getIntersectionTargets</code>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L233-L235"><code>SectionSteps.vue#L233-L235</code></a>),
+with an observer <code>rootMargin</code> of <code>-35% 0% -65% 0%</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L76"><code>SectionSteps.vue#L76</code></a>)
+that treats roughly the middle third of the viewport as the "focus band"; whichever step's container
+element crosses into that band calls <code>onIntersect</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L241-L255"><code>SectionSteps.vue#L241-L255</code></a>),
+which updates <code>activeStep</code>. Inside <code>Step.vue</code>, that prop feeds a computed
+<code>isActive: ({ index, currentIndex }) =&gt; index === currentIndex</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Step.vue#L116"><code>Step.vue#L116</code></a>),
+which toggles the <code>.focused</code> class on the step's root <code>&lt;div class="step"&gt;</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Step.vue#L13-L18"><code>Step.vue#L13-L18</code></a>),
+producing the highlighted left-border treatment for whichever step the reader has scrolled to.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+No literal JSON fixture containing <code>"type": "step"</code> was found in
+<code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive</code> or <code>SampleLibrary.doccarchive</code>
+(both archives only cover reference documentation, not tutorials; grepping those trees for
+<code>step</code> only matches minified, bundled JS/CSS application asset filenames, not archive content
+data). Swift-DocC's own test suite does construct a <code>RenderBlockContent.step(...)</code> value, but as
+an in-memory Swift literal rather than JSON, in
+<code>Tests/SwiftDocCTests/Model/RenderBlockContent+CapitalizationTests.swift:107</code>:
+</p>
+<pre><code>let step = RenderBlockContent.step(.init(
+  content: [.paragraph(.init(inlineContent: [.text("hello, world!")]))],
+  caption: [.paragraph(.init(inlineContent: [.text("Step caption")]))],
+  media: RenderReferenceIdentifier("Media"),
+  code: RenderReferenceIdentifier("Code"),
+  runtimePreview: RenderReferenceIdentifier("Preview")
+)).capitalizingFirstWord()</code></pre>
+<p class="synthesized-note">
+The JSON example below is hand-written, matching that fixture's field values and the schema confirmed in
+&sect;3.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "step",
+  "content": [
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        { "type": "text", "text": "Hello, world!" }
+      ]
+    }
+  ],
+  "caption": [
+    {
+      "type": "paragraph",
+      "inlineContent": [
+        { "type": "text", "text": "Step caption" }
+      ]
+    }
+  ],
+  "media": "Media",
+  "code": "Code",
+  "runtimePreview": "Preview"
+}</code></pre>
+<p>An author produces this by writing a <code>@Step</code> directive inside a <code>@Steps</code> group:</p>
+<pre><code>@Steps {
+  @Step {
+    Hello, world!
+
+    > Step caption
+
+    @Image(source: media.png, alt: "...")
+    @Code(name: "Code", file: main.swift)
+  }
+}</code></pre>
+<p>
+Per swift-docc's directive parser
+(<code>Sources/SwiftDocC/Semantics/Tutorial/Tasks/Steps/Step.swift:89-105</code>), the first paragraph
+becomes <code>content</code>, an immediately following second paragraph (typically a block quote in
+practice) becomes <code>caption</code>, and at most one media directive plus one <code>@Code</code>
+directive supply <code>media</code>/<code>code</code>; <code>runtimePreview</code> is populated later by
+the compiler when it can produce a live preview of the referenced code file, not by anything the author
+writes directly.
+</p>
+<div class="mockup">
+  <div style="border-radius:8px;background:#f2f2f2;padding:1rem 2rem;position:relative;max-width:32em;">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:#0071e3;border-radius:4px 0 0 4px;"></div>
+    <p style="font-weight:600;color:#666;margin:0 0 0.5em;">Step 1</p>
+    <p style="margin:0;">Hello, world!</p>
+    <div style="border-top:1px solid #ccc;margin-top:1em;padding-top:1em;color:#666;">Step caption</div>
+  </div>
+  <p style="font-size:0.85em;color:#666;">Mockup: the <code>.focused</code> left border (blue bar) only
+  appears on whichever step is currently scrolled into the middle-third "focus band"; the sibling media/code
+  panel this step's <code>media</code>/<code>code</code>/<code>runtimePreview</code> would drive is rendered
+  once, to the side, by <code>SectionSteps.vue</code>, not shown per-step here except on small screens.</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Authoritative source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>Step</code> (around line 1069), referenced from the <code>RenderBlockContent</code> discriminated
+union; cross-checked against the generated <code>Components.Schemas.Step</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code> (around lines 4633&ndash;4672). No standalone
+<code>doccArchiveType</code> beyond this generated <code>Components.Schemas.Step</code> was found by
+grepping <code>Types.swift</code> for <code>Step</code>.
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"step"</code> (fixed enum, one value)</td><td>Discriminator tag; generated as <code>Components.Schemas.Step._TypePayload</code>, a single-case <code>String</code>-backed enum.</td></tr>
+<tr><td><code>content</code></td><td>array of <code>RenderBlockContent</code></td><td>yes (schema); generated Swift is non-optional <code>[RenderBlockContent]</code></td><td>&mdash;</td><td>The step's instructional body. Swift-docc's authoring model restricts this in practice to a single paragraph plus, optionally, nested asides, but the wire schema itself permits arbitrary block content.</td></tr>
+<tr><td><code>caption</code></td><td>array of <code>RenderBlockContent</code></td><td>listed as required in the JSON schema, but swift-docc's own decoder treats it as optional and defaults to <code>[]</code> if absent (<code>RenderBlockContent.swift</code> decoding switch, <code>case .step</code>)</td><td>default <code>[]</code></td><td>Discrepancy worth flagging: the vendored schema's <code>required</code> list includes <code>caption</code>, but the hand-written <code>Codable</code> conformance in swift-docc uses <code>decodeIfPresent(...) ?? []</code> for it &mdash; so a wire payload omitting <code>caption</code> entirely still decodes successfully on the swift-docc side even though the JSON Schema says it must be present.</td></tr>
+<tr><td><code>media</code></td><td>string, nullable</td><td>no</td><td>default <code>null</code>/absent</td><td>A <code>RenderReferenceIdentifier</code> (opaque string key) into the RenderNode's top-level <code>references</code> map; resolved by <code>&lt;Asset :identifier="media"&gt;</code> in <code>Step.vue</code>/<code>SectionSteps.vue</code>. swift-docc's Swift struct always encodes this key (even when <code>nil</code>, it is written as JSON <code>null</code>) &mdash; it is never simply omitted.</td></tr>
+<tr><td><code>code</code></td><td>string, nullable</td><td>no</td><td>default <code>null</code>/absent</td><td>A <code>RenderReferenceIdentifier</code> pointing at the step's associated source file; drives the <code>&lt;MobileCodePreview&gt;</code>/<code>&lt;CodePreview&gt;</code> panel. Also always encoded, even when <code>nil</code>.</td></tr>
+<tr><td><code>runtimePreview</code></td><td>string, nullable</td><td>no</td><td>default <code>null</code>/absent</td><td>A <code>RenderReferenceIdentifier</code> for a rendered preview asset of the step's code, shown as an overlay <code>&lt;Asset&gt;</code> inside the code preview. Also always encoded, even when <code>nil</code>.</td></tr>
+</tbody>
+</table>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+<p>
+Cross-checking swift-docc's authoring-side Swift model at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift#L486-L506"><code>RenderBlockContent.swift#L486-L506</code></a>
+(<code>public struct TutorialStep: Equatable</code>): its initializer gives <code>media</code>,
+<code>code</code>, and <code>runtimePreview</code> a default of <code>nil</code>, but <code>content</code>
+and <code>caption</code> are both plain, non-optional <code>[RenderBlockContent]</code> parameters with no
+default &mdash; matching the generated Swift struct's shape, and explaining why the encoder
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift#L1186-L1191"><code>RenderBlockContent.swift#L1186-L1191</code></a>)
+unconditionally writes all five keys. The enum case itself is declared at
+<code>RenderBlockContent.swift:54</code> (<code>case step(TutorialStep)</code>).
+</p>
+<p>
+<strong>DocCArchive transform status:</strong> Not yet implemented. <code>MyHTMLTransformer</code> and
+<code>MyMarkdownTransformer</code> in <code>Sources/DocCArchive/DocCArchive.swift</code> are still stub
+placeholders (<code>HTMLRaw("&lt;!-- what? --&gt;")</code> and <code>return ""</code> respectively) and do
+not branch on <code>RenderBlockContent</code>/<code>Components.Schemas.Step</code> at all, so a
+<code>step</code> block passed through either transformer today produces no step-specific output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Per step, the DOM shape (from <code>Step.vue</code>'s template) is:
+</p>
+<ul>
+<li><code>div.step-container</code> plus a per-index modifier class <code>step-{stepNumber}</code> &mdash; the outer wrapper, controls vertical spacing between consecutive steps.</li>
+<li><code>div.step</code> (with <code>data-index</code> and, conditionally, class <code>.focused</code>) &mdash; the visible card; carries the rounded background, padding, and the left accent border used for the active-step highlight.</li>
+<li><code>p.step-label</code> &mdash; the localized "Step N" text.</li>
+<li>a nested <code>ContentNode</code> render tree for <code>content</code> (no extra wrapper class beyond whatever <code>ContentNode</code> itself emits), and, when non-empty, a second <code>ContentNode</code> tree wrapped in <code>.caption</code> for the step's <code>caption</code>.</li>
+<li><code>div.media-container</code> (hidden above the small breakpoint) holding an <code>Asset</code> for <code>media</code> and a <code>MobileCodePreview</code> for <code>code</code>/<code>runtimePreview</code>.</li>
+</ul>
+<p>
+The wider, non-mobile media/code panel lives outside <code>Step.vue</code> entirely, in
+<code>SectionSteps.vue</code>'s template: <code>div.steps &gt; div.asset-container.asset-wrapper</code>
+(via <code>BackgroundTheme</code>), holding either an <code>Asset</code> (<code>.step-asset</code>) or a
+<code>CodePreview</code>, whichever the currently-focused step's <code>visibleAsset</code> supplies.
+</p>
+<p>Styling is split across two scoped SCSS blocks, both <code>lang="scss"</code> in the same files:</p>
+<ul>
+<li><code>Step.vue</code>'s <code>&lt;style scoped&gt;</code> (lines 121&ndash;222) &mdash; defines <code>.step-container</code>, <code>.step</code>, <code>.step-label</code>, <code>.caption</code>, and the small-breakpoint <code>.media-container</code> rules, including the <code>::before</code> pseudo-element used for the focused-state accent bar.</li>
+<li><code>SectionSteps.vue</code>'s <code>&lt;style scoped&gt;</code> (lines 274&ndash;515) &mdash; defines <code>.steps</code>, <code>.content-container</code>, <code>.asset-container</code>, <code>.asset-wrapper</code>, <code>.interstitial</code>, and the <code>.fade-*</code> transition classes used when <code>visibleAsset</code> swaps.</li>
+</ul>
+<p>CSS custom properties consumed (from <code>src/styles/core/colors/_light.scss</code> and friends):</p>
+<ul>
+<li><code>--color-step-background</code> (aliases <code>--color-fill-secondary</code>) &mdash; the step card's background, and the "ide" asset-wrapper background.</li>
+<li><code>--color-step-focused</code> (aliases <code>--color-figure-light-gray</code>) &mdash; both the border and background color of the <code>.step::before</code> accent bar shown when <code>.focused</code> is applied.</li>
+<li><code>--color-step-text</code> (aliases <code>--color-figure-gray-secondary</code>) &mdash; fallback color for <code>.step-label</code>, overridden by <code>--colors-text</code> when set.</li>
+<li><code>--color-step-caption</code> (aliases <code>--color-figure-gray-secondary</code>) &mdash; the caption's top border and text color.</li>
+</ul>
+<p>
+Non-custom-property SCSS variables also feed in: <code>$step-padding-horizontal</code> (<code>2rem</code>,
+defined in <code>src/styles/core/_vars.scss</code>) sets the card's horizontal padding, and
+<code>$step-border-width</code> sets the width of the <code>::before</code> accent bar.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">Partial</span></p>
+<p>
+Current behavior: the "active step" highlight is not a click-driven toggle but a scroll-position
+computation. <code>SectionSteps.vue</code> registers each step element with an IntersectionObserver whose
+<code>rootMargin</code> is <code>-35% 0% -65% 0%</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/SectionSteps.vue#L76"><code>SectionSteps.vue#L76</code></a>),
+so only elements crossing the vertical middle third of the viewport fire; the observer callback
+(<code>onIntersect</code>) writes a single reactive <code>activeStep</code> index in component data, which
+is handed down as the <code>currentIndex</code> prop to every <code>Step</code>, where
+<code>isActive: index === currentIndex</code> toggles the <code>.focused</code> class
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Step.vue#L116"><code>Step.vue#L116</code></a>).
+The same <code>onFocus</code> call also swaps <code>visibleAsset</code>, which is what actually keeps the
+media/code panel in sync with the highlighted step.
+</p>
+<p>
+This is a case where a purely declarative CSS mechanism can replace <em>part</em> of the behavior but not
+all of it. CSS Scroll-driven Animations' <code>view()</code> timeline (an <code>animation-timeline: view()</code>
+tied to each <code>.step</code> element, animating e.g. its border-color/opacity as the element crosses a
+declared <code>view-timeline-inset</code> band) can mechanically reproduce the <code>.focused</code> visual
+toggle without any IntersectionObserver or Vue reactive state at all &mdash; the browser itself tracks each
+element's position in the scrollport and drives the animation, which is exactly the "highlight whichever
+card is in the middle third" effect the JS produces today. That covers the <code>.step</code> card's own
+highlight.
+</p>
+<p>
+What it cannot cover: the side-panel synchronization. The <code>visibleAsset</code> swap is cross-element
+state &mdash; the currently-scrolled-to step's <code>media</code>/<code>code</code>/<code>runtimePreview</code>
+must be reflected in a <em>different</em> DOM subtree (the sticky <code>.asset-container</code> that lives
+outside any individual step). No scroll-linked CSS mechanism can select "the sibling asset panel
+corresponding to whichever card is currently in view" and swap its content purely in CSS: <code>:has()</code>
+only looks at descendants/siblings within a single selector chain relative to a fixed anchor, not "whichever
+of N possible panels matches the one whose trigger is currently intersecting," and there is no CSS construct
+that reads a scroll-timeline position in one element and uses it to pick which of several
+<em>unrelated</em> elements to display. That part of the behavior remains inherently JavaScript-driven (or
+would require, at minimum, per-step CSS anchor-positioning + <code>:target</code>-style plumbing that
+swift-docc-render's markup does not currently provide hooks for), which is why this is scored "Partial"
+rather than "Applicable."
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

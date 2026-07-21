@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: download — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>download</code></h1>
+<p class="wire-value">Wire value: <code>"download"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>download</code> is not a block/inline content kind dispatched from <code>ContentNode.vue</code>'s
+<code>render()</code> switch — like <a href="reference-file.html"><code>file</code></a> and
+<a href="reference-link.html"><code>link</code></a>, it is a <em>reference</em>-tier object. A
+RenderNode carries a top-level <code>references</code> dictionary keyed by identifier string, and other
+parts of the tree point at an entry in that dictionary rather than embedding the download's URL/checksum
+inline. A literal search of <code>swift-docc-render/src/components/</code> and <code>src/views/</code>
+for the string <code>"download"</code> turns up no component or SCSS file named after this reference kind
+specifically (the only file-name hits are <code>Icons/DownloadIcon.vue</code> and
+<code>Icons/InlineDownloadIcon.vue</code>, two small SVG glyph components with no reference-resolution
+logic of their own). There are exactly two places in the render tree that dereference a
+<code>download</code> reference by identifier:
+</p>
+<ul>
+<li>
+<strong>Tutorial hero "Project files" link.</strong>
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Hero.vue#L146-L148"><code>components/Tutorial/Hero.vue#L146-L148</code></a>
+resolves the tutorial's <code>projectFiles</code> prop (an identifier string) straight out of the
+references map:
+</li>
+</ul>
+<pre><code>projectFilesUrl() {
+  return this.projectFiles ? normalizePath(this.references[this.projectFiles].url) : null;
+}</code></pre>
+<p>
+That computed value is passed down to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/Hero.vue#L55"><code>Hero.vue#L55</code></a>
+(<code>:projectFilesUrl="projectFilesUrl"</code>) into
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Tutorial/HeroMetadata.vue#L40-L51"><code>components/Tutorial/HeroMetadata.vue#L40-L51</code></a>,
+which renders it as a plain anchor next to a download glyph:
+</p>
+<pre><code>&lt;div class="item" v-if="projectFilesUrl"&gt;
+  &lt;DownloadIcon class="item-large-icon icon-inline" /&gt;
+  &lt;div class="content bottom"&gt;
+    &lt;a class="content-link project-download" :href="projectFilesUrl"&gt;
+      {{ $t('tutorials.project-files') }}
+      &lt;InlineDownloadIcon class="small-icon icon-inline" /&gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>
+No <code>type === 'download'</code> check happens anywhere in this path &mdash; the reference's
+<code>url</code> field is read directly by name, and the wire-level <code>type</code> discriminator is
+never inspected at render time (it only round-trips through Swift's <code>Codable</code> decoding; see
+Section 3).
+</p>
+<ul>
+<li>
+<strong>Symbol/article sample-code download button.</strong> A page's <code>sampleCodeDownload.action</code>
+is a <code>RenderInlineContent.reference</code> whose <code>identifier</code> names a <code>download</code>
+entry. <code>components/DocumentationTopic.vue</code> passes it to a <code>CallToActionButton</code>
+(aliased <code>DownloadButton</code>):
+</li>
+</ul>
+<pre><code>&lt;div v-if="sampleCodeDownload"&gt;
+  &lt;DownloadButton class="sample-download" :action="sampleCodeDownload.action" linksToAsset /&gt;
+&lt;/div&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L64-L69"><code>DocumentationTopic.vue#L64-L69</code></a>).
+<code>CallToActionButton.vue</code> hands the action's <code>destination</code> (identifier + optional
+overriding title) to <code>DestinationDataProvider</code>, whose <code>reference</code> computed does the
+actual dictionary lookup and picks out the <code>download</code> reference's <code>url</code> field:
+</p>
+<pre><code>reference: ({ references, destination }) => (references[destination.identifier] || {}),
+linkUrl: ({ destination, reference }) => ({
+  link: destination.destination,
+  reference: reference.url,
+  text: destination.text,
+}[destination.type]),</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DestinationDataProvider.vue#L61-L70"><code>DestinationDataProvider.vue#L61-L70</code></a>).
+The resolved <code>url</code>/<code>title</code> pair then reaches
+<code>ButtonLink.vue</code> with <code>linksToAsset</code> forced to <code>true</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/CallToActionButton.vue#L12-L19"><code>CallToActionButton.vue#L12-L19</code></a>),
+which routes rendering to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L56-L65"><code>ContentNode/Reference.vue#L56-L65</code></a>'s
+<code>isInternal</code> computed &mdash; which returns <code>false</code> whenever <code>linksToAsset</code>
+is set, forcing the plain external-link component
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/ReferenceExternal.vue#L11-L14"><code>ReferenceExternal.vue#L11-L14</code></a>
+(<code>&lt;a :href="url"&gt;&lt;slot/&gt;&lt;/a&gt;</code>) rather than the SPA router link that would
+otherwise be used for a same-site documentation page. This full <code>sampleCodeDownload</code> section
+wrapper and button chain is documented in more depth on the
+<a href="section-sampledownload.html"><code>sampleDownload</code> section page</a>; this page focuses on
+the leaf <code>download</code> reference object both paths ultimately resolve.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+<p class="see-concept">See also: <a href="../concepts/localization.html">Localization fallback</a> — how <code>$t()</code>/locale-key lookup works across every kind that uses it.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+A real fixture exists in swift-docc's own test suite:
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/sample-download-symbol.json</code>. Its
+<code>references</code> map contains one <code>download</code> entry, and its top-level
+<code>sampleCodeDownload</code> field is the action that points at it (field order below matches the
+fixture; abbreviated to the two relevant top-level keys):
+</p>
+<pre><code>{
+  "sampleCodeDownload": {
+    "action": {
+      "type": "reference",
+      "identifier": "doc://org.swift.docc.example/downloads/sample.zip",
+      "isActive": true,
+      "overridingTitle": "Download"
+    }
+  },
+  "references": {
+    "doc://org.swift.docc.example/downloads/sample.zip": {
+      "type": "download",
+      "identifier": "project.zip",
+      "url": "/downloads/project.zip",
+      "checksum": "ad4adacc8ad53230b59d"
+    }
+  }
+}</code></pre>
+<p>
+(fixture: <code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/sample-download-symbol.json</code> in
+the pinned swift-docc checkout). Note the two distinct identifiers in play: the <em>reference-map key</em>
+(<code>doc://org.swift.docc.example/downloads/sample.zip</code>, what <code>action.identifier</code>
+points at) versus the reference object's own <code>identifier</code> field
+(<code>project.zip</code>, an internal display/dedup name unrelated to the map key or to the URL's last
+path component). Rendered as a symbol page's sample-download button (per the
+<code>sampleCodeDownload</code> path in Section 1):
+</p>
+<div class="mockup">
+  <a href="#" style="display:inline-block; background:#0a84ff; color:#fff; font-family:-apple-system,sans-serif; font-size:0.9em; font-weight:600; padding:8px 16px; border-radius:6px; text-decoration:none; margin-top:12px;">Download</a>
+</div>
+<p>
+Rendered instead as a tutorial hero's "Project files" link (the <code>projectFiles</code> path in Section
+1, using the same URL):
+</p>
+<div class="mockup">
+  <div style="display:flex; align-items:center; gap:6px; font-family:-apple-system,sans-serif; font-size:0.85em; color:#555;">
+    <span style="display:inline-block; width:16px; height:16px; background:#8e8e93; border-radius:2px;"></span>
+    <a href="#" style="color:#0a84ff; text-decoration:none; display:flex; align-items:center; gap:4px;">Project Files &darr;</a>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema object: <code>#/components/schemas/DownloadRenderReference</code> in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json:1882-1904</code>, one of the <code>oneOf</code>
+branches of the discriminated <code>#/components/schemas/RenderReference</code> union at
+<code>RenderNode.spec.json:1491-1520</code>. Because DocCArchive's vendored schemas are merged from
+multiple source files (<code>RenderNode.spec.json</code>, <code>Assets.json</code>,
+<code>LinkableEntities.json</code> all separately define a same-named <code>DownloadRenderReference</code>
+schema), <code>openapi-merge-cli</code> disambiguates the duplicates by suffixing later occurrences, and
+<code>swift-openapi-generator</code> mirrors that as distinct Swift types. The one reachable from a
+RenderNode's <code>references</code> map (i.e. the type this page is about) is
+<code>Components.Schemas.DownloadRenderReference1</code> &mdash; generated from
+<code>Sources/DocCArchive/Vendored/merged-spec.json:1526-1550</code> &mdash; at
+<code>Sources/DocCArchive/generated/Types.swift:2623-2661</code>, reachable as the
+<code>.DownloadRenderReference1</code> case of the generated references-map value enum
+(<code>Types.swift:2129</code>, with a decode attempt at <code>Types.swift:2172-2177</code>). The
+unsuffixed <code>DownloadRenderReference</code> (<code>Types.swift:619-661</code>, from
+<code>Assets.json</code>'s standalone <code>downloads</code> array) and <code>DownloadRenderReference2</code>
+(<code>Types.swift:5132-...</code>, from <code>LinkableEntities.json</code>) describe the identical wire
+shape for other, unrelated contexts and are out of scope here.
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"download"</code></td><td>Discriminator; generated as <code>_TypePayload</code> with the single case <code>.download</code>. Matches <code>RenderReferenceType.download</code> in swift-docc's Swift model (<code>RenderReference.swift:29</code>).</td></tr>
+<tr><td><code>identifier</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>An internal display/dedup name for the downloadable item (e.g. <code>"project.zip"</code>), distinct from the reference-map key that other objects use to point at this entry. Wraps swift-docc's <code>RenderReferenceIdentifier</code> (<code>RenderReference.swift:36-59</code>), which is itself just a string.</td></tr>
+<tr><td><code>url</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Path to the downloadable resource, e.g. <code>"/downloads/project.zip"</code>. In swift-docc, encoded either verbatim (JSON round-trip) or filtered through <code>renderURL(for:prefixComponent:)</code> when freshly generated (<code>DownloadReference.swift:81-93</code>).</td></tr>
+<tr><td><code>checksum</code></td><td>string</td><td>no</td><td>no default; absent when unknown</td><td>SHA-512 hash of the file's bytes, computed by swift-docc at conversion time (<code>Checksum.sha512(of: downloadData)</code>, <code>RenderNodeTranslator.swift:1911-1928</code>). Not consumed by any swift-docc-render component found in Section 1 &mdash; it round-trips through the JSON but is not displayed or verified client-side.</td></tr>
+</table>
+<p>
+Authoring side (context, not schema-authoritative): a <code>download</code> reference is produced two
+ways. (1) A tutorial author sets the <code>projectFiles</code> argument on a
+<code>@Tutorial(projectFiles: "MyProject.zip") { … }</code> directive
+(<code>Sources/SwiftDocC/Semantics/Tutorial/Tutorial.swift:23-29,78</code>); swift-docc resolves that
+asset with <code>assetContext: .download</code>
+(<code>RenderNodeTranslator.swift:196-197,1911-1928</code>) and registers a <code>DownloadReference</code>.
+(2) For a symbol or article, a bundle-relative sample-code project asset referenced from that page's
+metadata is resolved the same way and surfaces as the page's <code>sampleCodeDownload.action</code>. In
+both cases the underlying Swift type constructed is
+<code>DownloadReference</code> (<code>swiftStructSite</code>,
+<code>Sources/SwiftDocC/Model/Rendering/Tutorial/References/DownloadReference.swift:14</code>), whose doc
+comment describes it plainly as "A reference to a resource that can be downloaded," stored under a
+<code>downloads/</code> directory in the built archive (<code>DownloadReference.locationName</code>,
+same file, line 19).
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind: <code>MyHTMLTransformer</code>
+and <code>MyMarkdownTransformer</code> (<code>Sources/DocCArchive/DocCArchive.swift:242-254</code>) are
+still stub placeholders (a hardcoded HTML comment and an empty string, respectively) that do not inspect
+<code>RenderNode.references</code> at all, so a <code>download</code> reference would currently pass
+through <code>parseRenderNode</code> decoding untouched but produce no HTML/Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+There is no dedicated root element "for a <code>download</code> reference" as such &mdash; the reference
+is pure data (URL + checksum); the DOM depends entirely on which of the two consumers in Section 1
+resolves it:
+</p>
+<ul>
+<li>
+Via <code>sampleCodeDownload</code>: <code>&lt;a class="button-cta sample-download"&gt;</code>
+(<code>ButtonLink.vue</code>'s root <code>class="button-cta"</code>, plus the caller's
+<code>class="sample-download"</code> from <code>DocumentationTopic.vue#L66</code>, plus modifier class
+<code>is-dark</code> when applicable). Styled by <code>ButtonLink.vue</code>'s scoped SCSS
+(imports <code>docc-render/styles/_core.scss</code>), consuming CSS custom properties
+<code>--colors-button-light-background</code> / <code>--color-button-background</code>,
+<code>--color-button-border</code>, <code>--button-border-radius</code>, <code>--button-border-style</code>,
+<code>--button-border-width</code>, <code>--colors-button-text</code> / <code>--color-button-text</code>,
+plus the <code>-Active</code>/<code>-Hover</code> and dark-mode (<code>--colors-button-dark-*</code>)
+variants. <code>DocumentationTopic.vue</code> itself adds one rule, <code>.sample-download { margin-top:
+20px; }</code> (<code>DocumentationTopic.vue:944-946</code>).
+</li>
+<li>
+Via the tutorial hero's <code>projectFiles</code>: <code>&lt;div class="item"&gt;</code> &gt;
+<code>&lt;DownloadIcon class="item-large-icon icon-inline"&gt;</code> +
+<code>&lt;a class="content-link project-download"&gt;</code> (text plus
+<code>&lt;InlineDownloadIcon class="small-icon icon-inline"&gt;</code>), all inside
+<code>HeroMetadata.vue</code>'s <code>&lt;div class="metadata"&gt;</code> flex row. Its scoped SCSS sets
+<code>.content-link { display: flex; align-items: center; }</code> and colors anchors with
+<code>--colors-link</code> / <code>--color-tutorials-overview-link</code>
+(<code>HeroMetadata.vue:145-152</code>); the icon components (<code>DownloadIcon.vue</code>,
+<code>InlineDownloadIcon.vue</code>) are theme-able SVGs keyed by <code>themeId="download"</code>, tinted
+via the standard icon-color custom properties rather than any reference-kind-specific styling.
+</li>
+</ul>
+<p>
+In neither path does the <code>checksum</code> field surface in the DOM or in any SCSS selector.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior: neither consumption path in Section 1 holds any client-side state or toggles visibility
+of anything. <code>HeroMetadata.vue</code>'s project-files link is a <code>v-if</code>-gated plain
+<code>&lt;a href&gt;</code> computed once from <code>references[this.projectFiles].url</code>; the
+sample-code download button resolves its <code>url</code>/<code>title</code> once inside
+<code>DestinationDataProvider</code>'s render-scoped-slot and renders a plain <code>&lt;a href&gt;</code>
+via <code>ReferenceExternal.vue</code> (forced there by <code>linksToAsset</code>, per Section 1). There is
+no click handler that opens/closes a panel, no <code>v-show</code>-driven alternate state, and no
+JavaScript-managed disclosure anywhere in either path &mdash; both are ordinary hyperlinks to a static
+asset URL, which is exactly what an HTML anchor is for. Because there is no interactive state machine here
+to begin with (unlike, say, a tab navigator or a disclosure triangle), there is no native mechanism
+(<code>&lt;details&gt;</code>, <code>:target</code>, <code>:has()</code>, etc.) to name as a replacement:
+this kind's entire "behavior" already is a plain link.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

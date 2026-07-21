@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: emphasis — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>emphasis</code></h1>
+<p class="wire-value">Wire value: <code>"emphasis"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'emphasis'</code> lands, as with every
+other block/inline content kind on this reference site, on <code>src/components/ContentNode.vue</code>'s
+wire-constant table. <code>emphasis</code> is one of the entries in the <code>InlineType</code> map
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>):
+</p>
+<pre><code>const InlineType = {
+  codeVoice: 'codeVoice',
+  emphasis: 'emphasis',
+  image: 'image',
+  ...
+};</code></pre>
+<p>
+That constant is matched in the <code>renderNode()</code> factory function's <code>switch (node.type)</code>
+dispatch table, where <code>emphasis</code> falls through to the same case as the (currently unrelated)
+<code>newTerm</code> kind:
+</p>
+<pre><code>case InlineType.emphasis:
+case InlineType.newTerm:
+  return createElement('em', (
+    renderChildren(node.inlineContent)
+  ));</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L437-L441"><code>ContentNode.vue#L437-L441</code></a>.)
+Unlike most block kinds, <code>emphasis</code> is <em>not</em> delegated to a dedicated child
+component &mdash; it is turned directly into a bare native <code>&lt;em&gt;</code> element via Vue's
+<code>createElement</code>. The node's only payload field, <code>inlineContent</code> (an array of
+nested <code>RenderInlineContent</code> nodes), is recursively rendered through the same module-local
+<code>renderChildren</code> helper
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L122-L124"><code>ContentNode.vue#L122-L124</code></a>)
+used by every other inline/block wrapper kind, so arbitrary nesting (for example <code>strong</code> inside
+<code>emphasis</code>, or a <code>reference</code> link inside <code>emphasis</code>) is rendered correctly
+by recursion rather than any special-casing. The <code>type</code> discriminator itself is consumed only
+by the <code>switch</code> and never forwarded into the DOM.
+</p>
+<p>
+<code>ContentNode.vue</code> also has a tree-walking utility API (<code>map</code>, <code>forEach</code>,
+<code>reduce</code>) used elsewhere in the app to traverse a content tree without rendering it (for
+example, to build the plain-text abstract for search indexing or social-preview metadata). Both
+<code>map</code> and <code>forEach</code> explicitly list <code>InlineType.emphasis</code> alongside
+<code>strong</code>, <code>inlineHead</code>, <code>superscript</code>, <code>subscript</code>,
+<code>strikethrough</code>, and <code>newTerm</code> as "wrapper" kinds whose <code>inlineContent</code>
+array must be recursed into
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L564-L575"><code>ContentNode.vue#L564-L575</code></a>,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L619-L628"><code>ContentNode.vue#L619-L628</code></a>).
+No other <code>.vue</code> file under <code>src/components/</code> or <code>src/views/</code> matches the
+literal string <code>'emphasis'</code>; the <code>DocumentationTopic/ContentNode.vue</code> and
+<code>Article/ContentNode.vue</code> files that also exist in the tree handle unrelated section-level
+concerns (list indentation, spacing) and do not reference this inline kind.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture, from swift-docc's test suite:
+<code>Tests/SwiftDocCTests/Rendering/Rendering Fixtures/term-lists-1.json</code> (line 124), pinned at
+swift-docc@8b8d8268aa. This excerpt is a <code>paragraph</code>'s <code>inlineContent</code> array
+containing plain text before and after an <code>emphasis</code> node:
+</p>
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    {
+      "type": "text",
+      "text": "It has "
+    },
+    {
+      "type": "emphasis",
+      "inlineContent": [
+        {
+          "type": "text",
+          "text": "multiple"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": " paragraphs."
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+<p>It has <em>multiple</em> paragraphs.</p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Field table for the <code>Emphasis</code> schema object
+(<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, one of the eleven members of the
+<code>RenderInlineContent</code> <code>oneOf</code> discriminator), cross-checked against the generated
+<code>Components.Schemas.Emphasis</code> struct in
+<code>Sources/DocCArchive/generated/Types.swift</code>:
+</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>"emphasis"</code> | <code>"italic"</code></td><td>Discriminator. Generated as <code>Emphasis._TypePayload</code>, a <code>String</code>-backed <code>enum</code> with exactly these two cases. <code>"italic"</code> is accepted as a legacy/alternate spelling of the same node on the wire &mdash; both decode into the identical <code>Emphasis</code> struct; there is no separate behavior keyed off which spelling was used.</td></tr>
+<tr><td><code>inlineContent</code></td><td>array of <code>RenderInlineContent</code></td><td>yes</td><td>&mdash;</td><td>The nested inline-content children to be rendered emphasized; generated as <code>[Components.Schemas.RenderInlineContent]</code>. Can itself contain further <code>emphasis</code>, <code>strong</code>, <code>reference</code>, etc. nodes.</td></tr>
+</tbody>
+</table>
+<p>
+Note the asymmetry with swift-docc's authoring-side Swift model: the in-memory
+<code>RenderInlineContent</code> Swift enum case at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift#L36">RenderInlineContent.swift#L36</a>
+is <code>case emphasis(inlineContent: [RenderInlineContent])</code> &mdash; it only ever encodes with
+<code>type: "emphasis"</code> (see the <code>InlineType</code> Codable mapping at
+<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift#L61-L63">RenderInlineContent.swift#L61-L63</a>).
+The <code>"italic"</code> wire alternative in the vendored JSON Schema exists purely as an input-side
+tolerance for decoding, not something swift-docc itself ever emits.
+</p>
+<p>
+What an author writes to produce this: standard CommonMark emphasis syntax, either
+<code>*text*</code> or <code>_text_</code>, inside a documentation comment or a <code>.md</code>/<code>.tutorial</code>
+article. swift-docc's Markdown-to-render-tree compiler has a dedicated visitor,
+<code>RenderContentCompiler.visitEmphasis(_:)</code>
+(<a href="https://github.com/swiftlang/swift-docc/blob/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7/Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift#L295-L296">RenderContentCompiler.swift#L295-L296</a>),
+which converts a parsed Markdown <code>Emphasis</code> node into exactly one
+<code>RenderInlineContent.emphasis(inlineContent:)</code> case, recursively visiting its Markdown
+children first.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+The rendered output is a bare <code>&lt;em&gt;...&lt;/em&gt;</code> element with no <code>id</code>,
+<code>class</code>, or <code>data-*</code> attribute of its own &mdash; the <code>createElement('em',
+renderChildren(node.inlineContent))</code> call at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L438-L441">ContentNode.vue#L438-L441</a>
+passes no <code>class</code>/<code>attrs</code> object at all, unlike sibling cases such as
+<code>InlineType.codeVoice</code> (which adds <code>class: 'inline-code'</code>) or
+<code>InlineType.reference</code> (which adds <code>class: 'inline-link'</code>) a few lines away in the
+same <code>switch</code>. No SCSS file in <code>src/styles/</code> targets the <code>em</code> element or
+defines a corresponding class; grepping the stylesheet tree for <code>em {</code> or a bare <code>em</code>
+selector turns up nothing beyond CSS length units (e.g. <code>1em</code>, <code>2em</code>) in unrelated
+rules. The emphasized (italic) appearance is therefore produced entirely by the browser's built-in default
+style for the <code>&lt;em&gt;</code> element (user-agent stylesheet <code>font-style: italic</code>), not
+by any DocC-render-authored CSS or custom property.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior, precisely: <code>emphasis</code> nodes are rendered as a plain, static
+<code>&lt;em&gt;</code> element via a one-line <code>createElement('em', renderChildren(...))</code> call,
+with no Vue <code>data</code>, no props, no event handlers, and no client-side state of any kind attached
+to the element or its rendering path. There is nothing dynamic to reproduce: the "behavior" in play is
+simply the HTML semantics of <code>&lt;em&gt;</code> (stress emphasis) combined with the browser's default
+<code>font-style: italic</code> presentation, which is already the plain, non-JavaScript, non-interactive
+mechanism in use today. There is no toggleable, hidden, or otherwise stateful aspect of this kind for a
+native CSS mechanism (<code>&lt;details&gt;</code>, <code>:target</code>, the Popover API, <code>:has()</code>,
+etc.) to replace.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: article — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">node</p>
+<h1><code>article</code></h1>
+<p class="wire-value">Wire value: <code>"article"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+<code>article</code> is one of two possible values of the top-level <code>kind</code> discriminator on a
+<code>DocumentationRenderNode</code> (the other is <code>"symbol"</code>). It marks a standalone,
+free-form documentation page — an "extension article" or top-level collection article written in a
+<code>.md</code> file in a DocC catalog — as opposed to a page that documents a specific
+symbol/declaration. Both share the exact same JSON schema and Vue rendering path; the difference is
+only in which optional fields are populated (an article has no <code>primaryContentSections</code>
+of kind <code>declarations</code>, for example).
+</p>
+<p>
+<strong>Do not confuse this with <code>views/Topic.vue</code>'s <code>TopicKind.article</code>.</strong>
+swift-docc-render's route table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/routes.js#L32-L54"><code>src/routes.js</code></a>)
+sends any path starting with <code>/documentation</code> to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/DocumentationTopic.vue#L11-L43"><code>views/DocumentationTopic.vue</code></a>,
+which is the actual consumer of a <code>DocumentationRenderNode</code> — this is the kind described
+on this page. Paths starting with <code>/tutorials</code> instead go to
+<code>views/Topic.vue</code>, whose own, differently-scoped <code>TopicKind.article</code> constant
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/views/Topic.vue#L37-L40"><code>src/views/Topic.vue#L37-L40</code></a>)
+dispatches to <code>components/Article.vue</code>, the renderer for tutorial "article" chapters
+(hero/callToAction/assessments sections) that belong to a <code>TutorialsPageRenderNode</code>, a
+completely different top-level schema variant. The two "articles" only share a wire-value string,
+not a schema.
+</p>
+<p>
+<code>views/DocumentationTopic.vue</code> wraps a single child, <code>DocumentationLayout</code>,
+whose <code>#content</code> slot renders
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L11-L43"><code>components/DocumentationTopic.vue</code></a>
+(aliased as <code>Topic</code> in the view). This component takes the node's fields as flattened
+props (<code>role</code>, <code>roleHeading</code>, <code>title</code>, <code>abstract</code>,
+<code>topicSections</code>, etc. — see
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L382-L385"><code>props.role</code></a>)
+rather than switching on <code>kind</code> directly. It renders unconditionally for both
+<code>kind: "symbol"</code> and <code>kind: "article"</code>; sections that don't apply to a plain
+article (declarations, relationships, default implementations) are simply absent from the JSON and
+so nothing renders for them &mdash; there is no <code>v-if="kind === 'article'"</code> branch.
+</p>
+<p>
+The one place the render code visibly reacts to an article is via the finer-grained
+<code>metadata.role</code> field (<code>DocumentationRole</code> enum, which also includes
+<code>"article"</code> as one of its values, distinct from but usually aligned with the top-level
+<code>kind</code>). <code>role</code> is passed straight through to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic/Hero/DocumentationHero.vue#L18-L25"><code>DocumentationHero.vue</code></a>,
+which uses it to pick the hero's icon and accent color:
+</p>
+<pre><code>// src/constants/TopicTypes.js
+export const TopicTypes = { article: 'article', /* … */ };
+
+// src/constants/HeroColors.js
+export const HeroColorsMap = {
+  [TopicTypes.article]: HeroColors.teal,
+  /* … */
+};
+
+// src/components/TopicTypeIcon.vue
+import ArticleIcon from 'theme/components/Icons/ArticleIcon.vue';
+// … [TopicTypes.article]: ArticleIcon, …</code></pre>
+<p>
+so an article page gets a teal-tinted hero background and the dedicated
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/Icons/ArticleIcon.vue#L1-L20"><code>ArticleIcon</code></a>
+watermark, in contrast to a symbol page's kind-specific color (purple for <code>struct</code>, blue
+for <code>method</code>, etc). <code>metadata.roleHeading</code> supplies the literal eyebrow text
+above the title — for articles this is the plain string <code>"Article"</code>, set on the swift-docc
+side (see step 3 below), and swift-docc-render simply displays it verbatim via
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/DocumentationTopic.vue#L47-L49"><code>Title</code>'s <code>eyebrow</code> prop</a>.
+</p>
+<p>
+On the swift-docc authoring side, a plain Markdown file in a DocC catalog (no <code>@Tutorial</code>
+or <code>@TutorialTableOfContents</code> directive) is modeled as an <code>Article</code> semantic
+node and translated by
+<code>RenderNodeTranslator.visitArticle</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderNodeTranslator.swift:624-625</code>), which constructs
+<code>RenderNode(identifier: identifier, kind: .article)</code> and then sets
+<code>node.metadata.role</code>/<code>roleHeading</code> (lines 763-771, the latter hard-coding the
+string <code>"Article"</code>) — this is the origin of the JSON in step 2 below.
+</p>
+<p>
+In this repository (DocCArchive), a parsed <code>article</code> node would arrive as the
+<code>.DocumentationRenderNode</code> case of the generated <code>RenderNode</code> enum
+(<code>Components.Schemas.RenderNode</code>, <code>Sources/DocCArchive/generated/Types.swift:2883-2916</code>)
+with <code>kind == .article</code>. Turning it into HTML or Markdown output is not yet implemented:
+<code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift:242-254</code>) are still stub placeholders that ignore
+the node's contents and return a hard-coded HTML comment / an empty string, respectively, regardless
+of whether the node is a symbol or an article.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive/data/documentation/exampledocs/examplearticle.json</code>
+in this repository (trimmed here to the fields relevant to <code>kind</code>/<code>metadata</code>/<code>abstract</code>
+plus one representative content section).
+</p>
+<pre><code>{
+  "kind": "article",
+  "identifier": {
+    "interfaceLanguage": "swift",
+    "url": "doc://ExampleDocs/documentation/ExampleDocs/ExampleArticle"
+  },
+  "schemaVersion": { "major": 0, "minor": 3, "patch": 0 },
+  "metadata": {
+    "modules": [ { "name": "ExampleDocs" } ],
+    "role": "article",
+    "roleHeading": "Article",
+    "title": "ExampleArticle"
+  },
+  "hierarchy": {
+    "paths": [ [ "doc://ExampleDocs/documentation/ExampleDocs" ] ]
+  },
+  "abstract": [
+    { "text": "An example article to display.", "type": "text" }
+  ],
+  "primaryContentSections": [
+    {
+      "kind": "content",
+      "content": [
+        { "type": "heading", "level": 2, "text": "Overview", "anchor": "Overview" },
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Description of what the article is about." }
+          ]
+        }
+      ]
+    }
+  ],
+  "sections": [],
+  "references": {}
+}</code></pre>
+<div class="mockup">
+  <div style="background:#e3f4f2; padding:10px 14px; border-radius:4px 4px 0 0;">
+    <span style="font-size:0.75em; letter-spacing:0.05em; text-transform:uppercase; color:#2a6f68;">Article</span>
+    <div style="margin:4px 0 2px 0;">ExampleArticle</div>
+    <p style="margin:0; color:#555;">An example article to display.</p>
+  </div>
+  <div style="border:1px solid #ddd; border-top:none; padding:10px 14px;">
+    <div style="margin:0 0 4px 0;">Overview</div>
+    <p style="margin:0;">Description of what the article is about.</p>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Schema object: <code>#/components/schemas/DocumentationRenderNode</code> in
+<code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code> (line 2056), whose <code>kind</code>
+property is <code>{"type":"string","enum":["symbol","article"]}</code> (line 2067-2070). Generated
+Swift: <code>Components.Schemas.DocumentationRenderNode</code> with nested
+<code>KindPayload: String, Codable, Hashable, Sendable, CaseIterable</code> enum
+(<code>Sources/DocCArchive/generated/Types.swift:5315-5322</code>). On the swift-docc authoring side,
+the top-level <code>RenderNode.Kind</code> enum (which backs both <code>DocumentationRenderNode</code>
+and <code>TutorialsPageRenderNode</code> in swift-docc's own model) declares
+<code>case article</code> at <code>Sources/SwiftDocC/Model/Rendering/RenderNode.swift:255</code>, decoded
+from the literal string <code>"article"</code> at line 265.
+</p>
+<table>
+<tr><th>Field</th><th>Type</th><th>Required?</th><th>Enum values / default</th><th>Note</th></tr>
+<tr><td><code>kind</code></td><td>string</td><td>yes</td><td><code>"symbol" | "article"</code></td><td>Discriminator; <code>"article"</code> selects the standalone-article shape of this schema.</td></tr>
+<tr><td><code>identifier</code></td><td>ResolvedTopicReference</td><td>yes</td><td>&mdash;</td><td>Stable topic reference/URL for this page.</td></tr>
+<tr><td><code>schemaVersion</code></td><td>SchemaVersion</td><td>yes</td><td>&mdash;</td><td>major/minor/patch of the RenderNode schema itself.</td></tr>
+<tr><td><code>hierarchy</code></td><td>DocumentationHierarchy</td><td>yes</td><td>&mdash;</td><td>Breadcrumb path(s) from the module/root to this article.</td></tr>
+<tr><td><code>metadata</code></td><td>DocumentationMetadata</td><td>yes</td><td>&mdash;</td><td>Carries <code>title</code>, <code>role</code> (e.g. <code>"article"</code>), <code>roleHeading</code> (e.g. <code>"Article"</code>), <code>modules</code>.</td></tr>
+<tr><td><code>abstract</code></td><td>[RenderInlineContent]</td><td>no</td><td>&mdash;</td><td>Summary/dek shown under the title.</td></tr>
+<tr><td><code>primaryContentSections</code></td><td>[DocumentationPrimaryRenderSection]</td><td>no</td><td>&mdash;</td><td>Body content; for an article this is typically a single section of <code>kind: "content"</code> holding the Markdown body.</td></tr>
+<tr><td><code>topicSectionsStyle</code></td><td>string</td><td>no</td><td><code>list</code> (default) | <code>compactGrid</code> | <code>detailedGrid</code> | <code>hidden</code></td><td>Layout of the Topics/curation grid, if any.</td></tr>
+<tr><td><code>topicSections</code></td><td>[TasksGroupSection]</td><td>no</td><td>&mdash;</td><td>"Topics" curation groups the article links to.</td></tr>
+<tr><td><code>seeAlsoSections</code></td><td>[TasksGroupSection]</td><td>no</td><td>&mdash;</td><td>"See Also" groups.</td></tr>
+<tr><td><code>defaultImplementationsSections</code></td><td>[TasksGroupSection]</td><td>no</td><td>&mdash;</td><td>Not applicable to plain articles in practice (symbol-only), but present in the shared schema.</td></tr>
+<tr><td><code>relationshipsSections</code></td><td>[RelationshipsGroupSection]</td><td>no</td><td>&mdash;</td><td>Not applicable to plain articles in practice (symbol-only).</td></tr>
+<tr><td><code>sampleCodeDownload</code></td><td>SampleDownload</td><td>no</td><td>&mdash;</td><td>Download link, if the article is a sample-code landing page.</td></tr>
+<tr><td><code>deprecationSummary</code></td><td>[RenderBlockContent]</td><td>no</td><td>&mdash;</td><td>Deprecation notice content.</td></tr>
+<tr><td><code>diffAvailability</code></td><td>object (beta/minor/major/sdk)</td><td>no</td><td>&mdash;</td><td>API-diff availability metadata.</td></tr>
+<tr><td><code>sections</code></td><td>[RenderSection]</td><td>yes</td><td>&mdash;</td><td>Legacy/tutorial-style sections array; empty (<code>[]</code>) for ordinary articles in practice.</td></tr>
+<tr><td><code>references</code></td><td>object (map of RenderReference)</td><td>no</td><td>&mdash;</td><td>Resolved link/media/topic references cited elsewhere in the node.</td></tr>
+<tr><td><code>variants</code></td><td>[RenderNodeVariant]</td><td>no</td><td>&mdash;</td><td>JSON-Patch-style per-trait overrides (e.g. per-language).</td></tr>
+</table>
+<p class="see-concept">See also: <a href="../concepts/variants.html">variants &amp; variantOverrides</a> — the full trait-override mechanism behind this field — and <a href="../concepts/references.html">The references map</a> — how the <code>references</code> field above resolves.</p>
+<p>
+Related but distinct enum: <code>DocumentationRole</code> (line 2447 of the same spec file) — the
+value of <code>metadata.role</code> — includes <code>"article"</code> alongside <code>"symbol"</code>,
+<code>"collection"</code>, <code>"sampleCode"</code>, etc. It is a more granular classification than
+the top-level <code>kind</code> and is what actually drives the hero color/icon choice in
+swift-docc-render (see section 1).
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Root wrapper: <code>&lt;div class="doc-topic"&gt;</code>
+(<code>src/components/DocumentationTopic.vue:13</code>, styled in the component's own
+<code>&lt;style scoped lang="scss"&gt;</code> block starting at line 752/796), shared verbatim by
+symbol and article pages alike. Inside it:
+</p>
+<ul>
+<li><code>&lt;div class="documentation-hero"&gt;</code> / <code>documentation-hero__content</code> /
+<code>documentation-hero__above-content</code> — from
+<code>src/components/DocumentationTopic/Hero/DocumentationHero.vue</code>; its scoped SCSS defines
+the gradient background via the CSS custom properties <code>--accent-color</code> and
+<code>--standard-accent-color</code>, which are set inline per-instance from the resolved
+<code>HeroColorsMap</code> entry for <code>role: "article"</code> (teal) and read by
+<code>--color-documentation-intro-fill</code>/<code>--color-documentation-intro-accent</code> theme
+variables as fallbacks.</li>
+<li><code>&lt;div class="icon"&gt;</code> containing the <code>ArticleIcon</code> SVG watermark
+(<code>background-icon</code> class), opacity/blend-mode controlled by
+<code>$doc-hero-icon-opacity</code>/<code>$doc-hero-icon-effect</code> SCSS variables in the same
+file.</li>
+<li>The page title block uses the shared <code>Title</code> component with an
+<code>eyebrow</code> prop set to <code>metadata.roleHeading</code> (<code>"Article"</code>).</li>
+<li>Body content (from <code>primaryContentSections</code>) is rendered through
+<code>PrimaryContent</code>/<code>ContentNode.vue</code> — the same block-content dispatch table
+used by every other block-content-bearing kind — so an article's headings, paragraphs, code
+listings, etc. get identical DOM/CSS to the corresponding content in a symbol page.</li>
+</ul>
+<p>
+No article-specific SCSS file exists; all of the above is either inherited from the shared
+<code>DocumentationTopic.vue</code>/<code>DocumentationHero.vue</code> styles or parameterized by the
+<code>role</code>-driven color/icon lookup tables in <code>src/constants/TopicTypes.js</code> and
+<code>src/constants/HeroColors.js</code>.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior: rendering an <code>article</code>-kind <code>DocumentationRenderNode</code> is a
+one-shot server/build-time-to-DOM mapping with no client-side interactive state to hold. Vue
+computes <code>role</code>/<code>roleHeading</code>/hero color from static JSON props once, on
+mount, and there is no toggle, tab, disclosure, or other stateful widget anywhere in this rendering
+path (contrast with something like a tab navigator, which holds <code>currentTitle</code> in
+component data and swaps visible panels via <code>v-show</code>). Any interactivity a reader
+encounters on an article page (a code-listing tab switcher, a disclosure triangle in a "Topics"
+grid, etc.) belongs to a nested block/inline content kind, not to the <code>article</code> node
+kind itself — those child kinds should be judged on their own reference pages. There is therefore no
+single native HTML/CSS mechanism to "replace" here: the node kind itself is a static content
+container, and a CSS-only alternative isn't a meaningful question for it.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

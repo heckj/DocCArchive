@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept: asset variant resolution — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html">Kind Catalog</a><a href="../archive-structure.html">Archive Structure</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">concept</p>
+<h1>Asset variant resolution (light/dark, 1x/2x/3x)</h1>
+<p>Images, videos, and hero backgrounds all store their pixel-level content the same way: not as one
+URL, but as a flat array of <code>{url, traits}</code> variants &mdash; one entry per combination of
+appearance (light/dark) and, for raster images, pixel density (1x/2x/3x). A shared JS-side mixin does
+the bucketing for every consumer. Fullest single-kind treatment prior to this page:
+<a href="../kinds/reference-image.html"><code>reference-image.html</code></a>, which walks the
+<code>ImageAsset.vue</code> path end to end; <a href="../kinds/reference-video.html"><code>reference-video.html</code></a>
+covers the video-specific half (light/dark only, no density).</p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Worked example</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. Where else this shows up</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Every asset reference kind (<code>ImageRenderReference</code>, <code>VideoRenderReference</code>, and
+the background art on a hero section) stores its <code>variants</code> as one flat array, each entry
+a plain <code>{url, traits, svgID?}</code> object with no nesting by appearance or density &mdash; the
+grouping happens entirely in JS at render time, not on the wire. The shared logic lives in
+<code>src/mixins/imageAsset.js</code>, built on two small utilities in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/utils/assets.js"><code>src/utils/assets.js</code></a>:
+</p>
+<pre><code>function separateVariantsByAppearance(variants) {
+  const dark = [];
+  const rest = [];
+  variants.forEach((variant) => {
+    if (variant.traits.includes('dark')) {
+      dark.push(variant);
+    } else {
+      rest.push(variant);
+    }
+  });
+  return { light: rest, dark };
+}
+
+function extractDensities(variants) {
+  return variants.reduce((all, variant) => {
+    const density = variant.traits.find(trait => /^[123]x$/.test(trait));
+    if (!density) return all;
+    return { ...all, [density]: variant.url };
+  }, {});
+}</code></pre>
+<p>
+(Paraphrased from <code>src/utils/assets.js</code>, lines ~1-40 &mdash; <code>separateVariantsByAppearance</code>
+buckets by the presence of a <code>"dark"</code> trait, treating everything else, including a variant
+with no appearance trait at all, as "light"; <code>extractDensities</code> then reduces whichever
+bucket is selected into a <code>{"1x": url, "2x": url, "3x": url}</code> map by matching each variant's
+traits against a <code>1x</code>/<code>2x</code>/<code>3x</code> pattern.) The critical, easy-to-miss
+behavior: <strong><code>extractDensities</code> silently drops any variant whose <code>traits</code>
+array has no density trait</strong> &mdash; there is no fallback or warning, the variant simply never
+appears in the resulting <code>srcset</code>. A hand-authored fixture that forgets to tag a variant
+<code>"1x"</code> (relying on it being "the only one") will render with an empty <code>srcset</code> for
+that appearance bucket.
+</p>
+<p>
+<code>ImageAsset.vue</code>'s mixin (<code>mixins/imageAsset.js</code>) combines both bucketing steps
+into <code>lightDensities</code>/<code>darkDensities</code> computed properties, then joins each
+density map into a single <code>srcset</code> string (<code>"url 1x, url2 2x, url3 3x"</code>) for the
+<code>&lt;img&gt;</code>/<code>&lt;source&gt;</code> it emits. <code>VideoAsset.vue</code> reuses only
+the appearance half (<code>separateVariantsByAppearance</code>) since video files have no meaningful
+"density" concept &mdash; it picks one <code>url</code> per appearance bucket and swaps the
+<code>&lt;video&gt;</code>'s single <code>&lt;source&gt;</code> element by watching
+<code>prefers-color-scheme</code>/app theme state in JS rather than relying on the unreliable
+cross-browser support for a <code>media</code> attribute on <code>&lt;source&gt;</code> itself (see
+<a href="../kinds/reference-video.html">reference-video.html</a> &sect;1 for the code comment
+explaining why).
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Worked example: one icon, two consumers</h2>
+<p>
+Real fixture: the <code>plus.svg</code> icon reference from swift-docc's
+<code>Tests/SwiftDocCTests/Indexing/RenderIndexTests.swift</code> (lines 803-818, also cited on
+<a href="../kinds/reference-image.html">reference-image.html</a>), extended here with a second,
+hand-added density variant to show the bucketing behavior on more than one entry:
+</p>
+<pre><code>"plus.svg": {
+  "type": "image",
+  "identifier": "plus.svg",
+  "alt": "A plus icon.",
+  "variants": [
+    { "url": "/images/plus.svg", "traits": ["1x", "light"], "svgID": "plus-id" },
+    { "url": "/images/plus@2x.png", "traits": ["2x", "light"] },
+    { "url": "/images/plus-dark.svg", "traits": ["1x", "dark"], "svgID": "plus-id-dark" }
+  ]
+}</code></pre>
+<div class="mockup">
+<p><em><code>separateVariantsByAppearance</code> splits this into <code>light: [1x, 2x]</code> and
+<code>dark: [1x]</code>. <code>extractDensities</code> then turns the light bucket into
+<code>{"1x": "/images/plus.svg", "2x": "/images/plus@2x.png"}</code> and the dark bucket into
+<code>{"1x": "/images/plus-dark.svg"}</code> &mdash; note there is no dark 2x entry, so a
+high-density display in dark mode falls back to the dark 1x asset (browser-native <code>srcset</code>
+behavior when a requested density isn't listed, not anything DocC-render does explicitly).
+<code>ImageAsset.vue</code>'s "Auto" template branch (the default) then emits:</em></p>
+<pre><code>&lt;picture&gt;
+  &lt;source media="(prefers-color-scheme: dark)" srcset="/images/plus-dark.svg 1x"&gt;
+  &lt;img srcset="/images/plus.svg 1x, /images/plus@2x.png 2x" alt="A plus icon."&gt;
+&lt;/picture&gt;</code></pre>
+</div>
+<p>
+A <code>VideoRenderReference</code> with the same shape of <code>variants</code> array (light/dark
+only, per <a href="../kinds/reference-video.html">reference-video.html</a>'s data sheet) would instead
+produce one <code>&lt;video poster="..."&gt;&lt;source src="..."&gt;&lt;/video&gt;</code>, with the
+single <code>src</code> swapped by a Vue <code>:key</code> remount when the appearance changes, rather
+than a native <code>&lt;picture&gt;</code>/<code>&lt;source media&gt;</code> pair &mdash; the density
+half of the mechanism simply doesn't apply.
+</p>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>. The shared variant shape,
+<code>RenderReferenceVariant</code> (referenced from both <code>ImageRenderReference.variants</code>
+and <code>VideoRenderReference.variants</code>), requires a <code>url</code> string and a
+<code>traits</code> array of <code>RenderReferenceVariantTrait</code> &mdash; a five-value enum:
+<code>"1x"</code>, <code>"2x"</code>, <code>"3x"</code>, <code>"light"</code>, <code>"dark"</code>
+(generated as <code>case _1x = "1x"</code>, etc., in <code>Types.swift</code>). Nothing in the schema
+enforces that a variant carry exactly one density trait and one appearance trait, or indeed any traits
+at all &mdash; a variant with an empty <code>traits</code> array is schema-valid but, per Section 1,
+invisible to <code>extractDensities</code> (silently excluded from every <code>srcset</code>) while
+still counting as "light" to <code>separateVariantsByAppearance</code> (since that function only tests
+for the presence of <code>"dark"</code>). An optional <code>svgID</code> field exists only on the image
+side, naming an element id inside an SVG sprite sheet to render for that specific variant.
+</p>
+<p>
+On the swift-docc production side, both <code>ImageReference</code> and <code>VideoReference</code>
+store their variants internally as a <code>DataAsset</code> &mdash; a general-purpose map keyed by
+<code>DataTraitCollection</code> (a genuinely dictionary-shaped structure on the authoring side) &mdash;
+and only flatten it into the wire's array-of-<code>{url,traits}</code> shape at
+<code>encode(to:)</code> time. This is a deliberate representation change between the authoring model
+(a real dictionary, trivially guaranteeing at most one asset per trait combination) and the wire format
+(a flat array with no such guarantee) &mdash; two variants with identical traits are schema-valid on the
+wire even though the authoring-side <code>DataAsset</code> could never produce that shape.
+</p>
+</section>
+<section id="css-mapping"><h2>4. Where else this shows up</h2>
+<p>
+Beyond <a href="../kinds/reference-image.html">image</a> and
+<a href="../kinds/reference-video.html">video</a> references, the same variant-array shape drives a
+tutorial project's cover art (<a href="../kinds/node-tutorial.html">node-tutorial.html</a>) and a
+<a href="../hierarchy/overview.html">Tutorials Overview</a> page's hero background
+(<a href="../kinds/section-hero.html">section-hero.html</a>'s <code>backgroundImage</code>, which
+resolves through the same <code>references</code> lookup and <code>ImageAsset</code> pipeline as an
+inline image). Two pages that mention "variants" in an unrelated sense are worth explicitly
+excluding here: <a href="../kinds/reference-xcoderequirement.html">reference-xcoderequirement.html</a>
+renders a hardcoded <code>XcodeIcon</code> SVG component rather than resolving any asset variants, and
+<a href="../kinds/block-codelisting.html">block-codelisting.html</a>'s use of the word refers to
+<code>RenderBlockContent</code>'s own discriminated-union arms, not to light/dark/density asset
+variants.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict partial">Partial</span></p>
+<p>
+As on <a href="../kinds/reference-image.html">reference-image.html</a>, the "Auto" branch &mdash; the
+default, and what most visitors see &mdash; already leans on native, JS-free CSS: a
+<code>&lt;picture&gt;</code>/<code>&lt;source media="(prefers-color-scheme: dark)"&gt;</code> pair for
+appearance, and a native <code>srcset</code>/density-descriptor string for density; browsers resolve
+both without any script running. What JS still does, and what CSS cannot replace, is (a) deciding
+<em>whether</em> to emit the native construct at all &mdash; gated on a three-state, app-level
+<code>preferredColorScheme</code> preference that overrides the OS setting, which has no CSS selector
+equivalent &mdash; and (b) the density/appearance <em>bucketing algorithm itself</em>
+(<code>separateVariantsByAppearance</code>/<code>extractDensities</code>), which is a data
+transformation from the wire's flat array into the strings a native <code>&lt;picture&gt;</code>/<code>srcset</code>
+actually needs; CSS has no mechanism to filter and regroup an arbitrary JSON array before deciding what
+to render. Once that transformation has happened, the remaining selection behavior is native and
+CSS-driven; the transformation step itself is not something CSS can perform.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

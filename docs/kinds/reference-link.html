@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: link — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">reference</p>
+<h1><code>link</code></h1>
+<p class="wire-value">Wire value: <code>"link"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a>, <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Like <a href="reference-file.html"><code>file</code></a>, <code>link</code> is not a block/inline content
+kind that <code>ContentNode.vue</code>'s <code>render()</code> switch dispatches on directly&mdash;it is a
+<em>reference</em>-tier object, an entry in the RenderNode's top-level <code>references</code> dictionary.
+Grepping <code>src/components/</code> for the literal string <code>'link'</code> only turns up an unrelated
+match: <code>ContentNode.vue</code>'s <code>InlineType</code> constant table includes a key/value pair
+<code>link: 'link'</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>)
+that is a <em>different</em>, explicitly deprecated inline node type (<code>{"type": "link", "destination":
+"...", "title": "..."}</code>, handled at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L459-L466"><code>ContentNode.vue#L459-L466</code></a>
+with the comment "Note: <code>InlineType.link</code> has been deprecated, but may still be found in old
+JSON"). That is not the <code>LinkRenderReference</code> object this page documents.
+</p>
+<p>
+The reference-tier <code>link</code> object is reached indirectly, through the generic
+<code>InlineType.reference</code> dispatch arm&mdash;the same one documented in full on the
+<a href="inline-reference.html"><code>reference</code> inline-kind page</a>:
+</p>
+<pre><code>case InlineType.reference: {
+  const reference = references[node.identifier];
+  if (!reference) return null;
+  const titleInlineContent = node.overridingTitleInlineContent
+    || reference.titleInlineContent;
+  const titlePlainText = node.overridingTitle || reference.title;
+  return createElement(Reference, {
+    props: {
+      url: reference.url,
+      kind: reference.kind,
+      role: reference.role,
+      isActive: node.isActive,
+      ideTitle: reference.ideTitle,
+      titleStyle: reference.titleStyle,
+      hasInlineFormatting: !!titleInlineContent,
+    },
+    class: 'inline-link',
+  }, (
+    titleInlineContent ? renderChildren(titleInlineContent) : titlePlainText
+  ));
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L467-L487"><code>ContentNode.vue#L467-L487</code></a>.)
+An inline <code>reference</code> node's <code>identifier</code> is looked up in the <code>references</code>
+map; when the resolved object's <code>type</code> happens to be <code>"link"</code> (a
+<code>LinkRenderReference</code>, produced for external URLs&mdash;see the data sheet below), its
+<code>url</code> and <code>title</code>/<code>titleInlineContent</code> feed the same
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue"><code>Reference.vue</code></a>
+component used for internal <code>doc:</code> links. Because <code>LinkRenderReference</code> carries no
+<code>kind</code> or <code>role</code> field (those only exist on <code>TopicRenderReference</code>),
+<code>Reference.vue</code>'s props for a link reference are <code>kind: undefined</code>,
+<code>role: undefined</code>:
+</p>
+<pre><code>isSymbolReference() {
+  return this.kind === 'symbol' &amp;&amp; !this.hasInlineFormatting
+    &amp;&amp; (this.role === TopicRole.symbol || this.role === TopicRole.dictionarySymbol);
+},
+refComponent({ isInternal, isDisplaySymbol }) {
+  if (isInternal) {
+    return isDisplaySymbol ? ReferenceInternalSymbol : ReferenceInternal;
+  }
+  return isDisplaySymbol ? ReferenceExternalSymbol : ReferenceExternal;
+},</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L67-L79"><code>Reference.vue#L67-L79</code></a>.)
+So <code>isSymbolReference</code>/<code>isDisplaySymbol</code> are always <code>false</code> for a
+<code>link</code> reference, and <code>isInternal</code> is computed purely from the URL string
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/Reference.vue#L52-L65"><code>Reference.vue#L52-L65</code></a>):
+true only if the URL starts with <code>/</code> or <code>#</code> and the Vue Router resolves it to
+something other than the "not found" route. In practice a <code>LinkRenderReference</code>'s
+<code>url</code> is an external absolute URL (it is only ever created for links that are <em>not</em>
+<code>doc:</code>-scheme, per swift-docc's compiler&mdash;see section 3), so <code>refComponent</code>
+resolves to
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/ReferenceExternal.vue"><code>ReferenceExternal.vue</code></a>,
+whose entire template is:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;a v-if="url &amp;&amp; isActive" :href="url"&gt;&lt;slot /&gt;&lt;/a&gt;
+  &lt;span v-else&gt;&lt;slot /&gt;&lt;/span&gt;
+&lt;/template&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/ReferenceExternal.vue#L11-L14"><code>ReferenceExternal.vue#L11-L14</code></a>,
+full file.) So the practical, common-case result of resolving a <code>link</code> reference is a plain
+<code>&lt;a href="…" class="inline-link"&gt;…&lt;/a&gt;</code>&mdash;no router integration, no symbol
+code-voice wrapping, no special icon; it falls back to a bare <code>&lt;span&gt;</code> only if
+<code>url</code> is empty or the enclosing inline node's <code>isActive</code> is <code>false</code>.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No literal JSON fixture containing <code>"type": "link"</code> as a reference-tier object was found in
+either <code>Tests/DocCArchiveTests/Fixtures/</code> in this repository (neither
+<code>ExampleDocs.doccarchive</code> nor <code>SampleLibrary.doccarchive</code> ships pre-rendered
+RenderNode JSON&mdash;only the compiled site's JS/HTML assets) or in swift-docc's own
+<code>Tests/SwiftDocCTests/</code> suite (no test file constructs a <code>LinkReference</code> by name,
+and no test JSON fixture contains a <code>"type": "link"</code> reference entry). The example below is
+hand-written from the schema and from swift-docc's compiler logic in
+<code>RenderContentCompiler.visitLink(_:)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift:145-172</code>), which is what
+actually constructs a <code>LinkReference</code>: given an authored Markdown link whose destination is
+<em>not</em> a <code>doc:</code>-scheme URL, it builds a <code>RenderReferenceIdentifier(forExternalLink:</code>
+the destination string<code>)</code> and a matching <code>LinkReference</code> keyed by that same string.
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    { "type": "text", "text": "See the " },
+    {
+      "type": "reference",
+      "identifier": "https://www.swift.org/documentation/",
+      "isActive": true
+    },
+    { "type": "text", "text": " for more." }
+  ]
+}</code></pre>
+<p>Matching entry in the RenderNode's top-level <code>references</code> map, keyed by the same identifier:</p>
+<pre><code>"references": {
+  "https://www.swift.org/documentation/": {
+    "type": "link",
+    "identifier": "https://www.swift.org/documentation/",
+    "title": "Swift Documentation",
+    "titleInlineContent": [
+      { "type": "text", "text": "Swift Documentation" }
+    ],
+    "url": "https://www.swift.org/documentation/"
+  }
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+    <p style="margin:0; font-size:15px; color:#1d1d1f;">
+      See the <a href="#" style="color:#0068da; text-decoration:underline;">Swift Documentation</a> for more.
+    </p>
+  </div>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<table>
+<thead>
+<tr><th>field</th><th>type</th><th>required?</th><th>enum values / default</th><th>note</th></tr>
+</thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>yes</td><td><code>["link"]</code></td><td>Discriminator; always the literal string <code>"link"</code>. Member of the shared <code>RenderReferenceType</code> Swift enum alongside <code>image, video, file, fileType, xcodeRequirement, topic, section, download, link, externalLocation, unresolvable</code> (<code>RenderReference.swift:29</code>).</td></tr>
+<tr><td><code>identifier</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>Key into the RenderNode's top-level <code>references</code> map. For a <code>LinkRenderReference</code>, swift-docc always sets this to the literal external URL string itself (<code>RenderReferenceIdentifier(forExternalLink: destination)</code>, <code>RenderContentCompiler.swift:155</code>), so it doubles as the value of <code>url</code>.</td></tr>
+<tr><td><code>title</code></td><td>string, nullable</td><td>no (not in the JSON schema's <code>required</code> array, though swift-docc's own encoder always writes it)</td><td>no schema-level default</td><td>Plain-text display title. swift-docc's decoder falls back to deriving this from <code>titleInlineContent</code>'s plain text, or finally to the raw URL string, if absent (<code>LinkReference.swift:56-65</code>).</td></tr>
+<tr><td><code>titleInlineContent</code></td><td>array of <code>RenderInlineContent</code></td><td>no (schema does not list it as required; swift-docc's own encoder always writes it)</td><td>no schema-level default</td><td>Formatted display title. swift-docc's initializer defaults this to <code>[.text(title)]</code> when not supplied programmatically (<code>LinkReference.swift:41</code>).</td></tr>
+<tr><td><code>url</code></td><td>string</td><td>yes</td><td>&mdash;</td><td>The link destination&mdash;an absolute external URL in every case swift-docc's compiler produces (a <code>doc:</code>-scheme destination never reaches this path; see below). Not restricted to external URLs by the JSON schema itself, which just types it as a plain string.</td></tr>
+</tbody>
+</table>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, the <code>LinkRenderReference</code>
+schema object (lines 1522-1547), one of the nine members of the <code>RenderReference</code>
+<code>oneOf</code> discriminated union (lines 1491-1519). Cross-checked against the generated Swift type in
+<code>Sources/DocCArchive/generated/Types.swift</code>:
+</p>
+<pre><code>public struct LinkRenderReference: Codable, Hashable, Sendable {
+  @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+    case link = "link"
+  }
+  public var _type: Components.Schemas.LinkRenderReference._TypePayload
+  public var identifier: Swift.String
+  public var title: Swift.String?
+  public var titleInlineContent: [Components.Schemas.RenderInlineContent]?
+  public var url: Swift.String
+}</code></pre>
+<p>
+(<code>Types.swift:2220-2233</code>.) This struct is one case (<code>.LinkRenderReference</code>) of the
+generated <code>Components.Schemas.RenderReference</code> indirect enum in the same file
+(<code>Types.swift:2133</code>). The vendored JSON schema's <code>required</code> array
+(<code>type</code>, <code>identifier</code>, <code>url</code>) matches the generated struct's
+non-optional stored properties exactly.
+</p>
+<p>
+On the authoring side, swift-docc's Swift model (<code>LinkReference.swift:12</code>, doc comment "A
+reference to a URL") is produced by <code>RenderContentCompiler.visitLink(_:)</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift:145-172</code>) whenever an author
+writes a plain Markdown link&mdash;<code>[Swift Documentation](https://www.swift.org/documentation/)</code>&mdash;whose
+destination does <em>not</em> use the <code>doc:</code> URL scheme. (Links that <em>do</em> use the
+<code>doc:</code> scheme, e.g. <code>&lt;doc:MyArticle&gt;</code> or a symbol link, resolve instead to a
+<code>TopicRenderReference</code> and are out of scope for this page; see swift-docc's
+<code>LinkResolution.md</code> catalog article,
+<code>Sources/SwiftDocC/SwiftDocC.docc/SwiftDocC/LinkResolution.md</code>, for that authoring path.) The
+compiler deduplicates repeat links to the same destination on one page, reusing the same
+<code>LinkReference</code> entry and instead emitting an <code>overridingTitle</code> on the inline
+<code>reference</code> node when the same URL is linked with different visible text
+(<code>RenderContentCompiler.swift:157-163</code>).
+</p>
+<p>
+Within this repository, DocCArchive's own transform layer does not yet do anything specific with this
+kind: <code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift:242-254</code>) are still stub placeholders that operate on a
+whole <code>RenderNode</code> and return a hardcoded HTML comment or an empty string, respectively&mdash;neither
+one walks the <code>references</code> map or <code>RenderInlineContent</code> case-by-case yet, so
+<code>link</code> reference objects are not yet resolved or rendered by this library.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Because a <code>link</code> reference's <code>url</code> is always external and it never carries a
+<code>kind</code>/<code>role</code>, the four-way branching in
+<a href="inline-reference.html"><code>Reference.vue</code></a> collapses to two practical shapes for this
+specific reference type:
+</p>
+<ul>
+<li>Active (<code>isActive</code> true and non-empty <code>url</code>): <code>&lt;a class="inline-link" href="…"&gt;&hellip;&lt;/a&gt;</code>, from <code>ReferenceExternal.vue</code>.</li>
+<li>Inactive or empty <code>url</code>: <code>&lt;span class="inline-link"&gt;&hellip;&lt;/span&gt;</code>, same component's <code>v-else</code> branch.</li>
+</ul>
+<p>
+The <code>ReferenceInternalSymbol</code>/<code>ReferenceExternalSymbol</code> (code-voice-wrapped) branches
+that the <code>reference</code> inline-kind page documents for symbol links are unreachable for a
+<code>link</code>-type reference, since <code>isDisplaySymbol</code> can never be true without a
+<code>kind === 'symbol'</code> value that this reference type doesn't carry.
+</p>
+<p>
+The <code>inline-link</code> class is applied at the dispatch site in <code>ContentNode.vue</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L483"><code>ContentNode.vue#L483</code></a>),
+not inside <code>Reference.vue</code> or <code>ReferenceExternal.vue</code> themselves. Its only styling
+rule lives in the shared typography partial:
+</p>
+<pre><code>a {
+  color: var(--colors-link, var(--color-link));
+
+  &amp;:link,
+  &amp;:visited {
+    text-decoration: none;
+  }
+
+  // Inline links need to be underline under WCAG 2.2 compliance
+  &amp;:hover, &amp;.inline-link {
+    @include underline-text;
+  }
+
+  &amp;:active {
+    text-decoration: none;
+  }
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_typography.scss#L131-L152"><code>src/styles/base/_typography.scss#L131-L152</code></a>.)
+So a resolved <code>link</code> reference is always rendered underlined (an explicit WCAG 2.2 choice per
+the inline comment, since color alone is not a sufficient link affordance), regardless of hover state. Its
+color comes from the CSS custom property <code>--color-link</code>, defined in
+<code>src/styles/core/colors/_light.scss:101</code> as <code>--color-link: var(--color-figure-blue)</code>,
+with a dark-mode override in the counterpart partial. No SCSS partial targets
+<code>ReferenceExternal.vue</code> by component name; all of its visual styling flows through this one
+generic <code>a</code>/<code>.inline-link</code> rule.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior, precisely: for a <code>link</code>-type reference specifically, <code>Reference.vue</code>
+holds no reactive component state (no <code>data()</code>, no click handler, no toggled visibility); its
+only "logic" is the one-shot <code>isInternal</code> computed property, which for this reference type is
+always <code>false</code> (the URL is an external absolute URL, never a leading <code>/</code> or
+<code>#</code>), and <code>isDisplaySymbol</code>, always <code>false</code> (no <code>kind</code> field on
+this reference type). Those two static, prop-derived booleans pick <code>ReferenceExternal.vue</code>, whose
+template condition <code>v-if="url &amp;&amp; isActive"</code> is likewise evaluated once from props at
+render time, with no runtime interaction afterward.
+</p>
+<p>
+There is nothing here that toggles, discloses, or changes state in response to user interaction after the
+initial render: no open/closed state, no tab/panel switching, no hover-driven layout change beyond the
+browser's native <code>:hover</code> underline (which is already plain CSS, not JS). The entire "behavior"
+is one-time branching over static data (is <code>isActive</code> true? is <code>url</code> non-empty?) that
+produces either a plain <code>&lt;a href&gt;</code> or a plain <code>&lt;span&gt;</code>. Since there is no
+interactive or stateful behavior in this kind to replace, none of the listed native mechanisms
+(<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio-input <code>:checked</code> + sibling
+selectors, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>, <code>:has()</code>,
+container queries, CSS anchor positioning, view-transitions) applies&mdash;a plain external
+<code>&lt;a href&gt;</code> already is the idiomatic, framework-free representation of what a
+<code>link</code> reference produces; there is no client-side state for a CSS mechanism to hold in its
+place.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

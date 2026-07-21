@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: thematicBreak — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">block</p>
+<h1><code>thematicBreak</code></h1>
+<p class="wire-value">Wire value: <code>"thematicBreak"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+Grepping <code>src/components/</code> for the literal string <code>'thematicBreak'</code> lands on
+<code>src/components/ContentNode.vue</code>'s wire-constant table
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L37-L54"><code>ContentNode.vue#L37-L54</code></a>),
+whose <code>thematicBreak</code> key holds <code>BlockType.thematicBreak = 'thematicBreak'</code> (the last
+entry in that object). That constant is matched in the module-level <code>renderNode()</code> factory
+function's (defined at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L121-L124"><code>ContentNode.vue#L121-L124</code></a>)
+<code>switch (node.type)</code> dispatch table:
+</p>
+<pre><code>case BlockType.thematicBreak:
+  return createElement(ThematicBreak);</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L429-L430"><code>ContentNode.vue#L429-L430</code></a>.)
+This is the shortest case arm in the whole dispatch table: unlike every other block kind, it reads no
+properties off <code>node</code> at all&mdash;the wire object carries no payload beyond its discriminator
+(confirmed in Section 3), so there is nothing to forward as props or slots. The call delegates straight to a
+dedicated child component, <code>ThematicBreak</code>, imported at
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L33"><code>ContentNode.vue#L33</code></a>
+from
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/ThematicBreak.vue"><code>src/components/ContentNode/ThematicBreak.vue</code></a>.
+</p>
+<p>
+That component's entire template is a single, unadorned element:
+</p>
+<pre><code>&lt;template&gt;
+  &lt;hr class="thematic-break" /&gt;
+&lt;/template&gt;</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/ThematicBreak.vue#L10-L12"><code>ThematicBreak.vue#L10-L12</code></a>.)
+There is no <code>&lt;script&gt;</code> block, no <code>props</code>, no <code>data()</code>, and no
+event handlers&mdash;this is the simplest component in the block-content dispatch table, a pure,
+stateless mapping from the wire kind to a native <code>&lt;hr&gt;</code>. All visual treatment comes from
+the scoped <code>&lt;style&gt;</code> block covered in Section 4.
+</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p class="synthesized-note">
+No literal RenderNode JSON fixture containing <code>"thematicBreak"</code> was found in
+<code>Tests/DocCArchiveTests/Fixtures/</code> (the only hits there are inside bundled, minified
+<code>*.js</code> app assets shipped alongside the two example archives, not RenderNode data files) nor as a
+JSON fixture file anywhere under <code>Tests/SwiftDocCTests/</code>. swift-docc's own test suite exercises
+this kind only via Swift-literal assertions in
+<code>Tests/SwiftDocCTests/Rendering/RenderBlockContent_ThematicBreakTests.swift</code>, which confirms that
+Markdown thematic-break variants&mdash;<code>---</code>, <code>***</code>, <code>___</code>, their
+space-separated forms (<code>- - -</code>, etc.), and runs of four or more characters&mdash;each compile to
+a bare <code>RenderBlockContent.thematicBreak</code> case via
+<code>RenderContentCompiler.visitThematicBreak</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift</code>, lines 398&ndash;400:
+<code>mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) -&gt; [any RenderContent] { return
+[RenderBlockContent.thematicBreak] }</code>). No test asserts the serialized JSON shape directly (the
+round-trip test, <code>testThematicBreakCodability</code>, only checks that decode(encode(x)) == x), so the
+minimal object below is hand-written to match the wire schema in Section 3 and the encoder logic at
+<code>RenderBlockContent.swift</code> lines 1217&ndash;1218 (<code>case .thematicBreak: break</code>&mdash;no
+extra key is ever written beside <code>type</code>).
+</p>
+<!-- SYNTHESIZED EXAMPLE: no fixture found in DocCArchive or swift-docc test suites as of 8b8d8268aa13bd1cfcd081c5d0644437fe4880e7 -->
+<pre><code>{
+  "kind": "article",
+  "primaryContentSections": [
+    {
+      "kind": "content",
+      "content": [
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Sloths climb slowly, but they climb with purpose." }
+          ]
+        },
+        { "type": "thematicBreak" },
+        {
+          "type": "paragraph",
+          "inlineContent": [
+            { "type": "text", "text": "Everything below this line concerns hats." }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <p style="margin:0 0 1.6em 0;">Sloths climb slowly, but they climb with purpose.</p>
+    <hr style="border:none; border-top:1px solid #d2d2d7; margin:0 0 1.6em 0;">
+    <p style="margin:0;">Everything below this line concerns hats.</p>
+  </div>
+  <p><em>mockup: a plain horizontal rule spanning the content column, with extra-large vertical margin
+  above and below (see Section 4) &mdash; no label, icon, or interactive behavior of any kind.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/ThematicBreak</code> (lines 700&ndash;713), which is one arm of the
+<code>RenderBlockContent</code> discriminated union (referenced at spec line 441). Cross-checked against
+<code>Components.Schemas.ThematicBreak</code> in <code>Sources/DocCArchive/generated/Types.swift</code>
+(lines 4083&ndash;4101).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"thematicBreak"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case thematicBreak
+= "thematicBreak" }</code>, decoded/encoded under the Swift property name <code>_type</code> via
+<code>CodingKeys { case _type = "type" }</code> (leading underscore because <code>type</code> collides with
+a reserved identifier pattern used by the generator for discriminator fields on this schema).</td>
+</tr>
+</tbody>
+</table>
+<p>
+That is the entire schema object: <code>ThematicBreak</code> is the only member of
+<code>RenderBlockContent</code>'s <code>oneOf</code> union with just one property. The generated struct
+confirms it holds nothing else:
+</p>
+<pre><code>public struct ThematicBreak: Codable, Hashable, Sendable {
+  @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+    case thematicBreak = "thematicBreak"
+  }
+  public var _type: Components.Schemas.ThematicBreak._TypePayload
+  public init(_type: Components.Schemas.ThematicBreak._TypePayload) {
+    self._type = _type
+  }
+  public enum CodingKeys: String, CodingKey {
+    case _type = "type"
+  }
+}</code></pre>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the enclosing
+enum case is a bare, payload-less case&mdash;<code>case thematicBreak</code>
+(<code>Sources/SwiftDocC/Model/Rendering/Content/RenderBlockContent.swift</code>, line 82, with a doc comment
+"An authored thematic break between block elements."), unlike almost every sibling case in
+<code>RenderBlockContent</code> which wraps a dedicated payload struct (e.g. <code>case
+heading(Heading)</code>). No <code>swiftStructSite</code> exists for this kind because none is needed: the
+custom <code>Decodable</code> initializer simply does <code>case .thematicBreak: self = .thematicBreak</code>
+(line 1124&ndash;1125) with no field reads, and the custom <code>Encodable</code> implementation does
+<code>case .thematicBreak: break</code> (line 1217&ndash;1218) after already writing the shared
+<code>type</code> discriminator&mdash;so no additional key is ever emitted. <code>rawIndexableTextContent</code>
+likewise returns <code>""</code> for this case (confirmed by
+<code>testThematicBreakIndexable</code> in the test file cited in Section 2): a thematic break contributes no
+searchable text.
+</p>
+<p>
+An author produces this kind simply by writing a standard Markdown thematic-break rule&mdash;three or more
+<code>-</code>, <code>*</code>, or <code>_</code> characters (optionally space-separated) on their own
+line&mdash;which swift-markdown parses as a <code>Markdown.ThematicBreak</code> markup node; swift-docc's
+<code>RenderContentCompiler.visitThematicBreak</code>
+(<code>Sources/SwiftDocC/Model/Rendering/RenderContentCompiler.swift</code>, lines 398&ndash;400) then maps
+that markup node onto the render-side <code>RenderBlockContent.thematicBreak</code> case with no
+transformation of any field, since there is nothing to carry over. There is no dedicated <code>.docc</code>
+catalog authoring article for this concept (unlike, say, tab navigators or row/column layouts) because it is
+plain CommonMark syntax rather than a DocC-specific directive.
+</p>
+<p>
+DocCArchive's own transform layer does not yet do anything with this kind:
+<code>MyHTMLTransformer</code> and <code>MyMarkdownTransformer</code>
+(<code>Sources/DocCArchive/DocCArchive.swift</code>, lines 242&ndash;254) are still stub placeholders that
+return a hardcoded HTML comment and an empty string respectively for an entire <code>RenderNode</code>, with
+no per-block-kind switch reached yet&mdash;so a <code>thematicBreak</code> node parsed via
+<code>Components.Schemas.ThematicBreak</code> is available on the decoded model today, but nothing in this
+repository currently converts it into HTML or Markdown output.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>thematicBreak</code> node, in context:
+</p>
+<ul>
+<li><code>hr.thematic-break</code> &mdash; the entire output. A single, self-closing, native
+<code>&lt;hr&gt;</code> element with one class and no children, no attributes, and no wrapper <code>div</code>,
+from <code>ThematicBreak.vue</code>.</li>
+</ul>
+<p>
+SCSS: <code>ThematicBreak.vue</code> carries its own scoped <code>&lt;style&gt;</code> block
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode/ThematicBreak.vue#L14-L23"><code>ThematicBreak.vue#L14-L23</code></a>):
+</p>
+<pre><code>.thematic-break {
+  @include space-out-between-siblings(var(--spacing-stacked-margin-xlarge));
+  border-top-color: var(--color-grid, currentColor);
+  border-top-style: solid;
+  border-width: 1px 0 0 0;
+}</code></pre>
+<p>
+The <code>space-out-between-siblings</code> mixin
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/core/_helpers.scss#L298-L302"><code>_helpers.scss#L298-L302</code></a>)
+expands to <code>* + &amp; { margin-top: $margin; }</code> (plus a <code>:deep(*)</code> variant for
+slotted content), i.e. it does not set its own bottom margin; instead it makes <em>any</em> element that
+follows a preceding sibling take the extra-large top margin, which is how the break gets breathing room on
+both sides purely through adjacent-sibling selectors rather than explicit <code>margin-bottom</code> on the
+<code>&lt;hr&gt;</code> itself. <code>border-width: 1px 0 0 0</code> together with
+<code>border-top-style: solid</code> reduces the browser's default <code>&lt;hr&gt;</code> box (which
+normally has a 2px inset/groove border on all sides plus default margins) down to a single 1px top rule,
+with the element's own height otherwise collapsing to its content-box (empty) height.
+</p>
+<p>
+CSS custom properties consumed: <code>--spacing-stacked-margin-xlarge</code>, defined as
+<code>calc(var(--spacing-stacked-margin-large) * 2)</code> in
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/base/_typography.scss#L44-L45"><code>_typography.scss#L44-L45</code></a>
+(itself <code>0.8em * 2</code>, since <code>--spacing-stacked-margin-large: 0.8em</code> is set a few lines
+above), giving roughly <code>1.6em</code> of top margin whenever a thematic break (or any block) follows a
+sibling; and <code>--color-grid</code>, falling back to the CSS keyword <code>currentColor</code> if unset,
+which in the light color scheme resolves to <code>var(--color-fill-gray)</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/styles/core/colors/_light.scss#L98"><code>_light.scss#L98</code></a>,
+itself a generated light-mode gray swatch) for the rule's color&mdash;the same token used elsewhere for
+generic hairline dividers such as table borders (<code>_vars.scss</code>: <code>$generic-border-style: 1px
+solid var(--color-grid)</code>).
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: none that involves JavaScript or component state. <code>ThematicBreak.vue</code>
+has no <code>&lt;script&gt;</code> block, no props, no <code>data()</code>, no computed properties, and no
+event handlers&mdash;it is a pure template-to-markup mapping (<code>&lt;hr class="thematic-break" /&gt;</code>)
+styled entirely by a static, scoped SCSS rule (Section 4). The Vue dispatch in
+<code>ContentNode.vue</code> (<code>case BlockType.thematicBreak: return createElement(ThematicBreak)</code>)
+is likewise stateless: it reads no property off the wire node (there is none to read, per Section 3) and
+makes no runtime decision.
+</p>
+<p>
+This kind has no interactive or stateful behavior to replace with a native HTML/CSS mechanism, because it
+never had any to begin with&mdash;a thematic break is a single, static, self-closing element whose only
+"behavior" is horizontal-rule styling and vertical spacing, both already accomplished with a plain
+<code>&lt;hr&gt;</code> and a CSS class in the current implementation. There is nothing here analogous to
+the tab-selection state, disclosure toggling, or scroll-linked behavior that other kinds' Vue components
+hold in JS; a modern-CSS-only alternative would look identical to what already exists (an
+<code>&lt;hr&gt;</code> styled with <code>border-top</code> and margin), so there is no mechanism to name.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>

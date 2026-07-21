@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RenderNode kind: text — DocC Schema Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<nav class="site-nav"><a href="../index.html" class="active" aria-current="page">Kind Catalog</a><a href="../hierarchy/index.html">Page Hierarchy</a><a href="../methodology.html">Methodology</a></nav>
+<header class="kind-header">
+<p class="tier-badge">inline</p>
+<h1><code>text</code></h1>
+<p class="wire-value">Wire value: <code>"text"</code></p>
+<p class="appears-on">Appears on: <a href="../hierarchy/doc-topic.html">Documentation Topic</a>, <a href="../hierarchy/tutorial-project.html">Tutorial (Project)</a>, <a href="../hierarchy/tutorial-article.html">Tutorial Article</a>, <a href="../hierarchy/overview.html">Tutorials Overview</a></p>
+</header>
+<main>
+<nav class="page-toc"><a href="#render-consumption">1. Consumption</a> &middot; <a href="#example-and-rendering">2. Example &amp; mockup</a> &middot; <a href="#data-sheet">3. Data sheet</a> &middot; <a href="#css-mapping">4. CSS mapping</a> &middot; <a href="#modern-css">5. Modern CSS</a></nav>
+<section id="render-consumption"><h2>1. How swift-docc-render consumes this</h2>
+<p>
+A grep of <code>src/components/</code> for the literal string <code>'text'</code> lands, like every other
+block/inline content kind on this reference site, on <code>src/components/ContentNode.vue</code>. Near the
+top of the file its inline-kind wire constants are declared in one object,
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L56-L69"><code>ContentNode.vue#L56-L69</code></a>,
+whose <code>text</code> key holds the literal string <code>'text'</code> (<code>InlineType.text =
+'text'</code>). A comment directly above the <code>renderNode()</code> factory function calls this kind
+out specifically:
+</p>
+<pre><code>// Recursively call the passed `createElement` function for each content node
+// and any of its children by mapping each node `type` to a given Vue component
+//
+// Note: A plain string of text is returned for nodes with `type="text"`</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L117-L121"><code>ContentNode.vue#L117-L121</code></a>.)
+The dispatch arm itself, in <code>renderNode()</code>'s <code>switch (node.type)</code>, is exactly that
+— it returns a JavaScript string rather than a Vue <code>createElement()</code> vnode:
+</p>
+<pre><code>case InlineType.text:
+  return node.text === '\n' ? (
+    createElement('br')
+  ) : (
+    node.text
+  );</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L493-L498"><code>ContentNode.vue#L493-L498</code></a>.)
+<code>text</code> is the only inline kind on this site with no wrapping element at all in the common case:
+Vue accepts a plain string as a vnode child and inserts it as a raw DOM text node, so the rendered output
+contributes no tag, class, or id of its own — it is literally the characters of <code>node.text</code>
+spliced into whatever parent element (<code>&lt;p&gt;</code>, <code>&lt;strong&gt;</code>,
+<code>&lt;li&gt;</code>, a table cell, etc.) is building its children via <code>renderChildren()</code>.
+The one special case is a literal newline character: <code>node.text === '\n'</code> is rendered as a hard
+line break element, <code>&lt;br&gt;</code>, instead of an actual <code>\n</code> character (which HTML
+would otherwise collapse into a single space).
+</p>
+<p>
+Because a <code>text</code> node carries no <code>inlineContent</code>/<code>content</code> children field
+(only the string in <code>text</code>), it does not appear as a recursion case in the file's other two
+traversal helpers, <code>map()</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L550-L604"><code>ContentNode.vue#L550-L604</code></a>)
+and <code>forEach()</code>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L611-L652"><code>ContentNode.vue#L611-L652</code></a>)
+— both fall through to their generic <code>default: return fn(node)</code> arm for a bare <code>text</code>
+node, since there is nothing nested to walk into. It does, however, appear explicitly in the component's
+<code>plaintext</code> computed property, which reduces an entire content tree to a single string (used
+for things like search snippets):
+</p>
+<pre><code>if (node.type === InlineType.text) {
+  return `${text}${node.text}`;
+}</code></pre>
+<p>
+(<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L680-L698"><code>ContentNode.vue#L680-L698</code></a>,
+case at line 689&ndash;691.) There, a <code>text</code> node's <code>.text</code> string is simply
+concatenated onto the accumulator — it is the base case that terminates recursion for every other inline
+kind's plain-text extraction (<code>codeVoice</code> uses <code>.code</code> instead;
+<code>reference</code> looks up a title from <code>references</code>; everything else falls through to
+the unchanged accumulator).
+</p>
+<p>
+<code>ContentNode.vue</code> itself has no template and no <code>&lt;style&gt;</code> block — it is a
+render-function-only component. It is always mounted from a wrapping component (for a symbol/article
+page, <code>src/components/DocumentationTopic/ContentNode.vue</code>) whose own root element and scoped
+stylesheet supply whatever visual context a run of plain text sits inside.
+</p>
+<p class="see-concept">See also: <a href="../concepts/references.html">The references map</a> — how this and every other reference-dictionary lookup works across kinds.</p>
+</section>
+<section id="example-and-rendering"><h2>2. Example JSON and rendered mockup</h2>
+<p>
+Real fixture: <code>Tests/DocCArchiveTests/Fixtures/ExampleDocs.doccarchive/data/documentation/exampledocs/examplearticle.json</code>,
+field <code>primaryContentSections[0].content[1].inlineContent[0]</code> — the sole inline child of the
+article's first authored paragraph. This is the RenderNode swift-docc produced for a run of unformatted
+Markdown prose.
+</p>
+<pre><code>{
+  "type": "paragraph",
+  "inlineContent": [
+    {
+      "type": "text",
+      "text": "Description of what the article is about - the problem being solved, etc."
+    }
+  ]
+}</code></pre>
+<div class="mockup">
+  <div style="background:#fff; border-radius:6px; padding:24px 28px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+    <p style="margin:0;">Description of what the article is about - the problem being solved, etc.</p>
+  </div>
+  <p><em>mockup: the <code>text</code> node contributes no element of its own — it is the raw character
+  data inside the enclosing <code>&lt;p&gt;</code> (or whatever inline-formatting element wraps it, e.g.
+  <code>&lt;strong&gt;</code> for a <code>strong</code> node's <code>inlineContent</code>). A second fixture
+  example, <code>Tests/DocCArchiveTests/Fixtures/SampleLibrary.doccarchive/.../samplemethod().json</code>'s
+  <code>abstract[0]</code> field, shows the same shape used outside a paragraph, as the entire abstract of
+  a symbol: <code>{"type": "text", "text": "A sample method that does something."}</code>.</em></p>
+</div>
+</section>
+<section id="data-sheet"><h2>3. Data sheet</h2>
+<p>
+Source: <code>Sources/DocCArchive/Vendored/RenderNode.spec.json</code>, schema object
+<code>#/components/schemas/Text</code> (lines 1227&ndash;1242), cross-checked against
+<code>Components.Schemas.Text</code> in <code>Sources/DocCArchive/generated/Types.swift</code> (lines
+1660&ndash;1685). <code>Text</code> is one arm of the <code>RenderInlineContent</code> discriminated
+union (<code>#/components/schemas/RenderInlineContent</code>, lines 1190&ndash;1226; generated as
+<code>Components.Schemas.RenderInlineContent</code>, an <code>indirect enum</code> at lines
+1535&ndash;1658, with case <code>Text(Components.Schemas.Text)</code> at line 1537).
+</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Enum values / default</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>"text"</code> (single-value enum)</td>
+<td>Generated as <code>_TypePayload: String, Codable, Hashable, Sendable, CaseIterable { case text =
+"text" }</code>, decoded/encoded under the Swift property name <code>_type</code> via an explicit
+<code>CodingKeys</code> mapping (<code>case _type = "type"</code>), the same discriminator-renaming
+pattern used for every other kind on this site.</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td>string</td>
+<td>yes</td>
+<td>&mdash;</td>
+<td>The literal run of plain text. Generated as <code>public var text: Swift.String</code>. This is the
+only payload field — <code>Text</code> is the simplest object in the whole schema: two required string
+properties and nothing else (no children array, no formatting, no identifier).</td>
+</tr>
+</tbody>
+</table>
+<p>
+On the swift-docc production side (secondary/flavor source, not authoritative for wire shape), the
+enclosing Swift type is declared at
+<code>Sources/SwiftDocC/Model/Rendering/Content/RenderInlineContent.swift</code>: the enum case
+<code>case text(String)</code> (line 45, with doc comment "A piece of plain text"). Unlike most of its
+sibling cases, <code>.text</code> has no nested payload struct of its own — it wraps a bare
+<code>String</code> associated value, not a <code>Text</code>-named struct — so there is no
+<code>swiftStructSite</code> to cite for this kind beyond the enum case declaration itself. The enclosing
+<code>RenderInlineContent</code> enum's doc comment (lines 11&ndash;31) frames inline elements generally as
+things a renderer "append[s] to previous inline elements" and gives an ASCII diagram showing
+<code>[Text] [Strong [Text]] [Text] [Emphasize [Reference]]</code> as the contents of one paragraph —
+plain <code>Text</code> nodes are the leaves that carry the actual prose, with every other inline kind
+existing to add formatting or linking around one or more of them. Authoring-side, a <code>text</code>
+node is what swift-docc emits for any span of authored Markdown that isn't itself wrapped in inline
+formatting syntax (no <code>**bold**</code>, <code>_italics_</code>, backtick code voice, or
+<code>[link]()</code>) — there is no directive an author writes to "create" one; it is the default leaf
+kind for prose characters, matching the DocCArchive <code>MyMarkdownTransformer.swift</code>-relevant
+observation in Section 5 below that regenerating those characters back to Markdown is exactly the
+identity operation for this kind.
+</p>
+</section>
+<section id="css-mapping"><h2>4. HTML/CSS mapping in DocC-Render output</h2>
+<p>
+Rendered DOM for a <code>text</code> node, in context:
+</p>
+<ul>
+<li>No element, class, or id of any kind. <code>renderNode()</code> returns the JavaScript string
+<code>node.text</code> directly (see
+<a href="https://github.com/swiftlang/swift-docc-render/blob/4a9efad63734d40cf742da9f36c99b9bc57305f8/src/components/ContentNode.vue#L493-L498"><code>ContentNode.vue#L493-L498</code></a>),
+and Vue's <code>createElement</code>-based render pipeline inserts a plain string child as a raw DOM
+<code>Text</code> node (no wrapping <code>&lt;span&gt;</code>). There is nothing to select in CSS that
+targets a <code>text</code> node specifically — it is inseparable from its parent element's text content.</li>
+<li>The one exception is a literal <code>"\n"</code> payload, which becomes a bare <code>&lt;br&gt;</code>
+element instead of a string child — also with no class or id.</li>
+<li>Its parent is whichever element the enclosing inline/block kind created (a bare <code>&lt;p&gt;</code>
+for a paragraph's <code>inlineContent</code>, <code>&lt;strong&gt;</code>/<code>&lt;em&gt;</code> for
+formatting wrappers, an <code>&lt;li&gt;</code> for a list item, a table <code>&lt;td&gt;</code>, etc.) —
+see the <code>block-paragraph</code> reference page on this site for the most common host.</li>
+</ul>
+<p>
+SCSS: because a <code>text</code> node contributes no element, there is no SCSS file that targets it and
+no scoped style block anywhere in <code>ContentNode.vue</code> or its wrapper
+(<code>src/components/DocumentationTopic/ContentNode.vue</code>) that could target it — a search of
+<code>src/styles/</code> for a <code>text</code>-specific selector turns up nothing, because the visual
+appearance of the characters is entirely inherited from whichever parent element (paragraph, heading,
+list item, table cell, emphasis wrapper) actually exists in the DOM. All font, color, and spacing
+comes from that parent's rules — e.g. <code>src/styles/base/_typography.scss</code>'s
+<code>font-styles(body)</code> mixin, inherited via <code>body</code>, is what a bare run of text
+ultimately renders with when its host is an unstyled <code>&lt;p&gt;</code>.
+</p>
+<p>
+CSS custom properties consumed: none directly. A <code>text</code> node has no rendered element to attach
+a custom property to; any typographic custom properties in play (font size, line height, color) are
+consumed by the parent element the text is inserted into, not by the text run itself.
+</p>
+</section>
+<section id="modern-css"><h2>5. Modern CSS-only alternative</h2>
+<p><span class="verdict not-applicable">Not applicable</span></p>
+<p>
+Current behavior in play: rendering a <code>text</code> node involves no JavaScript state and, more
+unusually among the kinds on this site, no DOM element at all — <code>renderNode()</code>'s
+<code>InlineType.text</code> arm is a pure, one-shot expression that returns either the string
+<code>node.text</code> or a static <code>&lt;br&gt;</code> vnode for a literal newline. There is no click
+handler, no <code>v-show</code>/<code>v-if</code> toggle, no component <code>data()</code> tracking any
+kind of open/active state, and nothing that persists or changes after the initial paint. It is the most
+minimal possible unit of content in the schema: a string, spliced verbatim into its parent.
+</p>
+<p>
+Concretely: none of the interactive-state mechanisms this survey looks for
+(<code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>, radio-input <code>:checked</code> plus a
+general sibling selector, <code>:target</code>, the Popover API, <code>&lt;dialog&gt;</code>,
+<code>:has()</code>, container queries, CSS anchor positioning, view transitions) apply here, because none
+of them are standing in for any behavior this kind has — there is no behavior, interactive or otherwise,
+beyond "insert these characters." The verdict is "not applicable" for the same reason it would be for any
+raw string literal: there is no state to hold and no element to hold it on.
+</p>
+</section>
+</main>
+<footer class="provenance-footer">
+<p>Verified against <a href="https://github.com/swiftlang/swift-docc/tree/8b8d8268aa13bd1cfcd081c5d0644437fe4880e7">swift-docc@8b8d8268aa</a> and <a href="https://github.com/swiftlang/swift-docc-render/tree/4a9efad63734d40cf742da9f36c99b9bc57305f8">swift-docc-render@4a9efad637</a> on 2026-07-20. See <a href="../methodology.html">methodology</a> to refresh.</p>
+</footer>
+</body>
+</html>
